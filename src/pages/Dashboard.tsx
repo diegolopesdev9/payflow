@@ -13,8 +13,10 @@ import {
   Plus
 } from "lucide-react";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const Dashboard = () => {
+  const navigate = useNavigate();
   const [weekProgress] = useState(65);
 
   const weeklyExpenses = [
@@ -200,15 +202,24 @@ const Dashboard = () => {
                 <Home className="w-5 h-5" />
                 <span className="text-sm">Home</span>
               </button>
-              <button className="nav-item">
+              <button 
+                onClick={() => navigate("/bills")}
+                className="nav-item"
+              >
                 <CreditCard className="w-5 h-5" />
                 <span className="text-sm">Contas</span>
               </button>
-              <button className="nav-item">
+              <button 
+                onClick={() => navigate("/reports")}
+                className="nav-item"
+              >
                 <TrendingUp className="w-5 h-5" />
                 <span className="text-sm">Relatórios</span>
               </button>
-              <button className="nav-item">
+              <button 
+                onClick={() => navigate("/profile")}
+                className="nav-item"
+              >
                 <Wallet className="w-5 h-5" />
                 <span className="text-sm">Perfil</span>
               </button>
