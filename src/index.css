@@ -2,95 +2,122 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* FinApp Design System - Financial Control App */
 
 @layer base {
   :root {
+    /* Brand Colors - Financial App Theme */
     --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-
+    --foreground: 207 27% 11%;
+    
+    /* Card and Surface Colors */
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-
+    --card-foreground: 207 27% 11%;
+    
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 207 27% 11%;
+    
+    /* Primary - Dark Green */
+    --primary: 146 45% 29%;
+    --primary-foreground: 0 0% 100%;
+    
+    /* Secondary - Light Green */
+    --secondary: 143 43% 53%;
+    --secondary-foreground: 0 0% 100%;
+    
+    /* Muted - Light Gray */
+    --muted: 210 14% 96%;
+    --muted-foreground: 207 8% 46%;
+    
+    /* Accent - Success Green */
+    --accent: 143 43% 53%;
+    --accent-foreground: 0 0% 100%;
+    
+    /* Status Colors */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    
+    --success: 143 43% 53%;
+    --success-foreground: 0 0% 100%;
+    
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+    
+    /* UI Elements */
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 146 45% 29%;
+    
+    /* Custom Design Tokens */
+    --radius: 0.75rem;
+    
+    /* Financial App Specific Colors */
+    --dashboard-bg: 146 45% 29%;
+    --dashboard-card: 0 0% 100%;
+    --expense-red: 0 84% 60%;
+    --income-green: 143 43% 53%;
+    --pending-orange: 38 92% 50%;
+    
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(146 45% 29%), hsl(143 43% 53%));
+    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%), hsl(210 14% 98%));
+    
+    /* Shadows */
+    --shadow-card: 0 4px 6px -1px hsl(207 27% 11% / 0.1), 0 2px 4px -1px hsl(207 27% 11% / 0.06);
+    --shadow-floating: 0 10px 25px -3px hsl(207 27% 11% / 0.1), 0 4px 6px -2px hsl(207 27% 11% / 0.05);
+    
+    /* Animations */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
-
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
-
-    --radius: 0.5rem;
-
+    /* Sidebar Colors */
     --sidebar-background: 0 0% 98%;
-
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-foreground: 207 27% 11%;
+    --sidebar-primary: 146 45% 29%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 14% 96%;
+    --sidebar-accent-foreground: 146 45% 29%;
+    --sidebar-border: 214 32% 91%;
+    --sidebar-ring: 146 45% 29%;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    --background: 146 45% 29%;
+    --foreground: 0 0% 100%;
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --card: 146 50% 25%;
+    --card-foreground: 0 0% 100%;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 146 50% 25%;
+    --popover-foreground: 0 0% 100%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 143 43% 53%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 146 30% 35%;
+    --secondary-foreground: 0 0% 100%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 146 30% 35%;
+    --muted-foreground: 210 14% 83%;
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 143 43% 53%;
+    --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
+    --border: 146 30% 35%;
+    --input: 146 30% 35%;
+    --ring: 143 43% 53%;
+    
+    --sidebar-background: 146 50% 25%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 143 43% 53%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-accent: 146 30% 35%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 146 30% 35%;
+    --sidebar-ring: 143 43% 53%;
   }
 }
 
@@ -100,6 +127,76 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+  
+  /* Custom scrollbar for modern look */
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: hsl(var(--muted));
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--primary));
+    border-radius: 3px;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--secondary));
+  }
+}
+
+@layer components {
+  /* Financial Cards */
+  .fin-card {
+    @apply bg-card/95 backdrop-blur-sm border shadow-sm rounded-xl p-6 transition-all duration-300;
+  }
+  
+  .fin-card:hover {
+    @apply shadow-md scale-[1.02];
+  }
+  
+  /* Dashboard Stats */
+  .stat-card {
+    @apply bg-gradient-to-br from-card to-muted/30 border-0 shadow-lg rounded-2xl p-6;
+  }
+  
+  /* Financial Values */
+  .value-positive {
+    @apply text-success font-semibold;
+  }
+  
+  .value-negative {
+    @apply text-destructive font-semibold;
+  }
+  
+  .value-warning {
+    @apply text-warning font-semibold;
+  }
+  
+  /* Buttons */
+  .btn-financial {
+    @apply bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl font-medium transition-all duration-300 shadow-sm hover:shadow-md;
+  }
+  
+  .btn-secondary-financial {
+    @apply bg-secondary text-secondary-foreground hover:bg-secondary/90 rounded-xl font-medium transition-all duration-300;
+  }
+  
+  /* Form Inputs */
+  .input-financial {
+    @apply border-input bg-card/50 backdrop-blur-sm rounded-xl px-4 py-3 text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-300;
+  }
+  
+  /* Navigation */
+  .nav-item {
+    @apply flex items-center gap-3 px-4 py-3 rounded-xl text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all duration-300;
+  }
+  
+  .nav-item.active {
+    @apply text-primary bg-primary/10 font-medium;
   }
 }
