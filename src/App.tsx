@@ -16,6 +16,10 @@ import Profile from "./pages/Profile";
 import EditProfile from "./pages/EditProfile";
 import Notifications from "./pages/Notifications";
 import Settings from "./pages/Settings";
+import Security from "./pages/Security";
+import Categories from "./pages/Categories";
+import AppSettings from "./pages/AppSettings";
+import Help from "./pages/Help";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -39,6 +43,10 @@ const App = () => (
           <Route path="/profile" element={<Profile />} />
           <Route path="/profile/edit" element={<EditProfile />} />
           <Route path="/profile/notifications" element={<Notifications />} />
+          <Route path="/profile/security" element={<Security />} />
+          <Route path="/profile/categories" element={<Categories />} />
+          <Route path="/profile/settings" element={<AppSettings />} />
+          <Route path="/profile/help" element={<Help />} />
           <Route path="/settings" element={<Settings />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
