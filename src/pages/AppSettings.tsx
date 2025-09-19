@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -24,7 +24,7 @@ import {
 } from "lucide-react";
 
 const AppSettings = () => {
-  const navigate = useNavigate();
+  const [location, setLocation] = useLocation();
   const [darkMode, setDarkMode] = useState(false);
   const [language, setLanguage] = useState("pt-br");
   const [currency, setCurrency] = useState("BRL");
@@ -43,7 +43,7 @@ const AppSettings = () => {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => navigate("/profile")}
+              onClick={() => setLocation("/profile")}
               className="text-primary-foreground hover:bg-primary-foreground/10"
             >
               <ArrowLeft className="w-5 h-5" />
@@ -248,28 +248,28 @@ const AppSettings = () => {
           <div className="container mx-auto px-4">
             <div className="grid grid-cols-4 gap-1">
               <button 
-                onClick={() => navigate("/dashboard")}
+                onClick={() => setLocation("/dashboard")}
                 className="nav-item"
               >
                 <Home className="w-5 h-5" />
                 <span className="text-sm">Home</span>
               </button>
               <button 
-                onClick={() => navigate("/bills")}
+                onClick={() => setLocation("/bills")}
                 className="nav-item"
               >
                 <CreditCard className="w-5 h-5" />
                 <span className="text-sm">Contas</span>
               </button>
               <button 
-                onClick={() => navigate("/reports")}
+                onClick={() => setLocation("/reports")}
                 className="nav-item"
               >
                 <TrendingUp className="w-5 h-5" />
                 <span className="text-sm">Relatórios</span>
               </button>
               <button 
-                onClick={() => navigate("/profile")}
+                onClick={() => setLocation("/profile")}
                 className="nav-item active"
               >
                 <User className="w-5 h-5" />

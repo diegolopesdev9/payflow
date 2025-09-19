@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
@@ -7,7 +7,7 @@ import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, Bell, Mail, Smartphone, Shield, AlertTriangle } from "lucide-react";
 
 const Notifications = () => {
-  const navigate = useNavigate();
+  const [location, setLocation] = useLocation();
   
   const [settings, setSettings] = useState({
     billReminders: true,
@@ -102,7 +102,7 @@ const Notifications = () => {
             <Button 
               variant="ghost" 
               size="sm" 
-              onClick={() => navigate("/profile")}
+              onClick={() => setLocation("/profile")}
               className="text-primary-foreground hover:bg-primary-foreground/10"
             >
               <ArrowLeft className="w-4 h-4" />

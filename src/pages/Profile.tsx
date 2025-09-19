@@ -57,26 +57,26 @@ const Profile = () => {
     {
       title: "Configurações do Aplicativo",
       icon: Smartphone,
-      action: () => navigate("/profile/settings"),
+      action: () => setLocation("/profile/settings"),
       hasArrow: true
     },
     {
       title: "Categorias de Gastos",
       icon: Tag,
-      action: () => navigate("/profile/categories"),
+      action: () => setLocation("/profile/categories"),
       hasArrow: true
     },
     {
       title: "Ajuda e Suporte",
       icon: HelpCircle,
-      action: () => navigate("/profile/help"),
+      action: () => setLocation("/profile/help"),
       hasArrow: true
     }
   ];
 
   const handleLogout = () => {
     // In a real app, you would clear authentication tokens here
-    navigate("/login");
+    setLocation("/login");
   };
 
   return (
@@ -119,7 +119,7 @@ const Profile = () => {
               <Button 
                 variant="outline"
                 size="sm"
-                onClick={() => navigate("/profile/edit")}
+                onClick={() => setLocation("/profile/edit")}
                 className="ml-auto"
               >
                 <Edit className="w-4 h-4 mr-2" />
@@ -205,21 +205,21 @@ const Profile = () => {
           <div className="container mx-auto px-4">
             <div className="grid grid-cols-4 gap-1">
               <button 
-                onClick={() => navigate("/dashboard")}
+                onClick={() => setLocation("/dashboard")}
                 className="nav-item"
               >
                 <Home className="w-5 h-5" />
                 <span className="text-sm">Home</span>
               </button>
               <button 
-                onClick={() => navigate("/bills")}
+                onClick={() => setLocation("/bills")}
                 className="nav-item"
               >
                 <CreditCard className="w-5 h-5" />
                 <span className="text-sm">Contas</span>
               </button>
               <button 
-                onClick={() => navigate("/reports")}
+                onClick={() => setLocation("/reports")}
                 className="nav-item"
               >
                 <TrendingUp className="w-5 h-5" />

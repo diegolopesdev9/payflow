@@ -32,7 +32,7 @@ const EditProfile = () => {
         title: "Perfil atualizado!",
         description: "Suas informações foram salvas com sucesso.",
       });
-      navigate("/profile");
+      setLocation("/profile");
     }, 1500);
   };
 
@@ -49,7 +49,7 @@ const EditProfile = () => {
             <Button 
               variant="ghost" 
               size="sm" 
-              onClick={() => navigate("/profile")}
+              onClick={() => setLocation("/profile")}
               className="text-primary-foreground hover:bg-primary-foreground/10"
             >
               <ArrowLeft className="w-4 h-4" />
@@ -150,7 +150,7 @@ const EditProfile = () => {
                 <Button 
                   type="button"
                   variant="outline"
-                  onClick={() => navigate("/profile")}
+                  onClick={() => setLocation("/profile")}
                   className="flex-1"
                 >
                   <X className="w-4 h-4 mr-2" />
