@@ -18,8 +18,8 @@ import {
 } from "lucide-react";
 
 const BillDetails = () => {
-  const [match, params] = useRoute("/bills/:id");
-  const id = params?.id || "1"; // fallback to default ID
+  const [match, params] = useRoute<{ id: string }>("/bills/:id");
+  const id = params?.id ?? "1"; // fallback to default ID if params is null
   const [location, setLocation] = useLocation();
   const { toast } = useToast();
   
