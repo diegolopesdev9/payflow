@@ -1,10 +1,10 @@
-import { useNavigate } from "react-router-dom";
+import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Home, ArrowLeft } from "lucide-react";
 
 const NotFound = () => {
-  const navigate = useNavigate();
+  const [location, setLocation] = useLocation();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary via-primary/95 to-secondary flex items-center justify-center p-4">
@@ -24,7 +24,7 @@ const NotFound = () => {
           
           <div className="space-y-3">
             <Button 
-              onClick={() => navigate("/dashboard")}
+              onClick={() => setLocation("/dashboard")}
               className="btn-primary-financial w-full"
             >
               <Home className="w-4 h-4 mr-2" />
@@ -32,7 +32,7 @@ const NotFound = () => {
             </Button>
             
             <Button 
-              onClick={() => navigate(-1)}
+              onClick={() => window.history.back()}
               variant="outline"
               className="w-full"
             >

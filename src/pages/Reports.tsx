@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 
 const Reports = () => {
-  const navigate = useNavigate();
+  const [location, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState("mensal");
 
   const monthlyData = {

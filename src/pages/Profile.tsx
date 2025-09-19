@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -24,7 +24,7 @@ import {
 } from "lucide-react";
 
 const Profile = () => {
-  const navigate = useNavigate();
+  const [location, setLocation] = useLocation();
   
   const user = {
     name: "Sofia Almeida",
@@ -39,19 +39,19 @@ const Profile = () => {
     {
       title: "Informações Pessoais",
       icon: UserIcon,
-      action: () => navigate("/profile/edit"),
+      action: () => setLocation("/profile/edit"),
       hasArrow: true
     },
     {
       title: "Segurança da Conta",
       icon: Shield,
-      action: () => navigate("/profile/security"),
+      action: () => setLocation("/profile/security"),
       hasArrow: true
     },
     {
       title: "Notificações",
       icon: Bell,
-      action: () => navigate("/profile/notifications"),
+      action: () => setLocation("/profile/notifications"),
       hasArrow: true
     },
     {

@@ -1,8 +1,9 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { Router, Route } from "wouter";
+import { queryClient } from "@/lib/queryClient";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -22,36 +23,32 @@ import AppSettings from "./pages/AppSettings";
 import Help from "./pages/Help";
 import NotFound from "./pages/NotFound";
 
-const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/bills" element={<Bills />} />
-          <Route path="/bills/new" element={<NewBill />} />
-          <Route path="/bills/:id" element={<BillDetails />} />
-          <Route path="/reports" element={<Reports />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/profile/edit" element={<EditProfile />} />
-          <Route path="/profile/notifications" element={<Notifications />} />
-          <Route path="/profile/security" element={<Security />} />
-          <Route path="/profile/categories" element={<Categories />} />
-          <Route path="/profile/settings" element={<AppSettings />} />
-          <Route path="/profile/help" element={<Help />} />
-          <Route path="/settings" element={<Settings />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
+      <Router>
+        <Route path="/" component={Index} />
+        <Route path="/login" component={Login} />
+        <Route path="/register" component={Register} />
+        <Route path="/forgot-password" component={ForgotPassword} />
+        <Route path="/dashboard" component={Dashboard} />
+        <Route path="/bills" component={Bills} />
+        <Route path="/bills/new" component={NewBill} />
+        <Route path="/bills/:id" component={BillDetails} />
+        <Route path="/reports" component={Reports} />
+        <Route path="/profile" component={Profile} />
+        <Route path="/profile/edit" component={EditProfile} />
+        <Route path="/profile/notifications" component={Notifications} />
+        <Route path="/profile/security" component={Security} />
+        <Route path="/profile/categories" component={Categories} />
+        <Route path="/profile/settings" component={AppSettings} />
+        <Route path="/profile/help" component={Help} />
+        <Route path="/settings" component={Settings} />
+        <Route path="/*" component={NotFound} />
+      </Router>
     </TooltipProvider>
   </QueryClientProvider>
 );

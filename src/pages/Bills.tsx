@@ -17,10 +17,10 @@ import {
   Clock,
   Check
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useLocation } from "wouter";
 
 const Bills = () => {
-  const navigate = useNavigate();
+  const [location, setLocation] = useLocation();
   const [searchTerm, setSearchTerm] = useState("");
   const [activeFilter, setActiveFilter] = useState("todas");
 
@@ -120,7 +120,7 @@ const Bills = () => {
               <p className="text-primary-foreground/80">Gerencie suas contas a pagar</p>
             </div>
             <Button 
-              onClick={() => navigate("/bills/new")}
+              onClick={() => setLocation("/bills/new")}
               className="btn-secondary-financial"
             >
               <Plus className="w-4 h-4 mr-2" />
@@ -164,7 +164,7 @@ const Bills = () => {
             <Card 
               key={bill.id} 
               className={`fin-card cursor-pointer border-l-4 ${getPriorityColor(bill.priority)} hover:shadow-lg transition-all duration-300`}
-              onClick={() => navigate(`/bills/${bill.id}`)}
+              onClick={() => setLocation(`/bills/${bill.id}`)}
             >
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
@@ -210,7 +210,7 @@ const Bills = () => {
                 {searchTerm ? "Tente ajustar os filtros de busca" : "Comece adicionando uma nova conta"}
               </p>
               <Button 
-                onClick={() => navigate("/bills/new")}
+                onClick={() => setLocation("/bills/new")}
                 className="btn-financial"
               >
                 <Plus className="w-4 h-4 mr-2" />
@@ -225,7 +225,7 @@ const Bills = () => {
           <div className="container mx-auto px-4">
             <div className="grid grid-cols-4 gap-1">
               <button 
-                onClick={() => navigate("/dashboard")}
+                onClick={() => setLocation("/dashboard")}
                 className="nav-item"
               >
                 <Home className="w-5 h-5" />
@@ -236,14 +236,14 @@ const Bills = () => {
                 <span className="text-sm">Contas</span>
               </button>
               <button 
-                onClick={() => navigate("/reports")}
+                onClick={() => setLocation("/reports")}
                 className="nav-item"
               >
                 <TrendingUp className="w-5 h-5" />
                 <span className="text-sm">Relatórios</span>
               </button>
               <button 
-                onClick={() => navigate("/profile")}
+                onClick={() => setLocation("/profile")}
                 className="nav-item"
               >
                 <User className="w-5 h-5" />

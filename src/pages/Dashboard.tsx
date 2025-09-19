@@ -13,10 +13,10 @@ import {
   Plus
 } from "lucide-react";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation } from "wouter";
 
 const Dashboard = () => {
-  const navigate = useNavigate();
+  const [location, setLocation] = useLocation();
   const [weekProgress] = useState(65);
 
   const weeklyExpenses = [
@@ -203,21 +203,21 @@ const Dashboard = () => {
                 <span className="text-sm">Home</span>
               </button>
               <button 
-                onClick={() => navigate("/bills")}
+                onClick={() => setLocation("/bills")}
                 className="nav-item"
               >
                 <CreditCard className="w-5 h-5" />
                 <span className="text-sm">Contas</span>
               </button>
               <button 
-                onClick={() => navigate("/reports")}
+                onClick={() => setLocation("/reports")}
                 className="nav-item"
               >
                 <TrendingUp className="w-5 h-5" />
                 <span className="text-sm">Relatórios</span>
               </button>
               <button 
-                onClick={() => navigate("/profile")}
+                onClick={() => setLocation("/profile")}
                 className="nav-item"
               >
                 <Wallet className="w-5 h-5" />

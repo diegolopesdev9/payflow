@@ -1,19 +1,19 @@
 import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { TrendingUp, Shield, Smartphone, BarChart3 } from "lucide-react";
 
 const Index = () => {
-  const navigate = useNavigate();
+  const [location, setLocation] = useLocation();
 
   useEffect(() => {
     // Redirect to login after a short delay for demo purposes
     const timer = setTimeout(() => {
-      navigate("/login");
+      setLocation("/login");
     }, 3000);
 
     return () => clearTimeout(timer);
-  }, [navigate]);
+  }, [setLocation]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary via-primary/95 to-secondary">
@@ -28,13 +28,13 @@ const Index = () => {
             </p>
             <div className="flex gap-4 justify-center">
               <Button 
-                onClick={() => navigate("/login")}
+                onClick={() => setLocation("/login")}
                 className="btn-secondary-financial px-8 py-6 text-lg"
               >
                 Entrar
               </Button>
               <Button 
-                onClick={() => navigate("/register")}
+                onClick={() => setLocation("/register")}
                 variant="outline"
                 className="px-8 py-6 text-lg border-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/10"
               >

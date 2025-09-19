@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -19,7 +19,7 @@ import {
 
 const BillDetails = () => {
   const { id } = useParams();
-  const navigate = useNavigate();
+  const [location, setLocation] = useLocation();
   const { toast } = useToast();
   
   // Mock data - in real app this would come from API
@@ -44,7 +44,7 @@ const BillDetails = () => {
   };
 
   const handleEdit = () => {
-    navigate(`/bills/${id}/edit`);
+    setLocation(`/bills/${id}/edit`);
   };
 
   const handleDelete = () => {
@@ -53,7 +53,7 @@ const BillDetails = () => {
       description: "A conta foi removida com sucesso.",
       variant: "destructive",
     });
-    navigate("/bills");
+    setLocation("/bills");
   };
 
   const getStatusColor = (status: string) => {
@@ -76,7 +76,7 @@ const BillDetails = () => {
             <Button 
               variant="ghost" 
               size="sm" 
-              onClick={() => navigate("/bills")}
+              onClick={() => setLocation("/bills")}
               className="text-primary-foreground hover:bg-primary-foreground/10"
             >
               <ArrowLeft className="w-4 h-4" />

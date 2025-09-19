@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,7 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Save, X } from "lucide-react";
 
 const NewBill = () => {
-  const navigate = useNavigate();
+  const [location, setLocation] = useLocation();
   const { toast } = useToast();
   
   const [formData, setFormData] = useState({
@@ -58,7 +58,7 @@ const NewBill = () => {
         title: "Conta criada com sucesso!",
         description: "A nova conta foi adicionada à sua lista.",
       });
-      navigate("/bills");
+      setLocation("/bills");
     }, 1500);
   };
 
@@ -75,7 +75,7 @@ const NewBill = () => {
             <Button 
               variant="ghost" 
               size="sm" 
-              onClick={() => navigate("/bills")}
+              onClick={() => setLocation("/bills")}
               className="text-primary-foreground hover:bg-primary-foreground/10"
             >
               <ArrowLeft className="w-4 h-4" />
@@ -199,7 +199,7 @@ const NewBill = () => {
                 <Button 
                   type="button"
                   variant="outline"
-                  onClick={() => navigate("/bills")}
+                  onClick={() => setLocation("/bills")}
                   className="flex-1"
                 >
                   <X className="w-4 h-4 mr-2" />
