@@ -50,8 +50,8 @@ export const insertBillSchema = createInsertSchema(bills).omit({
 
 // Types
 export type User = typeof users.$inferSelect;
-export type NewUser = z.infer<typeof insertUserSchema>;
+export type NewUser = typeof users.$inferInsert;
 export type Category = typeof categories.$inferSelect;
-export type NewCategory = z.infer<typeof insertCategorySchema>;
+export type NewCategory = typeof categories.$inferInsert;
 export type Bill = typeof bills.$inferSelect;
-export type NewBill = z.infer<typeof insertBillSchema>;
+export type NewBill = typeof bills.$inferInsert;

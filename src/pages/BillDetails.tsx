@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useParams, useLocation } from "wouter";
+import { useRoute, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -18,7 +18,8 @@ import {
 } from "lucide-react";
 
 const BillDetails = () => {
-  const { id } = useParams();
+  const [match, params] = useRoute("/bills/:id");
+  const id = params?.id || "1"; // fallback to default ID
   const [location, setLocation] = useLocation();
   const { toast } = useToast();
   

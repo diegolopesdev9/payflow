@@ -59,6 +59,8 @@ export class MemStorage implements IStorage {
     const category: Category = {
       id: crypto.randomUUID(),
       ...categoryData,
+      color: categoryData.color ?? null,
+      icon: categoryData.icon ?? null,
     };
     this.categories.push(category);
     return category;
@@ -93,6 +95,9 @@ export class MemStorage implements IStorage {
     const bill: Bill = {
       id: crypto.randomUUID(),
       ...billData,
+      isPaid: billData.isPaid ?? null,
+      description: billData.description ?? null,
+      categoryId: billData.categoryId ?? null,
       createdAt: new Date(),
     };
     this.bills.push(bill);
