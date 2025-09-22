@@ -20,11 +20,11 @@ app.post("/api/users", async (c) => {
 app.get("/api/users/:id", async (c) => {
   const id = c.req.param("id");
   const user = await storage.getUser(id);
-  
+
   if (!user) {
     return c.json({ error: "User not found" }, 404);
   }
-  
+
   return c.json(user);
 });
 
@@ -34,7 +34,7 @@ app.get("/api/categories", async (c) => {
   if (!userId) {
     return c.json({ error: "userId is required" }, 400);
   }
-  
+
   const categories = await storage.getCategories(userId);
   return c.json(categories);
 });
@@ -56,11 +56,11 @@ app.put("/api/categories/:id", async (c) => {
     const body = await c.req.json();
     const updates = insertCategorySchema.partial().parse(body);
     const category = await storage.updateCategory(id, updates);
-    
+
     if (!category) {
       return c.json({ error: "Category not found" }, 404);
     }
-    
+
     return c.json(category);
   } catch (error) {
     return c.json({ error: "Invalid category data" }, 400);
@@ -70,11 +70,11 @@ app.put("/api/categories/:id", async (c) => {
 app.delete("/api/categories/:id", async (c) => {
   const id = c.req.param("id");
   const deleted = await storage.deleteCategory(id);
-  
+
   if (!deleted) {
     return c.json({ error: "Category not found" }, 404);
   }
-  
+
   return c.json({ success: true });
 });
 
@@ -84,7 +84,7 @@ app.get("/api/bills", async (c) => {
   if (!userId) {
     return c.json({ error: "userId is required" }, 400);
   }
-  
+
   const bills = await storage.getBills(userId);
   return c.json(bills);
 });
@@ -92,11 +92,11 @@ app.get("/api/bills", async (c) => {
 app.get("/api/bills/upcoming", async (c) => {
   const userId = c.req.query("userId");
   const limit = c.req.query("limit");
-  
+
   if (!userId) {
     return c.json({ error: "userId is required" }, 400);
   }
-  
+
   const bills = await storage.getUpcomingBills(userId, limit ? parseInt(limit) : undefined);
   return c.json(bills);
 });
@@ -104,11 +104,11 @@ app.get("/api/bills/upcoming", async (c) => {
 app.get("/api/bills/:id", async (c) => {
   const id = c.req.param("id");
   const bill = await storage.getBill(id);
-  
+
   if (!bill) {
     return c.json({ error: "Bill not found" }, 404);
   }
-  
+
   return c.json(bill);
 });
 
@@ -129,11 +129,11 @@ app.put("/api/bills/:id", async (c) => {
     const body = await c.req.json();
     const updates = insertBillSchema.partial().parse(body);
     const bill = await storage.updateBill(id, updates);
-    
+
     if (!bill) {
       return c.json({ error: "Bill not found" }, 404);
     }
-    
+
     return c.json(bill);
   } catch (error) {
     return c.json({ error: "Invalid bill data" }, 400);
@@ -143,12 +143,22 @@ app.put("/api/bills/:id", async (c) => {
 app.delete("/api/bills/:id", async (c) => {
   const id = c.req.param("id");
   const deleted = await storage.deleteBill(id);
-  
+
   if (!deleted) {
     return c.json({ error: "Bill not found" }, 404);
   }
-  
+
   return c.json({ success: true });
+});
+
+// Clear all data endpoint
+app.delete("/api/clear-all-data", async (c) => {
+  try {
+    const result = await storage.clearAllData();
+    return c.json(result);
+  } catch (error) {
+    return c.json({ error: "Erro ao limpar dados" }, 500);
+  }
 });
 
 export default app;

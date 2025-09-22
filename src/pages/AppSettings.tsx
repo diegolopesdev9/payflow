@@ -20,7 +20,8 @@ import {
   Home,
   CreditCard,
   TrendingUp,
-  User
+  User,
+  HelpCircle
 } from "lucide-react";
 
 const AppSettings = () => {
@@ -141,9 +142,9 @@ const AppSettings = () => {
                 onCheckedChange={setSoundEnabled}
               />
             </div>
-            
+
             <Separator />
-            
+
             <div className="flex items-center justify-between">
               <div className="space-y-1">
                 <Label className="text-sm font-medium">Vibração</Label>
@@ -180,9 +181,9 @@ const AppSettings = () => {
                 onCheckedChange={setAutoSync}
               />
             </div>
-            
+
             <Separator />
-            
+
             <div className="flex items-center justify-between">
               <div className="space-y-1">
                 <Label className="text-sm font-medium">Apenas Wi-Fi</Label>
@@ -195,9 +196,9 @@ const AppSettings = () => {
                 onCheckedChange={setWifiOnly}
               />
             </div>
-            
+
             <Separator />
-            
+
             <div className="flex items-center justify-between">
               <div className="space-y-1">
                 <Label className="text-sm font-medium">Backup Automático</Label>
@@ -234,11 +235,54 @@ const AppSettings = () => {
               <span className="text-sm">Backup local</span>
               <span className="text-sm text-muted-foreground">856 KB</span>
             </div>
-            
+
             <Separator />
-            
+
             <Button variant="outline" className="w-full">
               Limpar Cache
+            </Button>
+          </CardContent>
+        </Card>
+        
+        {/* Help & Support */}
+        <Card className="fin-card">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <HelpCircle className="w-5 h-5" />
+              Ajuda e Suporte
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Button
+              variant="ghost"
+              className="w-full justify-start text-left h-auto p-3"
+              onClick={() => setLocation("/help")}
+            >
+              <div className="flex items-center gap-3">
+                <HelpCircle className="w-5 h-5" />
+                <div>
+                  <div className="font-medium">Ajuda e Suporte</div>
+                  <div className="text-xs text-muted-foreground">
+                    Central de ajuda e documentação
+                  </div>
+                </div>
+              </div>
+            </Button>
+
+            <Button
+              variant="ghost"
+              className="w-full justify-start text-left h-auto p-3 text-red-600 hover:text-red-700 hover:bg-red-50"
+              onClick={() => setLocation("/data-management")}
+            >
+              <div className="flex items-center gap-3">
+                <Database className="w-5 h-5" />
+                <div>
+                  <div className="font-medium">Gerenciar Dados</div>
+                  <div className="text-xs text-muted-foreground">
+                    Excluir e gerenciar dados do sistema
+                  </div>
+                </div>
+              </div>
             </Button>
           </CardContent>
         </Card>

@@ -21,6 +21,7 @@ import Security from "./pages/Security";
 import Categories from "./pages/Categories";
 import AppSettings from "./pages/AppSettings";
 import Help from "./pages/Help";
+import DataManagement from "./pages/DataManagement";
 import NotFound from "./pages/NotFound";
 
 
@@ -47,6 +48,7 @@ const App = () => (
         <Route path="/profile/settings" component={AppSettings} />
         <Route path="/profile/help" component={Help} />
         <Route path="/settings" component={Settings} />
+        <Route path="/data-management" component={DataManagement} />
         <Route path="/*" component={NotFound} />
       </Router>
     </TooltipProvider>

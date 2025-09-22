@@ -20,6 +20,7 @@ export interface IStorage {
   updateBill(id: string, bill: Partial<NewBill>): Promise<Bill | null>;
   deleteBill(id: string): Promise<boolean>;
   getUpcomingBills(userId: string, limit?: number): Promise<Bill[]>;
+  clearAllData(): Promise<{ success: boolean; message: string }>;
 }
 
 export class MemStorage implements IStorage {
@@ -126,6 +127,14 @@ export class MemStorage implements IStorage {
       .filter(b => b.userId === userId && !b.isPaid && b.dueDate > now)
       .sort((a, b) => a.dueDate.getTime() - b.dueDate.getTime())
       .slice(0, limit);
+  }
+
+  // Clear all data
+  async clearAllData(): Promise<{ success: boolean; message: string }> {
+    this.users = [];
+    this.categories = [];
+    this.bills = [];
+    return { success: true, message: "Todos os dados foram excluídos com sucesso" };
   }
 }
 
