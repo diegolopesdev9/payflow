@@ -78,22 +78,9 @@ async function startDevServer() {
     }
   });
 
-  import { serve } from "@hono/node-server";
-import { serveStatic } from "@hono/node-server/serve-static";
-import routes from "./routes";
-
-const port = 5000;
+  const port = 5000;
   
-  const app = routes;
-  
-  // Serve static files
-  app.use("/*", serveStatic({ root: "./dist" }));
-  
-  serve({
-    fetch: app.fetch,
-    port: port,
-    hostname: "0.0.0.0"
-  }, () => {
+  server.listen(port, '0.0.0.0', () => {
     console.log(`🚀 Full-stack server running on port ${port}`);
     console.log(`📱 Frontend: http://localhost:${port}`);
     console.log(`🔌 API: http://localhost:${port}/api`);
@@ -104,5 +91,4 @@ const port = 5000;
 startDevServer().catch((error) => {
   console.error('Failed to start dev server:', error);
   process.exit(1);
-});exit(1);
 });
