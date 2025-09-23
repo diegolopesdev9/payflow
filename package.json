@@ -13,6 +13,10 @@
     "start:prod": "npx tsx server/prod.ts",
     "build:start": "npm run build && npm run start:prod",
     "test:prod": "npm run build && npm run start:prod",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "migrate": "npx tsx server/migrate.ts",
     "db:setup": "npm run migrate"
   },
