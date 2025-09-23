@@ -21,19 +21,20 @@ const Index = () => {
         <div className="text-center mb-16">
           <div className="animate-fade-in">
             <h1 className="text-6xl font-bold text-primary-foreground mb-4">
-              Finanças
+              PayFlow
             </h1>
             <p className="text-xl text-primary-foreground/80 mb-8 max-w-2xl mx-auto">
-              Controle suas contas a pagar de forma inteligente e nunca mais se esqueça de um vencimento.
+              Controle suas contas a pagar de forma inteligente e nunca mais se
+              esqueça de um vencimento.
             </p>
             <div className="flex gap-4 justify-center">
-              <Button 
+              <Button
                 onClick={() => setLocation("/login")}
                 className="btn-secondary-financial px-8 py-6 text-lg"
               >
                 Entrar
               </Button>
-              <Button 
+              <Button
                 onClick={() => setLocation("/register")}
                 variant="outline"
                 className="px-8 py-6 text-lg border-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/10"
