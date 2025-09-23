@@ -12,6 +12,7 @@
     "start": "npx tsx server/dev.ts",
     "start:prod": "npx tsx server/prod.ts",
     "build:start": "npm run build && npm run start:prod",
+    "test:prod": "npm run build && npm run start:prod",
     "migrate": "npx tsx server/migrate.ts",
     "db:setup": "npm run migrate"
   },

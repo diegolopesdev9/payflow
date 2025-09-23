@@ -8,22 +8,34 @@ import { join } from "path";
 // Cria o app de produção
 const app = routes;
 
-// Serve arquivos estáticos do dist
-app.use("/*", serveStatic({
-  root: "./dist",
-  index: "index.html"
-}));
-
-// Fallback para SPA - serve index.html para rotas não encontradas
-app.get("*", async (c) => {
-  try {
-    const indexPath = join(process.cwd(), "dist", "index.html");
-    const indexHtml = readFileSync(indexPath, "utf-8");
-    return c.html(indexHtml);
-  } catch (error) {
-    console.error("Error serving index.html:", error);
-    return c.text("Application not found. Please build the project first.", 404);
+// Serve arquivos estáticos do dist para todas as rotas não-API
+app.use("*", async (c, next) => {
+  // Se a rota começa com /api, deixa as rotas da API tratarem
+  if (c.req.path.startsWith('/api')) {
+    return next();
   }
+  
+  // Para outras rotas, tenta servir arquivos estáticos
+  const staticHandler = serveStatic({
+    root: "./dist",
+    index: "index.html"
+  });
+  
+  const response = await staticHandler(c, next);
+  
+  // Se o arquivo não foi encontrado, serve o index.html para SPA routing
+  if (response.status === 404) {
+    try {
+      const indexPath = join(process.cwd(), "dist", "index.html");
+      const indexHtml = readFileSync(indexPath, "utf-8");
+      return c.html(indexHtml);
+    } catch (error) {
+      console.error("Error serving index.html:", error);
+      return c.text("Application not found. Please build the project first.", 404);
+    }
+  }
+  
+  return response;
 });
 
 const port = parseInt(process.env.PORT || "5000");
