@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,59 +18,62 @@ import {
   Check
 } from "lucide-react";
 import { useLocation } from "wouter";
+import { fetchWithAuth, useAuth } from "@/lib/auth";
+import { useToast } from "@/hooks/use-toast";
 
 const Bills = () => {
   const [location, setLocation] = useLocation();
+  const { user, authenticated } = useAuth();
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [activeFilter, setActiveFilter] = useState("todas");
+  const [bills, setBills] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const bills = [
-    {
-      id: 1,
-      description: "Aluguel",
-      amount: 1200.00,
-      dueDate: "15/07/2024",
-      category: "Moradia",
-      status: "pending",
-      priority: "high"
-    },
-    {
-      id: 2,
-      description: "Internet",
-      amount: 80.00,
-      dueDate: "20/07/2024",
-      category: "Telecom",
-      status: "pending",
-      priority: "medium"
-    },
-    {
-      id: 3,
-      description: "Energia",
-      amount: 150.00,
-      dueDate: "25/07/2024",
-      category: "Utilidades",
-      status: "pending",
-      priority: "medium"
-    },
-    {
-      id: 4,
-      description: "Streaming",
-      amount: 30.00,
-      dueDate: "30/07/2024",
-      category: "Entretenimento",
-      status: "paid",
-      priority: "low"
-    },
-    {
-      id: 5,
-      description: "Academia",
-      amount: 89.90,
-      dueDate: "05/08/2024",
-      category: "Saúde",
-      status: "pending",
-      priority: "low"
-    },
-  ];
+  useEffect(() => {
+    if (!authenticated) {
+      setLocation("/login");
+      return;
+    }
+
+    const fetchBills = async () => {
+      try {
+        setLoading(true);
+        const response = await fetchWithAuth(`/api/bills?userId=${user?.id}`);
+        const data = await response.json();
+        
+        // Adicionar prioridade baseada na proximidade do vencimento
+        const billsWithPriority = data.map(bill => {
+          const dueDate = new Date(bill.dueDate);
+          const today = new Date();
+          const daysLeft = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
+          
+          let priority = "low";
+          if (daysLeft <= 3) priority = "high";
+          else if (daysLeft <= 7) priority = "medium";
+          
+          return {
+            ...bill,
+            priority,
+            dueDate: dueDate.toLocaleDateString('pt-BR')
+          };
+        });
+        
+        setBills(billsWithPriority);
+      } catch (error) {
+        console.error('Erro ao carregar contas:', error);
+        toast({
+          title: "Erro ao carregar contas",
+          description: "Não foi possível carregar suas contas. Tente novamente.",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBills();
+  }, [authenticated, user, setLocation, toast]);
 
   const filterBills = (status: string) => {
     switch (status) {
@@ -86,6 +89,14 @@ const Bills = () => {
   const filteredBills = filterBills(activeFilter).filter(bill =>
     bill.description.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary via-primary/95 to-secondary flex items-center justify-center">
+        <div className="text-primary-foreground text-lg">Carregando contas...</div>
+      </div>
+    );
+  }
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -120,7 +131,7 @@ const Bills = () => {
               <p className="text-primary-foreground/80">Gerencie suas contas a pagar</p>
             </div>
             <Button 
-              onClick={() => setLocation("/bills/new")}
+              onClick={() => setLocation("/new-bill")}
               className="btn-secondary-financial"
             >
               <Plus className="w-4 h-4 mr-2" />
@@ -210,7 +221,7 @@ const Bills = () => {
                 {searchTerm ? "Tente ajustar os filtros de busca" : "Comece adicionando uma nova conta"}
               </p>
               <Button 
-                onClick={() => setLocation("/bills/new")}
+                onClick={() => setLocation("/new-bill")}
                 className="btn-financial"
               >
                 <Plus className="w-4 h-4 mr-2" />

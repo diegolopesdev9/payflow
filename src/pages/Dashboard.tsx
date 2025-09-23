@@ -12,32 +12,104 @@ import {
   Home,
   Plus
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
+import { fetchWithAuth, useAuth } from "@/lib/auth";
 
 const Dashboard = () => {
   const [location, setLocation] = useLocation();
-  const [weekProgress] = useState(65);
+  const { user, authenticated } = useAuth();
+  const [upcomingBills, setUpcomingBills] = useState([]);
+  const [totalToPay, setTotalToPay] = useState(0);
+  const [totalPaid, setTotalPaid] = useState(0);
+  const [weeklyTotal, setWeeklyTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!authenticated) {
+      setLocation("/login");
+      return;
+    }
+
+    const fetchDashboardData = async () => {
+      try {
+        setLoading(true);
+        
+        // Buscar próximas contas
+        const upcomingResponse = await fetchWithAuth(`/api/bills/upcoming?userId=${user?.id}&limit=5`);
+        const upcomingData = await upcomingResponse.json();
+        
+        // Buscar todas as contas para calcular totais
+        const allBillsResponse = await fetchWithAuth(`/api/bills?userId=${user?.id}`);
+        const allBills = await allBillsResponse.json();
+
+        // Calcular estatísticas
+        const pending = allBills.filter(bill => bill.status === 'pending');
+        const paid = allBills.filter(bill => bill.status === 'paid');
+        
+        const totalToPay = pending.reduce((sum, bill) => sum + bill.amount, 0);
+        const totalPaid = paid.reduce((sum, bill) => sum + bill.amount, 0);
+        
+        // Simular dados semanais baseados nas contas
+        const weeklyTotal = Math.min(totalToPay, 1250);
+
+        // Mapear dados das contas próximas com ícones
+        const billsWithIcons = upcomingData.map(bill => ({
+          ...bill,
+          name: bill.description,
+          daysLeft: Math.ceil((new Date(bill.dueDate) - new Date()) / (1000 * 60 * 60 * 24)),
+          icon: getIconForCategory(bill.category)
+        }));
+
+        setUpcomingBills(billsWithIcons);
+        setTotalToPay(totalToPay);
+        setTotalPaid(totalPaid);
+        setWeeklyTotal(weeklyTotal);
+      } catch (error) {
+        console.error('Erro ao carregar dados do dashboard:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, [authenticated, user, setLocation]);
+
+  const getIconForCategory = (category) => {
+    const iconMap = {
+      'Moradia': Home,
+      'Telecom': CreditCard,
+      'Cartão': CreditCard,
+      'Saúde': TrendingUp,
+      'Entretenimento': CreditCard,
+      'Utilidades': Home,
+      'Alimentação': DollarSign,
+      'Transporte': CreditCard,
+      'Educação': TrendingUp,
+      'Lazer': CreditCard,
+    };
+    return iconMap[category] || CreditCard;
+  };
 
   const weeklyExpenses = [
-    { day: "Seg", amount: 180 },
-    { day: "Ter", amount: 220 },
-    { day: "Qua", amount: 150 },
-    { day: "Qui", amount: 200 },
-    { day: "Sex", amount: 280 },
-    { day: "Sáb", amount: 120 },
-    { day: "Dom", amount: 98 },
-  ];
-
-  const upcomingBills = [
-    { id: 1, name: "Aluguel", amount: 500, daysLeft: 2, category: "Moradia", icon: Home },
-    { id: 2, name: "Internet", amount: 100, daysLeft: 5, category: "Telecom", icon: CreditCard },
-    { id: 3, name: "Cartão de Crédito", amount: 250, daysLeft: 7, category: "Cartão", icon: CreditCard },
-    { id: 4, name: "Academia", amount: 50, daysLeft: 10, category: "Saúde", icon: TrendingUp },
-    { id: 5, name: "Streaming", amount: 20, daysLeft: 12, category: "Entretenimento", icon: CreditCard },
+    { day: "Seg", amount: Math.floor(weeklyTotal * 0.15) },
+    { day: "Ter", amount: Math.floor(weeklyTotal * 0.18) },
+    { day: "Qua", amount: Math.floor(weeklyTotal * 0.12) },
+    { day: "Qui", amount: Math.floor(weeklyTotal * 0.16) },
+    { day: "Sex", amount: Math.floor(weeklyTotal * 0.22) },
+    { day: "Sáb", amount: Math.floor(weeklyTotal * 0.10) },
+    { day: "Dom", amount: Math.floor(weeklyTotal * 0.07) },
   ];
 
   const maxAmount = Math.max(...weeklyExpenses.map(d => d.amount));
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary via-primary/95 to-secondary flex items-center justify-center">
+        <div className="text-primary-foreground text-lg">Carregando...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary via-primary/95 to-secondary">
@@ -74,7 +146,9 @@ const Dashboard = () => {
           <CardContent>
             <div className="space-y-6">
               <div>
-                <div className="text-3xl font-bold text-foreground mb-2">R$ 1.250</div>
+                <div className="text-3xl font-bold text-foreground mb-2">
+                  R$ {weeklyTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                </div>
                 <p className="text-muted-foreground">Esta semana</p>
               </div>
 
@@ -101,11 +175,15 @@ const Dashboard = () => {
               <div className="grid grid-cols-2 gap-4 pt-4 border-t">
                 <div>
                   <div className="text-sm text-muted-foreground">Total de despesas</div>
-                  <div className="text-lg font-semibold">R$ 1.250</div>
+                  <div className="text-lg font-semibold">
+                    R$ {weeklyTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </div>
                 </div>
                 <div>
                   <div className="text-sm text-muted-foreground">Média diária</div>
-                  <div className="text-lg font-semibold">R$ 178,57</div>
+                  <div className="text-lg font-semibold">
+                    R$ {(weeklyTotal / 7).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </div>
                 </div>
               </div>
             </div>
@@ -122,7 +200,9 @@ const Dashboard = () => {
                     <Wallet className="w-4 h-4" />
                     <span className="text-sm">Total a Pagar</span>
                   </div>
-                  <div className="text-2xl font-bold value-negative">R$ 850</div>
+                  <div className="text-2xl font-bold value-negative">
+                    R$ {totalToPay.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </div>
                   <div className="flex items-center gap-1 text-sm text-destructive">
                     <TrendingDown className="w-3 h-3" />
                     <span>-5%</span>
@@ -140,7 +220,9 @@ const Dashboard = () => {
                     <DollarSign className="w-4 h-4" />
                     <span className="text-sm">Total Pago</span>
                   </div>
-                  <div className="text-2xl font-bold value-positive">R$ 400</div>
+                  <div className="text-2xl font-bold value-positive">
+                    R$ {totalPaid.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </div>
                   <div className="flex items-center gap-1 text-sm text-success">
                     <TrendingUp className="w-3 h-3" />
                     <span>+10%</span>
@@ -158,9 +240,15 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {upcomingBills.map((bill) => {
-                const Icon = bill.icon;
-                const isUrgent = bill.daysLeft <= 3;
+              {upcomingBills.length === 0 ? (
+                <div className="text-center py-8">
+                  <CreditCard className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">Nenhuma conta próxima do vencimento</p>
+                </div>
+              ) : (
+                upcomingBills.map((bill) => {
+                  const Icon = bill.icon;
+                  const isUrgent = bill.daysLeft <= 3;
                 
                 return (
                   <div 
@@ -182,7 +270,9 @@ const Dashboard = () => {
                     </div>
 
                     <div className="text-right">
-                      <div className="font-semibold">R$ {bill.amount}</div>
+                      <div className="font-semibold">
+                        R$ {bill.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </div>
                       <div className={`text-sm flex items-center gap-1 ${
                         isUrgent ? 'text-destructive' : 'text-muted-foreground'
                       }`}>
@@ -192,7 +282,8 @@ const Dashboard = () => {
                     </div>
                   </div>
                 );
-              })}
+              })
+              )}
             </div>
           </CardContent>
         </Card>

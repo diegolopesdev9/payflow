@@ -5,24 +5,37 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { CalendarIcon, ArrowLeft, Save, X } from "lucide-react";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Save, X } from "lucide-react";
+import { useBills } from "@/hooks/useBills";
+import { useAuth } from "@/lib/auth";
 
 const NewBill = () => {
   const [location, setLocation] = useLocation();
   const { toast } = useToast();
-  
+  const { user, authenticated } = useAuth();
+  const { createBill } = useBills();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date>();
+
+  // Verificar autenticação
+  if (!authenticated) {
+    setLocation("/login");
+    return null;
+  }
+
   const [formData, setFormData] = useState({
     description: "",
     amount: "",
-    dueDate: "",
     category: "",
     frequency: "",
     notes: ""
   });
-
-  const [isLoading, setIsLoading] = useState(false);
 
   const categories = [
     "Moradia",
@@ -49,17 +62,44 @@ const NewBill = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
 
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
+    if (!selectedDate) {
       toast({
-        title: "Conta criada com sucesso!",
-        description: "A nova conta foi adicionada à sua lista.",
+        title: "Data obrigatória",
+        description: "Por favor, selecione uma data de vencimento.",
+        variant: "destructive",
       });
+      return;
+    }
+
+    if (!user?.id) {
+      toast({
+        title: "Erro de autenticação",
+        description: "Usuário não encontrado. Faça login novamente.",
+        variant: "destructive",
+      });
+      setLocation("/login");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      await createBill({
+        description: formData.description,
+        amount: parseFloat(formData.amount),
+        dueDate: selectedDate.toISOString().split('T')[0], // Format YYYY-MM-DD
+        category: formData.category,
+        status: 'pending',
+        userId: user.id
+      });
+
       setLocation("/bills");
-    }, 1500);
+    } catch (error) {
+      // Error handling is done in the hook
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const updateField = (field: string, value: string) => {
@@ -72,9 +112,9 @@ const NewBill = () => {
       <div className="bg-primary/80 backdrop-blur-sm border-b border-primary-foreground/10">
         <div className="container mx-auto px-4 py-6">
           <div className="flex items-center gap-4">
-            <Button 
-              variant="ghost" 
-              size="sm" 
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => setLocation("/bills")}
               className="text-primary-foreground hover:bg-primary-foreground/10"
             >
@@ -131,22 +171,38 @@ const NewBill = () => {
               {/* Due Date */}
               <div className="space-y-2">
                 <Label htmlFor="dueDate">Data de Vencimento *</Label>
-                <Input
-                  id="dueDate"
-                  type="date"
-                  value={formData.dueDate}
-                  onChange={(e) => updateField("dueDate", e.target.value)}
-                  className="input-financial"
-                  required
-                />
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant={"outline"}
+                      className={cn(
+                        "w-full justify-start text-left input-financial",
+                        !selectedDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {selectedDate ? format(selectedDate, "PPP", { locale: ptBR }) : "Selecione a data"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={selectedDate}
+                      onSelect={setSelectedDate}
+                      locale={ptBR}
+                      initialFocus
+                      className="input-financial"
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
 
               {/* Category and Frequency Row */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="category">Categoria *</Label>
-                  <Select 
-                    value={formData.category} 
+                  <Select
+                    value={formData.category}
                     onValueChange={(value) => updateField("category", value)}
                   >
                     <SelectTrigger className="input-financial">
@@ -164,8 +220,8 @@ const NewBill = () => {
 
                 <div className="space-y-2">
                   <Label htmlFor="frequency">Frequência *</Label>
-                  <Select 
-                    value={formData.frequency} 
+                  <Select
+                    value={formData.frequency}
                     onValueChange={(value) => updateField("frequency", value)}
                   >
                     <SelectTrigger className="input-financial">
@@ -196,7 +252,7 @@ const NewBill = () => {
 
               {/* Action Buttons */}
               <div className="flex gap-4 pt-6">
-                <Button 
+                <Button
                   type="button"
                   variant="outline"
                   onClick={() => setLocation("/bills")}
@@ -205,14 +261,14 @@ const NewBill = () => {
                   <X className="w-4 h-4 mr-2" />
                   Cancelar
                 </Button>
-                
-                <Button 
-                  type="submit" 
+
+                <Button
+                  type="submit"
                   className="flex-1 btn-financial"
-                  disabled={isLoading}
+                  disabled={isSubmitting}
                 >
                   <Save className="w-4 h-4 mr-2" />
-                  {isLoading ? "Salvando..." : "Salvar"}
+                  {isSubmitting ? "Salvando..." : "Salvar"}
                 </Button>
               </div>
             </form>
