@@ -3,7 +3,10 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { z } from 'zod';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production';
+const JWT_SECRET = process.env.JWT_SECRET || (() => {
+  console.warn('⚠️  JWT_SECRET não configurado! Use Replit Secrets para definir uma chave segura.');
+  return 'development-only-key-not-for-production';
+})();
 const JWT_EXPIRES_IN = '7d';
 
 // Schema de validação para senhas
