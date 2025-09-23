@@ -78,7 +78,7 @@ async function startDevServer() {
     }
   });
 
-  const port = 5000;
+  const port = process.env.PORT ? parseInt(process.env.PORT) : 5000;
   
   server.listen(port, '0.0.0.0', () => {
     console.log(`🚀 Full-stack server running on port ${port}`);
