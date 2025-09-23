@@ -1,6 +1,8 @@
 import { Hono } from "hono";
 import { z } from "zod";
 import { storage } from "./storage";
+import { postgresStorage } from './db';
+import { supabaseStorage } from './supabase';
 import { insertUserSchema, insertCategorySchema, insertBillSchema } from "../shared/schema";
 import { 
   registerSchema, 
@@ -48,7 +50,7 @@ app.post("/api/auth/register", async (c) => {
 
     // Retornar dados sem a senha
     const { passwordHash, ...userWithoutPassword } = user;
-    
+
     return c.json({ 
       user: userWithoutPassword, 
       token,
@@ -126,7 +128,7 @@ app.post("/api/users", async (c) => {
 app.get("/api/users/:id", authMiddleware, async (c) => {
   const userId = c.get('userId');
   const id = c.req.param("id");
-  
+
   // Usuários só podem acessar seus próprios dados
   if (userId !== id) {
     return c.json({ error: "Acesso negado" }, 403);
@@ -234,13 +236,13 @@ app.post("/api/bills", authMiddleware, async (c) => {
 app.put("/api/bills/:id", authMiddleware, async (c) => {
   const userId = c.get('userId');
   const id = c.req.param("id");
-  
+
   // Verificar se a conta existe e pertence ao usuário
   const existingBill = await storage.getBill(id);
   if (!existingBill) {
     return c.json({ error: "Bill not found" }, 404);
   }
-  
+
   if (existingBill.userId !== userId) {
     return c.json({ error: "Acesso negado" }, 403);
   }
@@ -258,13 +260,13 @@ app.put("/api/bills/:id", authMiddleware, async (c) => {
 app.delete("/api/bills/:id", authMiddleware, async (c) => {
   const userId = c.get('userId');
   const id = c.req.param("id");
-  
+
   // Verificar se a conta existe e pertence ao usuário
   const existingBill = await storage.getBill(id);
   if (!existingBill) {
     return c.json({ error: "Bill not found" }, 404);
   }
-  
+
   if (existingBill.userId !== userId) {
     return c.json({ error: "Acesso negado" }, 403);
   }
@@ -282,5 +284,21 @@ app.delete("/api/clear-all-data", async (c) => {
     return c.json({ error: "Erro ao limpar dados" }, 500);
   }
 });
+
+// Use Supabase if available, PostgreSQL if DATABASE_URL exists, otherwise memory storage
+const getStorage = () => {
+  if (process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY) {
+    console.log('📊 Using Supabase storage');
+    return supabaseStorage;
+  } else if (process.env.DATABASE_URL) {
+    console.log('📦 Using PostgreSQL storage');
+    return postgresStorage;
+  } else {
+    console.log('⚠️ Using memory storage (add SUPABASE_URL and SUPABASE_ANON_KEY for Supabase)');
+    return storage;
+  }
+};
+
+const dbStorage = getStorage();
 
 export default app;
