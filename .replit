@@ -5,8 +5,8 @@ channel = "stable-25_05"
 
 [deployment]
 deploymentTarget = "autoscale"
-run = ["npm", "start"]
-build = ["npm", "run", "build"]
+run = ["sh", "-c", "npm run start:prod"]
+build = ["sh", "-c", "npm run build"]
 
 [workflows]
 runButton = "Start App"
