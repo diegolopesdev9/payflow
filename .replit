@@ -5,8 +5,8 @@ channel = "stable-25_05"
 
 [deployment]
 deploymentTarget = "autoscale"
-run = ["sh", "-c", "npm run start:prod"]
-build = ["sh", "-c", "npm run build"]
+run = ["npm", "run", "start:prod"]
+build = ["npm", "run", "build"]
 
 [workflows]
 runButton = "Start App"
@@ -51,14 +51,6 @@ mode = "sequential"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "npm run test:prod"
-
-[[ports]]
-localPort = 5000
-externalPort = 80
-
-[[ports]]
-localPort = 24678
-externalPort = 3000
 
 [agent]
 expertMode = true
