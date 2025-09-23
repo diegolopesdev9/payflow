@@ -6,12 +6,23 @@ import {
   registerSchema, 
   loginSchema, 
   verifyPassword, 
-  generateToken, 
-  authenticateToken,
+  generateToken,
   loginAttempts 
 } from "./auth";
+import { 
+  authMiddleware, 
+  rateLimitMiddleware, 
+  apiRateLimit, 
+  authRateLimit 
+} from "./middleware";
 
 const app = new Hono();
+
+// Aplicar rate limiting global para todas as rotas API
+app.use('/api/*', rateLimitMiddleware(apiRateLimit));
+
+// Rate limiting específico para rotas de autenticação
+app.use('/api/auth/*', rateLimitMiddleware(authRateLimit));
 
 // Auth routes
 app.post("/api/auth/register", async (c) => {
@@ -112,19 +123,12 @@ app.post("/api/users", async (c) => {
   return c.json({ error: "Use /api/auth/register para criar conta" }, 400);
 });
 
-app.get("/api/users/:id", async (c) => {
-  // Verificar autenticação
-  const authHeader = c.req.header("Authorization");
-  const auth = authenticateToken(authHeader);
-  
-  if (!auth) {
-    return c.json({ error: "Token de acesso inválido ou expirado" }, 401);
-  }
-
+app.get("/api/users/:id", authMiddleware, async (c) => {
+  const userId = c.get('userId');
   const id = c.req.param("id");
   
   // Usuários só podem acessar seus próprios dados
-  if (auth.userId !== id) {
+  if (userId !== id) {
     return c.json({ error: "Acesso negado" }, 403);
   }
 
@@ -139,20 +143,13 @@ app.get("/api/users/:id", async (c) => {
 });
 
 // Category routes
-app.get("/api/categories", async (c) => {
-  // Verificar autenticação
-  const authHeader = c.req.header("Authorization");
-  const auth = authenticateToken(authHeader);
-  
-  if (!auth) {
-    return c.json({ error: "Token de acesso inválido ou expirado" }, 401);
-  }
-
-  const categories = await storage.getCategories(auth.userId);
+app.get("/api/categories", authMiddleware, async (c) => {
+  const userId = c.get('userId');
+  const categories = await storage.getCategories(userId);
   return c.json(categories);
 });
 
-app.post("/api/categories", async (c) => {
+app.post("/api/categories", authMiddleware, async (c) => {
   try {
     const body = await c.req.json();
     const categoryData = insertCategorySchema.parse(body);
@@ -163,7 +160,7 @@ app.post("/api/categories", async (c) => {
   }
 });
 
-app.put("/api/categories/:id", async (c) => {
+app.put("/api/categories/:id", authMiddleware, async (c) => {
   const id = c.req.param("id");
   try {
     const body = await c.req.json();
@@ -180,7 +177,7 @@ app.put("/api/categories/:id", async (c) => {
   }
 });
 
-app.delete("/api/categories/:id", async (c) => {
+app.delete("/api/categories/:id", authMiddleware, async (c) => {
   const id = c.req.param("id");
   const deleted = await storage.deleteCategory(id);
 
@@ -192,29 +189,21 @@ app.delete("/api/categories/:id", async (c) => {
 });
 
 // Bill routes
-app.get("/api/bills", async (c) => {
-  const userId = c.req.query("userId");
-  if (!userId) {
-    return c.json({ error: "userId is required" }, 400);
-  }
-
+app.get("/api/bills", authMiddleware, async (c) => {
+  const userId = c.get('userId');
   const bills = await storage.getBills(userId);
   return c.json(bills);
 });
 
-app.get("/api/bills/upcoming", async (c) => {
-  const userId = c.req.query("userId");
+app.get("/api/bills/upcoming", authMiddleware, async (c) => {
+  const userId = c.get('userId');
   const limit = c.req.query("limit");
-
-  if (!userId) {
-    return c.json({ error: "userId is required" }, 400);
-  }
-
   const bills = await storage.getUpcomingBills(userId, limit ? parseInt(limit) : undefined);
   return c.json(bills);
 });
 
-app.get("/api/bills/:id", async (c) => {
+app.get("/api/bills/:id", authMiddleware, async (c) => {
+  const userId = c.get('userId');
   const id = c.req.param("id");
   const bill = await storage.getBill(id);
 
@@ -222,13 +211,19 @@ app.get("/api/bills/:id", async (c) => {
     return c.json({ error: "Bill not found" }, 404);
   }
 
+  // Verificar se a conta pertence ao usuário autenticado
+  if (bill.userId !== userId) {
+    return c.json({ error: "Acesso negado" }, 403);
+  }
+
   return c.json(bill);
 });
 
-app.post("/api/bills", async (c) => {
+app.post("/api/bills", authMiddleware, async (c) => {
   try {
+    const userId = c.get('userId');
     const body = await c.req.json();
-    const billData = insertBillSchema.parse(body);
+    const billData = insertBillSchema.parse({ ...body, userId });
     const bill = await storage.createBill(billData);
     return c.json(bill, 201);
   } catch (error) {
@@ -236,31 +231,45 @@ app.post("/api/bills", async (c) => {
   }
 });
 
-app.put("/api/bills/:id", async (c) => {
+app.put("/api/bills/:id", authMiddleware, async (c) => {
+  const userId = c.get('userId');
   const id = c.req.param("id");
+  
+  // Verificar se a conta existe e pertence ao usuário
+  const existingBill = await storage.getBill(id);
+  if (!existingBill) {
+    return c.json({ error: "Bill not found" }, 404);
+  }
+  
+  if (existingBill.userId !== userId) {
+    return c.json({ error: "Acesso negado" }, 403);
+  }
+
   try {
     const body = await c.req.json();
     const updates = insertBillSchema.partial().parse(body);
     const bill = await storage.updateBill(id, updates);
-
-    if (!bill) {
-      return c.json({ error: "Bill not found" }, 404);
-    }
-
     return c.json(bill);
   } catch (error) {
     return c.json({ error: "Invalid bill data" }, 400);
   }
 });
 
-app.delete("/api/bills/:id", async (c) => {
+app.delete("/api/bills/:id", authMiddleware, async (c) => {
+  const userId = c.get('userId');
   const id = c.req.param("id");
-  const deleted = await storage.deleteBill(id);
-
-  if (!deleted) {
+  
+  // Verificar se a conta existe e pertence ao usuário
+  const existingBill = await storage.getBill(id);
+  if (!existingBill) {
     return c.json({ error: "Bill not found" }, 404);
   }
+  
+  if (existingBill.userId !== userId) {
+    return c.json({ error: "Acesso negado" }, 403);
+  }
 
+  const deleted = await storage.deleteBill(id);
   return c.json({ success: true });
 });
 
