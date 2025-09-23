@@ -1,18 +1,22 @@
-import { User, NewUser, Category, NewCategory, Bill, NewBill } from "../shared/schema";
+import { insertUserSchema, insertCategorySchema, insertBillSchema, type User, type Category, type Bill } from "../shared/schema";
+import { db } from "./db";
+import { users, categories, bills } from "../shared/schema";
+import { hashPassword } from "./auth";
+import { eq } from "drizzle-orm";
 
 export interface IStorage {
   // User operations
   getUser(id: string): Promise<User | null>;
   getUserByEmail(email: string): Promise<User | null>;
   createUser(user: NewUser): Promise<User>;
-  
+
   // Category operations
   getCategories(userId: string): Promise<Category[]>;
   getCategory(id: string): Promise<Category | null>;
   createCategory(category: NewCategory): Promise<Category>;
   updateCategory(id: string, category: Partial<NewCategory>): Promise<Category | null>;
   deleteCategory(id: string): Promise<boolean>;
-  
+
   // Bill operations
   getBills(userId: string): Promise<Bill[]>;
   getBill(id: string): Promise<Bill | null>;
@@ -70,7 +74,7 @@ export class MemStorage implements IStorage {
   async updateCategory(id: string, updates: Partial<NewCategory>): Promise<Category | null> {
     const index = this.categories.findIndex(c => c.id === id);
     if (index === -1) return null;
-    
+
     this.categories[index] = { ...this.categories[index], ...updates };
     return this.categories[index];
   }
@@ -78,7 +82,7 @@ export class MemStorage implements IStorage {
   async deleteCategory(id: string): Promise<boolean> {
     const index = this.categories.findIndex(c => c.id === id);
     if (index === -1) return false;
-    
+
     this.categories.splice(index, 1);
     return true;
   }
@@ -108,7 +112,7 @@ export class MemStorage implements IStorage {
   async updateBill(id: string, updates: Partial<NewBill>): Promise<Bill | null> {
     const index = this.bills.findIndex(b => b.id === id);
     if (index === -1) return null;
-    
+
     this.bills[index] = { ...this.bills[index], ...updates };
     return this.bills[index];
   }
@@ -116,7 +120,7 @@ export class MemStorage implements IStorage {
   async deleteBill(id: string): Promise<boolean> {
     const index = this.bills.findIndex(b => b.id === id);
     if (index === -1) return false;
-    
+
     this.bills.splice(index, 1);
     return true;
   }

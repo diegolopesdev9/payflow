@@ -17,28 +17,41 @@ const Login = () => {
     setIsLoading(true);
 
     try {
-      // In a real app, you would verify credentials with the backend
-      // For now, we'll check if there are any users in the system
-      const response = await fetch('/api/users/demo-user-id');
-      
-      if (response.status === 404) {
-        toast({
-          title: "Nenhum usuário encontrado",
-          description: "Crie uma conta primeiro para fazer login.",
-          variant: "destructive",
-        });
-      } else {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email,
+          password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Salvar token no localStorage
+        localStorage.setItem('authToken', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+
         toast({
           title: "Login realizado com sucesso!",
           description: "Bem-vindo de volta ao PayFlow.",
         });
+        
         window.location.href = "/dashboard";
+      } else {
+        toast({
+          title: "Erro de login",
+          description: data.error || "Credenciais inválidas.",
+          variant: "destructive",
+        });
       }
     } catch (error) {
-      // If there's an error, assume no users exist
       toast({
-        title: "Erro de login",
-        description: "Verifique suas credenciais ou crie uma nova conta.",
+        title: "Erro de conexão",
+        description: "Não foi possível conectar ao servidor. Tente novamente.",
         variant: "destructive",
       });
     } finally {

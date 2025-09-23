@@ -2,40 +2,153 @@ import { Hono } from "hono";
 import { z } from "zod";
 import { storage } from "./storage";
 import { insertUserSchema, insertCategorySchema, insertBillSchema } from "../shared/schema";
+import { 
+  registerSchema, 
+  loginSchema, 
+  verifyPassword, 
+  generateToken, 
+  authenticateToken,
+  loginAttempts 
+} from "./auth";
 
 const app = new Hono();
 
-// User routes
-app.post("/api/users", async (c) => {
+// Auth routes
+app.post("/api/auth/register", async (c) => {
   try {
     const body = await c.req.json();
-    const userData = insertUserSchema.parse(body);
-    const user = await storage.createUser(userData);
-    return c.json(user, 201);
+    const userData = registerSchema.parse(body);
+
+    // Verificar se email já existe
+    const existingUser = await storage.getUserByEmail(userData.email);
+    if (existingUser) {
+      return c.json({ error: "Email já está em uso" }, 409);
+    }
+
+    // Criar usuário com senha hasheada
+    const user = await storage.createUser({
+      name: userData.name,
+      email: userData.email,
+      passwordHash: userData.password // Será hasheada no storage
+    });
+
+    // Gerar token JWT
+    const token = generateToken(user.id);
+
+    // Retornar dados sem a senha
+    const { passwordHash, ...userWithoutPassword } = user;
+    
+    return c.json({ 
+      user: userWithoutPassword, 
+      token,
+      message: "Conta criada com sucesso!"
+    }, 201);
   } catch (error) {
-    return c.json({ error: "Invalid user data" }, 400);
+    if (error instanceof z.ZodError) {
+      return c.json({ 
+        error: "Dados inválidos", 
+        details: error.errors.map(e => e.message) 
+      }, 400);
+    }
+    return c.json({ error: "Erro interno do servidor" }, 500);
   }
 });
 
-app.get("/api/users/:id", async (c) => {
-  const id = c.req.param("id");
-  const user = await storage.getUser(id);
+app.post("/api/auth/login", async (c) => {
+  try {
+    const body = await c.req.json();
+    const loginData = loginSchema.parse(body);
 
-  if (!user) {
-    return c.json({ error: "User not found" }, 404);
+    // Verificar rate limiting
+    if (loginAttempts.isBlocked(loginData.email)) {
+      const remainingTime = Math.ceil(loginAttempts.getRemainingTime(loginData.email) / 1000 / 60);
+      return c.json({ 
+        error: `Muitas tentativas de login. Tente novamente em ${remainingTime} minutos.` 
+      }, 429);
+    }
+
+    // Buscar usuário por email
+    const user = await storage.getUserByEmail(loginData.email);
+    if (!user) {
+      loginAttempts.recordAttempt(loginData.email, false);
+      return c.json({ error: "Email ou senha incorretos" }, 401);
+    }
+
+    // Verificar senha
+    const isValidPassword = await verifyPassword(loginData.password, user.passwordHash);
+    if (!isValidPassword) {
+      loginAttempts.recordAttempt(loginData.email, false);
+      return c.json({ error: "Email ou senha incorretos" }, 401);
+    }
+
+    // Login bem-sucedido
+    loginAttempts.recordAttempt(loginData.email, true);
+
+    // Gerar token JWT
+    const token = generateToken(user.id);
+
+    // Retornar dados sem a senha
+    const { passwordHash, ...userWithoutPassword } = user;
+
+    return c.json({ 
+      user: userWithoutPassword, 
+      token,
+      message: "Login realizado com sucesso!"
+    });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return c.json({ 
+        error: "Dados inválidos", 
+        details: error.errors.map(e => e.message) 
+      }, 400);
+    }
+    return c.json({ error: "Erro interno do servidor" }, 500);
+  }
+});
+
+// User routes (protegidas)
+app.post("/api/users", async (c) => {
+  // Redirecionar para rota de registro
+  return c.json({ error: "Use /api/auth/register para criar conta" }, 400);
+});
+
+app.get("/api/users/:id", async (c) => {
+  // Verificar autenticação
+  const authHeader = c.req.header("Authorization");
+  const auth = authenticateToken(authHeader);
+  
+  if (!auth) {
+    return c.json({ error: "Token de acesso inválido ou expirado" }, 401);
   }
 
-  return c.json(user);
+  const id = c.req.param("id");
+  
+  // Usuários só podem acessar seus próprios dados
+  if (auth.userId !== id) {
+    return c.json({ error: "Acesso negado" }, 403);
+  }
+
+  const user = await storage.getUser(id);
+  if (!user) {
+    return c.json({ error: "Usuário não encontrado" }, 404);
+  }
+
+  // Remover senha do retorno
+  const { passwordHash, ...userWithoutPassword } = user;
+  return c.json(userWithoutPassword);
 });
 
 // Category routes
 app.get("/api/categories", async (c) => {
-  const userId = c.req.query("userId");
-  if (!userId) {
-    return c.json({ error: "userId is required" }, 400);
+  // Verificar autenticação
+  const authHeader = c.req.header("Authorization");
+  const auth = authenticateToken(authHeader);
+  
+  if (!auth) {
+    return c.json({ error: "Token de acesso inválido ou expirado" }, 401);
   }
 
-  const categories = await storage.getCategories(userId);
+  const categories = await storage.getCategories(auth.userId);
   return c.json(categories);
 });
 

@@ -31,7 +31,7 @@ const Register = () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/users', {
+      const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -39,25 +39,34 @@ const Register = () => {
         body: JSON.stringify({
           name: formData.name,
           email: formData.email,
-          passwordHash: formData.password, // In a real app, this would be hashed
+          password: formData.password,
         }),
       });
 
+      const data = await response.json();
+
       if (response.ok) {
-        const user = await response.json();
+        // Salvar token no localStorage
+        localStorage.setItem('authToken', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+
         toast({
           title: "Conta criada com sucesso!",
-          description: `Bem-vindo ao FinApp, ${user.name}!`,
+          description: `Bem-vindo ao PayFlow, ${data.user.name}!`,
         });
-        // Redirect to dashboard instead of login since user is now created
+        
         window.location.href = "/dashboard";
       } else {
-        throw new Error('Erro ao criar conta');
+        toast({
+          title: "Erro",
+          description: data.error || "Não foi possível criar a conta.",
+          variant: "destructive",
+        });
       }
     } catch (error) {
       toast({
         title: "Erro",
-        description: "Não foi possível criar a conta. Tente novamente.",
+        description: "Erro de conexão. Tente novamente.",
         variant: "destructive",
       });
     } finally {
