@@ -30,16 +30,39 @@ const Register = () => {
 
     setIsLoading(true);
 
-    // Simulate registration
-    setTimeout(() => {
-      setIsLoading(false);
-      toast({
-        title: "Conta criada com sucesso!",
-        description: "Bem-vindo ao FinApp.",
+    try {
+      const response = await fetch('/api/users', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          passwordHash: formData.password, // In a real app, this would be hashed
+        }),
       });
-      // Here you would typically redirect to login or dashboard
-      window.location.href = "/login";
-    }, 1500);
+
+      if (response.ok) {
+        const user = await response.json();
+        toast({
+          title: "Conta criada com sucesso!",
+          description: `Bem-vindo ao FinApp, ${user.name}!`,
+        });
+        // Redirect to dashboard instead of login since user is now created
+        window.location.href = "/dashboard";
+      } else {
+        throw new Error('Erro ao criar conta');
+      }
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Não foi possível criar a conta. Tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const updateField = (field: string, value: string) => {

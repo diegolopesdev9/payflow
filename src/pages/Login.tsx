@@ -16,16 +16,34 @@ const Login = () => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Simulate login
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      // In a real app, you would verify credentials with the backend
+      // For now, we'll check if there are any users in the system
+      const response = await fetch('/api/users/demo-user-id');
+      
+      if (response.status === 404) {
+        toast({
+          title: "Nenhum usuário encontrado",
+          description: "Crie uma conta primeiro para fazer login.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Login realizado com sucesso!",
+          description: "Bem-vindo de volta ao PayFlow.",
+        });
+        window.location.href = "/dashboard";
+      }
+    } catch (error) {
+      // If there's an error, assume no users exist
       toast({
-        title: "Login realizado com sucesso!",
-        description: "Bem-vindo de volta ao FinApp.",
+        title: "Erro de login",
+        description: "Verifique suas credenciais ou crie uma nova conta.",
+        variant: "destructive",
       });
-      // Here you would typically redirect to dashboard
-      window.location.href = "/dashboard";
-    }, 1500);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
