@@ -115,10 +115,11 @@ export default function DataManagement() {
         </CardHeader>
         <CardContent>
           <div className="space-y-2 text-sm">
-            <p><strong>Tipo de Armazenamento:</strong> Memória Local (MemStorage)</p>
-            <p><strong>Persistência:</strong> Os dados são perdidos quando o servidor é reiniciado</p>
-            <p><strong>Backup:</strong> Não há backup automático dos dados</p>
-            <p><strong>Recuperação:</strong> Dados excluídos não podem ser recuperados</p>
+            <p><strong>Tipo de Armazenamento:</strong> PostgreSQL Database</p>
+            <p><strong>Persistência:</strong> Dados são salvos permanentemente no banco</p>
+            <p><strong>Backup:</strong> Dados são mantidos mesmo após reiniciar o servidor</p>
+            <p><strong>Recuperação:</strong> Dados excluídos só podem ser recuperados com backup</p>
+            <p><strong>ORM:</strong> Drizzle ORM para operações type-safe</p>
           </div>
         </CardContent>
       </Card>

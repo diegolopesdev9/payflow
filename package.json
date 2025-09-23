@@ -9,7 +9,9 @@
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview",
-    "start": "npx tsx server/dev.ts"
+    "start": "npx tsx server/dev.ts",
+    "migrate": "npx tsx server/migrate.ts",
+    "db:setup": "npm run migrate"
   },
   "dependencies": {
     "@hono/node-server": "^1.19.4",

@@ -138,4 +138,21 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+// Use PostgreSQL if DATABASE_URL is available, otherwise fallback to memory storage
+let storage: IStorage;
+
+if (process.env.DATABASE_URL) {
+  try {
+    const { postgresStorage } = require('./db');
+    storage = postgresStorage;
+    console.log('📦 Using PostgreSQL storage');
+  } catch (error) {
+    console.log('⚠️  PostgreSQL not available, using memory storage');
+    storage = new MemStorage();
+  }
+} else {
+  console.log('📦 Using memory storage (no DATABASE_URL found)');
+  storage = new MemStorage();
+}
+
+export { storage };
