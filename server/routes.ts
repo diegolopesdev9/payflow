@@ -1,8 +1,6 @@
 import { Hono } from "hono";
 import { z } from "zod";
 import { storage } from "./storage";
-import { postgresStorage } from './db';
-import { supabaseStorage } from './supabase';
 import { insertUserSchema, insertCategorySchema, insertBillSchema } from "../shared/schema";
 import { 
   registerSchema, 
@@ -285,20 +283,6 @@ app.delete("/api/clear-all-data", async (c) => {
   }
 });
 
-// Use Supabase if available, PostgreSQL if DATABASE_URL exists, otherwise memory storage
-const getStorage = () => {
-  if (process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY) {
-    console.log('📊 Using Supabase storage');
-    return supabaseStorage;
-  } else if (process.env.DATABASE_URL) {
-    console.log('📦 Using PostgreSQL storage');
-    return postgresStorage;
-  } else {
-    console.log('⚠️ Using memory storage (add SUPABASE_URL and SUPABASE_ANON_KEY for Supabase)');
-    return storage;
-  }
-};
-
-const dbStorage = getStorage();
+// Use the storage with proper fallback logic from storage.ts
 
 export default app;
