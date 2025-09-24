@@ -1,7 +1,7 @@
 import { serve } from "@hono/node-server";
 import routes from "./routes";
 
-const port = 3001;
+const port = Number(process.env.PORT) || 8080;
 
 serve({
   fetch: routes.fetch,
