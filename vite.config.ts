@@ -12,8 +12,10 @@ export default defineConfig(({ mode }) => ({
     allowedHosts: true,
     proxy: {
       "/api": {
-        target: "http://127.0.0.1:3001",
+        target: "http://0.0.0.0:3001",
         changeOrigin: true,
+        secure: false,
+        ws: true,
         // se suas rotas no backend NÃO incluem /api, descomente:
         // rewrite: (path) => path.replace(/^\/api/, ''),
       },
