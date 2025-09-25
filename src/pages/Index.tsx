@@ -27,7 +27,7 @@ const Index = () => {
               <Button
                 onClick={() => setLocation("/register")}
                 variant="outline"
-                className="px-8 py-6 text-lg border-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/10"
+                className="px-8 py-6 text-lg border-primary-foreground/30 text-primary-foreground bg-primary-foreground/10 hover:bg-primary-foreground/20 font-medium"
               >
                 Criar Conta
               </Button>
