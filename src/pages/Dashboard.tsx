@@ -15,6 +15,7 @@ import {
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { fetchWithAuth, useAuth } from "@/lib/auth";
+// Removed unused imports: useQuery, Bill, Category
 
 const Dashboard = () => {
   const [location, setLocation] = useLocation();
@@ -23,6 +24,7 @@ const Dashboard = () => {
   const [totalToPay, setTotalToPay] = useState(0);
   const [totalPaid, setTotalPaid] = useState(0);
   const [weeklyTotal, setWeeklyTotal] = useState(0);
+  const [allBills, setAllBills] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -39,29 +41,32 @@ const Dashboard = () => {
       try {
         setLoading(true);
         
-        // Buscar próximas contas
-        const upcomingResponse = await fetchWithAuth(`/api/bills/upcoming?userId=${user.id}&limit=5`);
+        // Buscar próximas contas (backend deve usar autenticação para filtrar por usuário)
+        const upcomingResponse = await fetchWithAuth(`/api/bills/upcoming?limit=5`);
         const upcomingData = await upcomingResponse.json();
         
         // Buscar todas as contas para calcular totais
-        const allBillsResponse = await fetchWithAuth(`/api/bills?userId=${user.id}`);
+        const allBillsResponse = await fetchWithAuth(`/api/bills`);
         const allBills = await allBillsResponse.json();
 
-        // Calcular estatísticas
-        const pending = allBills.filter(bill => bill.status === 'pending');
-        const paid = allBills.filter(bill => bill.status === 'paid');
+        // Calcular estatísticas (usar isPaid em vez de status)
+        const pending = allBills.filter(bill => !bill.isPaid);
+        const paid = allBills.filter(bill => bill.isPaid);
         
-        const totalToPay = pending.reduce((sum, bill) => sum + bill.amount, 0);
-        const totalPaid = paid.reduce((sum, bill) => sum + bill.amount, 0);
+        const totalToPay = pending.reduce((sum, bill) => sum + (bill.amount / 100), 0); // Convert from cents
+        const totalPaid = paid.reduce((sum, bill) => sum + (bill.amount / 100), 0); // Convert from cents
         
-        // Simular dados semanais baseados nas contas
-        const weeklyTotal = Math.min(totalToPay, 1250);
+        // Calcular dados semanais reais baseados nas contas dos próximos 7 dias
+        const weeklyTotal = calculateRealWeeklyTotal(allBills);
+        
+        // Store bills for weekly calculation
+        setAllBills(allBills);
 
         // Mapear dados das contas próximas com ícones
         const billsWithIcons = upcomingData.map(bill => ({
           ...bill,
-          name: bill.description,
-          daysLeft: Math.ceil((new Date(bill.dueDate) - new Date()) / (1000 * 60 * 60 * 24)),
+          name: bill.name || bill.description, // Use name field from schema
+          daysLeft: Math.ceil((new Date(bill.dueDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)),
           icon: getIconForCategory(bill.category)
         }));
 
@@ -95,17 +100,49 @@ const Dashboard = () => {
     return iconMap[category] || CreditCard;
   };
 
-  const weeklyExpenses = [
-    { day: "Seg", amount: Math.floor(weeklyTotal * 0.15) },
-    { day: "Ter", amount: Math.floor(weeklyTotal * 0.18) },
-    { day: "Qua", amount: Math.floor(weeklyTotal * 0.12) },
-    { day: "Qui", amount: Math.floor(weeklyTotal * 0.16) },
-    { day: "Sex", amount: Math.floor(weeklyTotal * 0.22) },
-    { day: "Sáb", amount: Math.floor(weeklyTotal * 0.10) },
-    { day: "Dom", amount: Math.floor(weeklyTotal * 0.07) },
-  ];
+  // Função para calcular total semanal real
+  const calculateRealWeeklyTotal = (bills) => {
+    const today = new Date();
+    const nextWeek = new Date(today.getTime() + (7 * 24 * 60 * 60 * 1000));
+    
+    return bills
+      .filter(bill => {
+        const dueDate = new Date(bill.dueDate);
+        return dueDate >= today && dueDate <= nextWeek && !bill.isPaid;
+      })
+      .reduce((sum, bill) => sum + (bill.amount / 100), 0); // Convert from cents
+  };
 
-  const maxAmount = Math.max(...weeklyExpenses.map(d => d.amount));
+  // Calcular gastos reais por dia da semana (próximos 7 dias)
+  const calculateWeeklyExpenses = (bills) => {
+    const daysOfWeek = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+    const today = new Date();
+    
+    // Próximos 7 dias a partir de hoje
+    const weeklyData = [];
+    for (let i = 0; i < 7; i++) {
+      const currentDate = new Date(today.getTime() + (i * 24 * 60 * 60 * 1000));
+      const dayName = daysOfWeek[currentDate.getDay()];
+      
+      // Somar contas que vencem neste dia
+      const dayTotal = bills
+        .filter(bill => {
+          const billDate = new Date(bill.dueDate);
+          return billDate.toDateString() === currentDate.toDateString() && !bill.isPaid;
+        })
+        .reduce((sum, bill) => sum + (bill.amount / 100), 0); // Convert from cents
+      
+      weeklyData.push({
+        day: dayName,
+        amount: dayTotal
+      });
+    }
+    return weeklyData;
+  };
+
+  const weeklyExpenses = loading ? [] : calculateWeeklyExpenses(allBills);
+
+  const maxAmount = Math.max(...weeklyExpenses.map(d => d.amount), 1); // Avoid zero division
 
   if (loading) {
     return (
@@ -166,7 +203,7 @@ const Dashboard = () => {
                         <div 
                           className="bg-secondary rounded-t-md transition-all duration-500 ease-out min-h-[20px]"
                           style={{ 
-                            height: `${(day.amount / maxAmount) * 100}px`,
+                            height: maxAmount > 1 ? `${(day.amount / maxAmount) * 100}px` : '0px',
                             animationDelay: `${index * 100}ms`
                           }}
                         />
@@ -275,7 +312,7 @@ const Dashboard = () => {
 
                     <div className="text-right">
                       <div className="font-semibold">
-                        R$ {bill.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        R$ {(bill.amount / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                       </div>
                       <div className={`text-sm flex items-center gap-1 ${
                         isUrgent ? 'text-destructive' : 'text-muted-foreground'
