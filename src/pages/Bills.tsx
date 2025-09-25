@@ -73,7 +73,7 @@ const Bills = () => {
     };
 
     fetchBills();
-  }, [authenticated, user, setLocation, toast]);
+  }, [authenticated, user?.id]);
 
   const filterBills = (status: string) => {
     switch (status) {
