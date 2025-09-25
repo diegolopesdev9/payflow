@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CalendarIcon, ArrowLeft, Save, X } from "lucide-react";
@@ -14,6 +15,8 @@ import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useBills } from "@/hooks/useBills";
 import { useAuth } from "@/lib/auth";
+import { useQuery } from "@tanstack/react-query";
+import type { Category } from "../../shared/schema";
 
 const NewBill = () => {
   const [location, setLocation] = useLocation();
@@ -23,42 +26,41 @@ const NewBill = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date>();
 
-  // Verificar autenticação
-  if (!authenticated) {
-    setLocation("/login");
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (authenticated === false) {
+      setLocation("/login");
+    }
+  }, [authenticated, setLocation]);
+
+  // Fetch user categories
+  const { data: categories = [], isLoading: categoriesLoading, isError: categoriesError } = useQuery<Category[]>({
+    queryKey: ['/api/categories'],
+    enabled: !!user?.id,
+  });
+
+  // Show loading while auth is resolving
+  if (authenticated === null || (authenticated && !user)) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary via-primary/95 to-secondary flex items-center justify-center">
+        <div className="text-primary-foreground text-lg" data-testid="loading-new-bill">Carregando...</div>
+      </div>
+    );
+  }
+
+  // Redirect if not authenticated (handled by useEffect)
+  if (authenticated === false) {
     return null;
   }
 
   const [formData, setFormData] = useState({
-    description: "",
+    name: "",
     amount: "",
-    category: "",
-    frequency: "",
-    notes: ""
+    categoryId: "",
+    description: ""
   });
 
-  const categories = [
-    "Moradia",
-    "Alimentação",
-    "Transporte",
-    "Saúde",
-    "Educação",
-    "Entretenimento",
-    "Telecom",
-    "Utilidades",
-    "Outros"
-  ];
-
-  const frequencies = [
-    "Única",
-    "Semanal",
-    "Quinzenal",
-    "Mensal",
-    "Bimestral",
-    "Trimestral",
-    "Semestral",
-    "Anual"
-  ];
+  // Categories are now fetched from API via React Query
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -86,12 +88,13 @@ const NewBill = () => {
 
     try {
       await createBill({
-        description: formData.description,
-        amount: parseFloat(formData.amount),
-        dueDate: selectedDate.toISOString().split('T')[0], // Format YYYY-MM-DD
-        category: formData.category,
-        status: 'pending',
-        userId: user.id
+        name: formData.name,
+        amount: Math.round(parseFloat(formData.amount) * 100), // Convert to cents
+        dueDate: selectedDate, // Date object
+        description: formData.description || undefined, // Optional
+        categoryId: formData.categoryId || undefined, // Optional, only if selected
+        userId: user.id, // Required by schema
+        isPaid: false // Required by schema, new bills start as unpaid
       });
 
       setLocation("/bills");
@@ -117,6 +120,7 @@ const NewBill = () => {
               size="sm"
               onClick={() => setLocation("/bills")}
               className="text-primary-foreground hover:bg-primary-foreground/10"
+              data-testid="button-back"
             >
               <ArrowLeft className="w-4 h-4" />
             </Button>
@@ -135,16 +139,17 @@ const NewBill = () => {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Description */}
+              {/* Name */}
               <div className="space-y-2">
-                <Label htmlFor="description">Descrição *</Label>
+                <Label htmlFor="name">Nome da Conta *</Label>
                 <Input
-                  id="description"
+                  id="name"
                   placeholder="Ex: Conta de luz, Aluguel, Internet..."
-                  value={formData.description}
-                  onChange={(e) => updateField("description", e.target.value)}
+                  value={formData.name}
+                  onChange={(e) => updateField("name", e.target.value)}
                   className="input-financial"
                   required
+                  data-testid="input-name"
                 />
               </div>
 
@@ -164,6 +169,7 @@ const NewBill = () => {
                     onChange={(e) => updateField("amount", e.target.value)}
                     className="pl-10 input-financial"
                     required
+                    data-testid="input-amount"
                   />
                 </div>
               </div>
@@ -179,6 +185,7 @@ const NewBill = () => {
                         "w-full justify-start text-left input-financial",
                         !selectedDate && "text-muted-foreground"
                       )}
+                      data-testid="button-date-picker"
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
                       {selectedDate ? format(selectedDate, "PPP", { locale: ptBR }) : "Selecione a data"}
@@ -197,56 +204,53 @@ const NewBill = () => {
                 </Popover>
               </div>
 
-              {/* Category and Frequency Row */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="category">Categoria *</Label>
-                  <Select
-                    value={formData.category}
-                    onValueChange={(value) => updateField("category", value)}
-                  >
-                    <SelectTrigger className="input-financial">
-                      <SelectValue placeholder="Selecione uma categoria" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categories.map((category) => (
-                        <SelectItem key={category} value={category}>
-                          {category}
+              {/* Category */}
+              <div className="space-y-2">
+                <Label htmlFor="category">Categoria</Label>
+                <Select
+                  value={formData.categoryId}
+                  onValueChange={(value) => updateField("categoryId", value)}
+                >
+                  <SelectTrigger className="input-financial" data-testid="select-category">
+                    <SelectValue placeholder="Selecione uma categoria (opcional)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="" data-testid="category-none">
+                      Sem categoria
+                    </SelectItem>
+                    {categoriesLoading ? (
+                      <SelectItem value="loading" disabled data-testid="loading-categories">
+                        Carregando categorias...
+                      </SelectItem>
+                    ) : categoriesError ? (
+                      <SelectItem value="error" disabled data-testid="error-categories">
+                        Erro ao carregar categorias
+                      </SelectItem>
+                    ) : categories.length === 0 ? (
+                      <SelectItem value="empty" disabled data-testid="empty-categories">
+                        Nenhuma categoria encontrada
+                      </SelectItem>
+                    ) : (
+                      categories.map((category) => (
+                        <SelectItem key={category.id} value={category.id} data-testid={`category-${category.id}`}>
+                          {category.name}
                         </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="frequency">Frequência *</Label>
-                  <Select
-                    value={formData.frequency}
-                    onValueChange={(value) => updateField("frequency", value)}
-                  >
-                    <SelectTrigger className="input-financial">
-                      <SelectValue placeholder="Selecione a frequência" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {frequencies.map((frequency) => (
-                        <SelectItem key={frequency} value={frequency}>
-                          {frequency}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
               </div>
 
-              {/* Notes */}
+              {/* Description */}
               <div className="space-y-2">
-                <Label htmlFor="notes">Observações</Label>
+                <Label htmlFor="description">Descrição</Label>
                 <Textarea
-                  id="notes"
+                  id="description"
                   placeholder="Informações adicionais sobre esta conta..."
-                  value={formData.notes}
-                  onChange={(e) => updateField("notes", e.target.value)}
+                  value={formData.description}
+                  onChange={(e) => updateField("description", e.target.value)}
                   className="input-financial min-h-[100px] resize-none"
+                  data-testid="textarea-description"
                 />
               </div>
 
@@ -257,6 +261,7 @@ const NewBill = () => {
                   variant="outline"
                   onClick={() => setLocation("/bills")}
                   className="flex-1"
+                  data-testid="button-cancel"
                 >
                   <X className="w-4 h-4 mr-2" />
                   Cancelar
@@ -266,6 +271,7 @@ const NewBill = () => {
                   type="submit"
                   className="flex-1 btn-financial"
                   disabled={isSubmitting}
+                  data-testid="button-save"
                 >
                   <Save className="w-4 h-4 mr-2" />
                   {isSubmitting ? "Salvando..." : "Salvar"}

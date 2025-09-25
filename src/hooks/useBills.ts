@@ -2,24 +2,18 @@
 import { useState, useEffect } from 'react';
 import { fetchWithAuth, useAuth } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
+import type { Bill } from '../../shared/schema';
 
-export interface Bill {
-  id: string;
-  description: string;
-  amount: number;
-  dueDate: string;
-  category: string;
-  status: 'pending' | 'paid';
-  userId: string;
-  createdAt: string;
-  updatedAt: string;
+// Bill type is now imported from shared/schema.ts to ensure consistency
+// Add computed priority field locally
+export interface BillWithPriority extends Bill {
   priority?: 'low' | 'medium' | 'high';
 }
 
 export const useBills = () => {
   const { user, authenticated } = useAuth();
   const { toast } = useToast();
-  const [bills, setBills] = useState<Bill[]>([]);
+  const [bills, setBills] = useState<BillWithPriority[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchBills = async () => {
@@ -34,7 +28,7 @@ export const useBills = () => {
       const billsWithPriority = data.map((bill: any) => {
         const dueDate = new Date(bill.dueDate);
         const today = new Date();
-        const daysLeft = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
+        const daysLeft = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
         
         let priority: 'low' | 'medium' | 'high' = 'low';
         if (daysLeft <= 3) priority = 'high';
@@ -60,7 +54,7 @@ export const useBills = () => {
     }
   };
 
-  const createBill = async (billData: Omit<Bill, 'id' | 'createdAt' | 'updatedAt'>) => {
+  const createBill = async (billData: Omit<Bill, 'id' | 'createdAt'>) => {
     try {
       const response = await fetchWithAuth('/api/bills', {
         method: 'POST',
@@ -72,7 +66,7 @@ export const useBills = () => {
         setBills(prev => [...prev, newBill]);
         toast({
           title: "Conta criada com sucesso!",
-          description: `${billData.description} foi adicionada às suas contas.`,
+          description: `${billData.name} foi adicionada às suas contas.`,
         });
         return newBill;
       } else {
@@ -145,7 +139,7 @@ export const useBills = () => {
 
   const getUpcomingBills = (limit?: number) => {
     const upcoming = bills
-      .filter(bill => bill.status === 'pending')
+      .filter(bill => !bill.isPaid)
       .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
     
     return limit ? upcoming.slice(0, limit) : upcoming;
@@ -153,13 +147,13 @@ export const useBills = () => {
 
   const getTotalToPay = () => {
     return bills
-      .filter(bill => bill.status === 'pending')
+      .filter(bill => !bill.isPaid)
       .reduce((sum, bill) => sum + bill.amount, 0);
   };
 
   const getTotalPaid = () => {
     return bills
-      .filter(bill => bill.status === 'paid')
+      .filter(bill => bill.isPaid)
       .reduce((sum, bill) => sum + bill.amount, 0);
   };
 
