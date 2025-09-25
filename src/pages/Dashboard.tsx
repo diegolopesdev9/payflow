@@ -31,16 +31,20 @@ const Dashboard = () => {
       return;
     }
 
+    if (!user?.id) {
+      return;
+    }
+
     const fetchDashboardData = async () => {
       try {
         setLoading(true);
         
         // Buscar próximas contas
-        const upcomingResponse = await fetchWithAuth(`/api/bills/upcoming?userId=${user?.id}&limit=5`);
+        const upcomingResponse = await fetchWithAuth(`/api/bills/upcoming?userId=${user.id}&limit=5`);
         const upcomingData = await upcomingResponse.json();
         
         // Buscar todas as contas para calcular totais
-        const allBillsResponse = await fetchWithAuth(`/api/bills?userId=${user?.id}`);
+        const allBillsResponse = await fetchWithAuth(`/api/bills?userId=${user.id}`);
         const allBills = await allBillsResponse.json();
 
         // Calcular estatísticas
@@ -73,7 +77,7 @@ const Dashboard = () => {
     };
 
     fetchDashboardData();
-  }, [authenticated, user, setLocation]);
+  }, [authenticated, user?.id]);
 
   const getIconForCategory = (category) => {
     const iconMap = {

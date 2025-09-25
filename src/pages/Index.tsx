@@ -1,19 +1,9 @@
-import { useEffect } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { TrendingUp, Shield, Smartphone, BarChart3 } from "lucide-react";
 
 const Index = () => {
   const [location, setLocation] = useLocation();
-
-  useEffect(() => {
-    // Redirect to login after a short delay for demo purposes
-    const timer = setTimeout(() => {
-      setLocation("/login");
-    }, 3000);
-
-    return () => clearTimeout(timer);
-  }, [setLocation]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary via-primary/95 to-secondary">
