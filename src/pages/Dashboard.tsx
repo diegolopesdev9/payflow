@@ -35,18 +35,24 @@ const Dashboard = () => {
   const { data: allBills = [], isLoading: billsLoading, isError: billsError } = useQuery<Bill[]>({
     queryKey: ['/api/bills'],
     enabled: !!user?.id,
+    retry: 3,
+    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
   // Fetch upcoming bills
   const { data: upcomingData = [], isLoading: upcomingLoading, isError: upcomingError } = useQuery<Bill[]>({
     queryKey: ['/api/bills/upcoming'],
     enabled: !!user?.id,
+    retry: 3,
+    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
   // Fetch categories for mapping
   const { data: categories = [], isLoading: categoriesLoading, isError: categoriesError } = useQuery<Category[]>({
     queryKey: ['/api/categories'],
     enabled: !!user?.id,
+    retry: 3,
+    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
   // Create category mapping
@@ -146,8 +152,8 @@ const Dashboard = () => {
     return null;
   }
 
-  // Show loading while auth is resolving or data is loading
-  if (authenticated === null || (authenticated && !user) || billsLoading || upcomingLoading || categoriesLoading) {
+  // Show loading while auth is resolving
+  if (authenticated === null || (authenticated && !user)) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary via-primary/95 to-secondary flex items-center justify-center">
         <div className="text-primary-foreground text-lg" data-testid="loading-dashboard">Carregando dashboard...</div>
@@ -155,8 +161,17 @@ const Dashboard = () => {
     );
   }
 
-  // Show error state if any queries failed
-  if (authenticated && user && (billsError || upcomingError || categoriesError)) {
+  // Show loading while data is loading (only if authenticated)
+  if (authenticated && user && (billsLoading || upcomingLoading || categoriesLoading)) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary via-primary/95 to-secondary flex items-center justify-center">
+        <div className="text-primary-foreground text-lg" data-testid="loading-dashboard">Carregando dados...</div>
+      </div>
+    );
+  }
+
+  // Show error state if any queries failed (but only if we're authenticated and not loading)
+  if (authenticated && user && !billsLoading && !upcomingLoading && !categoriesLoading && (billsError || upcomingError || categoriesError)) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary via-primary/95 to-secondary flex items-center justify-center">
         <div className="text-center text-primary-foreground">

@@ -6,6 +6,15 @@ export const queryClient = new QueryClient({
     queries: {
       staleTime: 1000 * 60 * 5, // 5 minutes
       refetchOnWindowFocus: false,
+      retry: (failureCount, error: any) => {
+        // Don't retry on authentication errors
+        if (error?.status === 401 || error?.status === 403) {
+          return false;
+        }
+        // Retry up to 3 times for other errors
+        return failureCount < 3;
+      },
+      retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
     },
   },
 });
