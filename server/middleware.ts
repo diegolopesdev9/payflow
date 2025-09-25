@@ -1,6 +1,7 @@
 
 import { Context, Next } from 'hono';
 import { authenticateToken } from './auth';
+import { ContextVariables } from './types';
 
 // Rate limiting por IP
 class RateLimit {
@@ -69,7 +70,7 @@ export const rateLimitMiddleware = (rateLimit: RateLimit) => {
 };
 
 // Middleware de autenticação
-export const authMiddleware = async (c: Context, next: Next) => {
+export const authMiddleware = async (c: Context<{ Variables: ContextVariables }>, next: Next) => {
   const authHeader = c.req.header('Authorization');
   const auth = authenticateToken(authHeader);
 
@@ -83,7 +84,7 @@ export const authMiddleware = async (c: Context, next: Next) => {
 };
 
 // Middleware de autenticação opcional (não bloqueia se não autenticado)
-export const optionalAuthMiddleware = async (c: Context, next: Next) => {
+export const optionalAuthMiddleware = async (c: Context<{ Variables: ContextVariables }>, next: Next) => {
   const authHeader = c.req.header('Authorization');
   const auth = authenticateToken(authHeader);
 

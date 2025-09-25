@@ -15,8 +15,9 @@ import {
   apiRateLimit, 
   authRateLimit 
 } from "./middleware";
+import { ContextVariables } from "./types";
 
-const app = new Hono();
+const app = new Hono<{ Variables: ContextVariables }>();
 
 // Aplicar rate limiting global para todas as rotas API
 app.use('/api/*', rateLimitMiddleware(apiRateLimit));
