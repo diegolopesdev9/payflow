@@ -1,10 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRoute, useLocation } from "wouter";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { useAuth } from "@/lib/auth";
+import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
+import type { Bill } from "@shared/schema";
 import { 
   ArrowLeft, 
   Edit, 
@@ -19,42 +23,128 @@ import {
 
 const BillDetails = () => {
   const [match, params] = useRoute<{ id: string }>("/bills/:id");
-  const id = params?.id ?? "1"; // fallback to default ID if params is null
+  const billId = params?.id;
   const [location, setLocation] = useLocation();
+  const { user, authenticated } = useAuth();
   const { toast } = useToast();
-  
-  // Mock data - in real app this would come from API
-  const bill = {
-    id: 1,
-    description: "Aluguel do apartamento",
-    amount: 1500.00,
-    dueDate: "10 de cada mês",
-    category: "Moradia",
-    frequency: "Mensal",
-    status: "pending",
-    notes: "Pagamento do aluguel do apartamento na Rua das Flores, 123",
-    createdAt: "2024-01-10",
-    lastPayment: "2024-06-10"
-  };
+
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (authenticated === false) {
+      setLocation("/login");
+    }
+  }, [authenticated, setLocation]);
+
+  // Redirect if no bill ID
+  useEffect(() => {
+    if (!billId) {
+      setLocation("/bills");
+    }
+  }, [billId, setLocation]);
+
+  // Fetch bill details using React Query
+  const { data: bill, isLoading, isError } = useQuery<Bill>({
+    queryKey: [`/api/bills/${billId}`],
+    enabled: !!billId && !!user?.id,
+  });
+
+  if (authenticated === false || !billId) {
+    return null;
+  }
+
+  // Show loading while auth is resolving or bill data is loading
+  if (authenticated === null || (authenticated && !user) || isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary via-primary/95 to-secondary flex items-center justify-center">
+        <div className="text-primary-foreground text-lg" data-testid="loading-bill-details">Carregando detalhes...</div>
+      </div>
+    );
+  }
+
+  // Show error if bill not found or unauthorized
+  if (authenticated && user && (isError || !bill)) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary via-primary/95 to-secondary flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-primary-foreground text-lg mb-4" data-testid="error-bill-details">
+            Conta não encontrada ou acesso negado
+          </div>
+          <button 
+            onClick={() => setLocation("/bills")}
+            className="text-primary-foreground underline"
+            data-testid="button-back-bills"
+          >
+            Voltar para Contas
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Mark as paid mutation
+  const markAsPaidMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest(`/api/bills/${billId}`, {
+        method: 'PUT',
+        body: JSON.stringify({ isPaid: true }),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/bills/${billId}`] });
+      queryClient.invalidateQueries({ queryKey: ['/api/bills'] });
+      toast({
+        title: "Conta marcada como paga!",
+        description: "A conta foi atualizada com sucesso.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Erro ao marcar como paga",
+        description: "Não foi possível atualizar a conta. Tente novamente.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Delete bill mutation
+  const deleteBillMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest(`/api/bills/${billId}`, {
+        method: 'DELETE',
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/bills'] });
+      toast({
+        title: "Conta excluída",
+        description: "A conta foi removida com sucesso.",
+        variant: "destructive",
+      });
+      setLocation("/bills");
+    },
+    onError: () => {
+      toast({
+        title: "Erro ao excluir conta",
+        description: "Não foi possível excluir a conta. Tente novamente.",
+        variant: "destructive",
+      });
+    },
+  });
 
   const handleMarkAsPaid = () => {
-    toast({
-      title: "Conta marcada como paga!",
-      description: "A conta foi atualizada com sucesso.",
-    });
+    if (window.confirm('Tem certeza que deseja marcar esta conta como paga?')) {
+      markAsPaidMutation.mutate();
+    }
   };
 
   const handleEdit = () => {
-    setLocation(`/bills/${id}/edit`);
+    setLocation(`/bills/${billId}/edit`);
   };
 
   const handleDelete = () => {
-    toast({
-      title: "Conta excluída",
-      description: "A conta foi removida com sucesso.",
-      variant: "destructive",
-    });
-    setLocation("/bills");
+    if (window.confirm('Tem certeza que deseja excluir esta conta?')) {
+      deleteBillMutation.mutate();
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -79,6 +169,7 @@ const BillDetails = () => {
               size="sm" 
               onClick={() => setLocation("/bills")}
               className="text-primary-foreground hover:bg-primary-foreground/10"
+              data-testid="button-back-bills"
             >
               <ArrowLeft className="w-4 h-4" />
             </Button>
@@ -92,20 +183,22 @@ const BillDetails = () => {
 
       <div className="container mx-auto px-4 py-6 space-y-6">
         {/* Bill Details Card */}
-        <Card className="stat-card">
+        <Card className="stat-card" data-testid="card-bill-details">
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle className="text-2xl">{bill.description}</CardTitle>
-              <Badge className={getStatusColor(bill.status)}>
-                {bill.status === "paid" ? "Pago" : "Pendente"}
+              <CardTitle className="text-2xl" data-testid="text-bill-name">
+                {bill.description || bill.name}
+              </CardTitle>
+              <Badge className={getStatusColor(bill.isPaid ? "paid" : "pending")} data-testid="badge-bill-status">
+                {bill.isPaid ? "Pago" : "Pendente"}
               </Badge>
             </div>
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Amount */}
             <div className="text-center py-6">
-              <div className="text-4xl font-bold text-primary mb-2">
-                R$ {bill.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              <div className="text-4xl font-bold text-primary mb-2" data-testid="text-bill-amount">
+                R$ {(bill.amount / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
               </div>
               <p className="text-muted-foreground">Valor da conta</p>
             </div>
@@ -121,7 +214,9 @@ const BillDetails = () => {
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Data de Vencimento</p>
-                    <p className="font-semibold">{bill.dueDate}</p>
+                    <p className="font-semibold" data-testid="text-bill-due-date">
+                      {new Date(bill.dueDate).toLocaleDateString('pt-BR')}
+                    </p>
                   </div>
                 </div>
 
@@ -130,8 +225,10 @@ const BillDetails = () => {
                     <Tag className="w-5 h-5 text-primary" />
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Categoria</p>
-                    <p className="font-semibold">{bill.category}</p>
+                    <p className="text-sm text-muted-foreground">ID da Categoria</p>
+                    <p className="font-semibold" data-testid="text-bill-category">
+                      {bill.categoryId ? String(bill.categoryId).slice(0, 8) + '...' : 'Sem categoria'}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -142,8 +239,10 @@ const BillDetails = () => {
                     <Clock className="w-5 h-5 text-primary" />
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Frequência</p>
-                    <p className="font-semibold">{bill.frequency}</p>
+                    <p className="text-sm text-muted-foreground">Data de Criação</p>
+                    <p className="font-semibold" data-testid="text-bill-created">
+                      {new Date(bill.createdAt).toLocaleDateString('pt-BR')}
+                    </p>
                   </div>
                 </div>
 
@@ -152,19 +251,21 @@ const BillDetails = () => {
                     <Home className="w-5 h-5 text-primary" />
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Último Pagamento</p>
-                    <p className="font-semibold">{bill.lastPayment}</p>
+                    <p className="text-sm text-muted-foreground">ID da Conta</p>
+                    <p className="font-semibold" data-testid="text-bill-id">
+                      {String(bill.id).slice(0, 8)}...
+                    </p>
                   </div>
                 </div>
               </div>
             </div>
 
-            {bill.notes && (
+            {bill.description && (
               <>
                 <Separator />
                 <div>
-                  <p className="text-sm text-muted-foreground mb-2">Observações</p>
-                  <p className="text-foreground">{bill.notes}</p>
+                  <p className="text-sm text-muted-foreground mb-2">Descrição</p>
+                  <p className="text-foreground" data-testid="text-bill-description">{bill.description}</p>
                 </div>
               </>
             )}
@@ -176,6 +277,7 @@ const BillDetails = () => {
           <Button 
             onClick={handleEdit}
             className="btn-financial flex items-center gap-2"
+            data-testid="button-edit-bill"
           >
             <Edit className="w-4 h-4" />
             Editar Conta
@@ -185,45 +287,39 @@ const BillDetails = () => {
             onClick={handleMarkAsPaid}
             variant="outline"
             className="border-success text-success hover:bg-success/10 flex items-center gap-2"
+            disabled={bill.isPaid || markAsPaidMutation.isPending}
+            data-testid="button-mark-paid"
           >
             <Check className="w-4 h-4" />
-            Marcar como Pago
+            {markAsPaidMutation.isPending ? 'Marcando...' : bill.isPaid ? 'Já Pago' : 'Marcar como Pago'}
           </Button>
 
           <Button 
             onClick={handleDelete}
             variant="outline"
             className="border-destructive text-destructive hover:bg-destructive/10 flex items-center gap-2"
+            disabled={deleteBillMutation.isPending}
+            data-testid="button-delete-bill"
           >
             <Trash2 className="w-4 h-4" />
-            Excluir
+            {deleteBillMutation.isPending ? 'Excluindo...' : 'Excluir'}
           </Button>
         </div>
 
         {/* Payment History */}
-        <Card className="fin-card">
+        <Card className="fin-card" data-testid="card-payment-history">
           <CardHeader>
             <CardTitle>Histórico de Pagamentos</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {[
-                { date: "10/06/2024", amount: 1500.00, status: "paid" },
-                { date: "10/05/2024", amount: 1500.00, status: "paid" },
-                { date: "10/04/2024", amount: 1500.00, status: "paid" },
-              ].map((payment, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-success/10 rounded-full flex items-center justify-center">
-                      <Check className="w-4 h-4 text-success" />
-                    </div>
-                    <span className="font-medium">{payment.date}</span>
-                  </div>
-                  <span className="font-semibold text-success">
-                    R$ {payment.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                  </span>
-                </div>
-              ))}
+            <div className="text-center py-8">
+              <Clock className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+              <h3 className="font-semibold mb-2" data-testid="text-no-payment-history">
+                Histórico de pagamentos em desenvolvimento
+              </h3>
+              <p className="text-muted-foreground text-sm" data-testid="text-payment-history-desc">
+                O histórico de pagamentos será implementado em uma versão futura
+              </p>
             </div>
           </CardContent>
         </Card>
