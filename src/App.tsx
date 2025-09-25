@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { Router, Route } from "wouter";
+import { Router, Route, Switch } from "wouter";
 import { queryClient } from "@/lib/queryClient";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
@@ -31,25 +31,27 @@ const App = () => (
       <Toaster />
       <Sonner />
       <Router>
-        <Route path="/" component={Index} />
-        <Route path="/login" component={Login} />
-        <Route path="/register" component={Register} />
-        <Route path="/forgot-password" component={ForgotPassword} />
-        <Route path="/dashboard" component={Dashboard} />
-        <Route path="/bills" component={Bills} />
-        <Route path="/bills/new" component={NewBill} />
-        <Route path="/bills/:id" component={BillDetails} />
-        <Route path="/reports" component={Reports} />
-        <Route path="/profile" component={Profile} />
-        <Route path="/profile/edit" component={EditProfile} />
-        <Route path="/profile/notifications" component={Notifications} />
-        <Route path="/profile/security" component={Security} />
-        <Route path="/profile/categories" component={Categories} />
-        <Route path="/profile/settings" component={AppSettings} />
-        <Route path="/profile/help" component={Help} />
-        <Route path="/settings" component={Settings} />
-        <Route path="/data-management" component={DataManagement} />
-        <Route path="/*" component={NotFound} />
+        <Switch>
+          <Route path="/" component={Index} />
+          <Route path="/login" component={Login} />
+          <Route path="/register" component={Register} />
+          <Route path="/forgot-password" component={ForgotPassword} />
+          <Route path="/dashboard" component={Dashboard} />
+          <Route path="/bills" component={Bills} />
+          <Route path="/bills/new" component={NewBill} />
+          <Route path="/bills/:id" component={BillDetails} />
+          <Route path="/reports" component={Reports} />
+          <Route path="/profile" component={Profile} />
+          <Route path="/profile/edit" component={EditProfile} />
+          <Route path="/profile/notifications" component={Notifications} />
+          <Route path="/profile/security" component={Security} />
+          <Route path="/profile/categories" component={Categories} />
+          <Route path="/profile/settings" component={AppSettings} />
+          <Route path="/profile/help" component={Help} />
+          <Route path="/settings" component={Settings} />
+          <Route path="/data-management" component={DataManagement} />
+          <Route><NotFound /></Route>
+        </Switch>
       </Router>
     </TooltipProvider>
   </QueryClientProvider>
