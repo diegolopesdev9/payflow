@@ -34,6 +34,13 @@ const Dashboard = () => {
   // Fetch all bills for calculations
   const { data: allBills = [], isLoading: billsLoading, isError: billsError } = useQuery<Bill[]>({
     queryKey: ['/api/bills'],
+    queryFn: async () => {
+      const response = await fetch('/api/bills');
+      if (!response.ok) {
+        throw new Error('Failed to fetch bills');
+      }
+      return response.json();
+    },
     enabled: !!user?.id,
     retry: 3,
     retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
@@ -42,6 +49,13 @@ const Dashboard = () => {
   // Fetch upcoming bills
   const { data: upcomingData = [], isLoading: upcomingLoading, isError: upcomingError } = useQuery<Bill[]>({
     queryKey: ['/api/bills/upcoming'],
+    queryFn: async () => {
+      const response = await fetch('/api/bills/upcoming');
+      if (!response.ok) {
+        throw new Error('Failed to fetch upcoming bills');
+      }
+      return response.json();
+    },
     enabled: !!user?.id,
     retry: 3,
     retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
@@ -50,6 +64,13 @@ const Dashboard = () => {
   // Fetch categories for mapping
   const { data: categories = [], isLoading: categoriesLoading, isError: categoriesError } = useQuery<Category[]>({
     queryKey: ['/api/categories'],
+    queryFn: async () => {
+      const response = await fetch('/api/categories');
+      if (!response.ok) {
+        throw new Error('Failed to fetch categories');
+      }
+      return response.json();
+    },
     enabled: !!user?.id,
     retry: 3,
     retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
