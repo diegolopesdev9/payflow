@@ -56,6 +56,13 @@ app.post("/api/auth/register", async (c) => {
     }, 201);
   } catch (error) {
     if (error instanceof z.ZodError) {
+      // Verificar se há erro de senha para mostrar mensagem mais específica
+      const passwordError = error.errors.find(e => e.path.includes('password'));
+      if (passwordError) {
+        return c.json({ 
+          error: "A senha deve conter pelo menos 8 caracteres, incluindo: letras maiúsculas, minúsculas, números e caracteres especiais (@$!%*?&)" 
+        }, 400);
+      }
       return c.json({ 
         error: "Dados inválidos", 
         details: error.errors.map(e => e.message) 
