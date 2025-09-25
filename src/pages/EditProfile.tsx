@@ -1,39 +1,94 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { useAuth } from "@/lib/auth";
+import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Save, X, User, Mail, Phone, Calendar, MapPin } from "lucide-react";
+import type { User } from "../../shared/schema";
+import { ArrowLeft, Save, X, User as UserIcon, Mail, Phone, Calendar, MapPin } from "lucide-react";
 
 const EditProfile = () => {
   const [location, setLocation] = useLocation();
+  const { user, authenticated } = useAuth();
   const { toast } = useToast();
   
   const [formData, setFormData] = useState({
-    name: "Sofia Almeida",
-    email: "sofia.almeida@email.com",
-    phone: "+55 11 98765-4321",
-    birthDate: "1990-05-15",
-    address: "Rua das Flores, 123, Apto 45, São Paulo, SP"
+    name: "",
+    email: ""
   });
 
-  const [isLoading, setIsLoading] = useState(false);
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (authenticated === false) {
+      setLocation("/login");
+    }
+  }, [authenticated, setLocation]);
+
+  // Fetch user profile data
+  const { data: userProfile, isLoading: profileLoading, isError: profileError } = useQuery<User>({
+    queryKey: ['/api/users', user?.id],
+    queryFn: () => apiRequest(`/api/users/${user?.id}`),
+    enabled: !!user?.id,
+  });
+
+  // Update form data when user profile loads
+  useEffect(() => {
+    if (userProfile) {
+      setFormData({
+        name: userProfile.name || "",
+        email: userProfile.email || ""
+      });
+    }
+  }, [userProfile]);
+
+  if (authenticated === false) {
+    return null;
+  }
+
+  // Show loading while auth is resolving or profile data is loading
+  if (authenticated === null || (authenticated && !user) || profileLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary via-primary/95 to-secondary flex items-center justify-center">
+        <div className="text-primary-foreground text-lg" data-testid="loading-edit-profile">Carregando perfil...</div>
+      </div>
+    );
+  }
+
+  // Show error if profile failed to load
+  if (authenticated && user && profileError) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary via-primary/95 to-secondary flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-primary-foreground text-lg mb-4" data-testid="error-edit-profile">
+            Erro ao carregar dados do perfil
+          </div>
+          <button 
+            onClick={() => setLocation("/profile")}
+            className="text-primary-foreground underline"
+            data-testid="button-back-profile"
+          >
+            Voltar para Perfil
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Note: Update profile mutation temporarily disabled until backend endpoint is implemented
+  // const updateProfileMutation = useMutation({ ... });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
-      toast({
-        title: "Perfil atualizado!",
-        description: "Suas informações foram salvas com sucesso.",
-      });
-      setLocation("/profile");
-    }, 1500);
+    
+    toast({
+      title: "Funcionalidade em desenvolvimento",
+      description: "A edição de perfil será implementada quando o endpoint do backend estiver pronto.",
+      variant: "destructive",
+    });
   };
 
   const updateField = (field: string, value: string) => {
@@ -63,7 +118,7 @@ const EditProfile = () => {
       </div>
 
       <div className="container mx-auto px-4 py-6">
-        <Card className="max-w-2xl mx-auto stat-card">
+        <Card className="max-w-2xl mx-auto stat-card" data-testid="card-edit-profile">
           <CardHeader>
             <CardTitle>Informações Pessoais</CardTitle>
           </CardHeader>
@@ -72,7 +127,7 @@ const EditProfile = () => {
               {/* Name */}
               <div className="space-y-2">
                 <Label htmlFor="name" className="flex items-center gap-2">
-                  <User className="w-4 h-4" />
+                  <UserIcon className="w-4 h-4" />
                   Nome completo
                 </Label>
                 <Input
@@ -81,6 +136,7 @@ const EditProfile = () => {
                   onChange={(e) => updateField("name", e.target.value)}
                   className="input-financial"
                   required
+                  data-testid="input-name"
                 />
               </div>
 
@@ -97,52 +153,15 @@ const EditProfile = () => {
                   onChange={(e) => updateField("email", e.target.value)}
                   className="input-financial"
                   required
+                  data-testid="input-email"
                 />
               </div>
 
-              {/* Phone */}
-              <div className="space-y-2">
-                <Label htmlFor="phone" className="flex items-center gap-2">
-                  <Phone className="w-4 h-4" />
-                  Telefone
-                </Label>
-                <Input
-                  id="phone"
-                  type="tel"
-                  value={formData.phone}
-                  onChange={(e) => updateField("phone", e.target.value)}
-                  className="input-financial"
-                />
-              </div>
-
-              {/* Birth Date */}
-              <div className="space-y-2">
-                <Label htmlFor="birthDate" className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4" />
-                  Data de nascimento
-                </Label>
-                <Input
-                  id="birthDate"
-                  type="date"
-                  value={formData.birthDate}
-                  onChange={(e) => updateField("birthDate", e.target.value)}
-                  className="input-financial"
-                />
-              </div>
-
-              {/* Address */}
-              <div className="space-y-2">
-                <Label htmlFor="address" className="flex items-center gap-2">
-                  <MapPin className="w-4 h-4" />
-                  Endereço
-                </Label>
-                <Input
-                  id="address"
-                  value={formData.address}
-                  onChange={(e) => updateField("address", e.target.value)}
-                  className="input-financial"
-                  placeholder="Rua, número, complemento, cidade, estado"
-                />
+              {/* Note about limited functionality */}
+              <div className="bg-muted/50 rounded-lg p-4">
+                <p className="text-sm text-muted-foreground" data-testid="text-limited-functionality">
+                  <strong>Nota:</strong> Esta tela exibe dados reais do seu perfil buscados da API. A funcionalidade de edição será implementada quando o endpoint de atualização estiver disponível no backend.
+                </p>
               </div>
 
               {/* Action Buttons */}
@@ -152,6 +171,7 @@ const EditProfile = () => {
                   variant="outline"
                   onClick={() => setLocation("/profile")}
                   className="flex-1"
+                  data-testid="button-cancel"
                 >
                   <X className="w-4 h-4 mr-2" />
                   Cancelar
@@ -160,10 +180,11 @@ const EditProfile = () => {
                 <Button 
                   type="submit" 
                   className="flex-1 btn-financial"
-                  disabled={isLoading}
+                  disabled={true}
+                  data-testid="button-save"
                 >
                   <Save className="w-4 h-4 mr-2" />
-                  {isLoading ? "Salvando..." : "Salvar alterações"}
+                  Salvar alterações (Em breve)
                 </Button>
               </div>
             </form>
