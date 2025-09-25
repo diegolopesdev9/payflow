@@ -1,9 +1,20 @@
 import { QueryClient } from "@tanstack/react-query";
+import { fetchWithAuth } from "./auth";
 
 // Create query client
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
+      queryFn: async ({ queryKey }) => {
+        const url = queryKey[0] as string;
+        const response = await fetchWithAuth(url);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        return response.json();
+      },
       staleTime: 1000 * 60 * 5, // 5 minutes
       refetchOnWindowFocus: false,
       retry: (failureCount, error: any) => {
