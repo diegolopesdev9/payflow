@@ -38,8 +38,9 @@ app.use("*", async (c, next) => {
   return response;
 });
 
-const port = parseInt(process.env.PORT || "5000");
-
+const PORT = Number(process.env.API_PORT) || 3001;
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`API on http://0.0.0.0:${PORT}`);
 console.log("🚀 Starting production server...");
 console.log(`📦 Serving static files from ./dist`);
 console.log(`🔌 API available at /api`);

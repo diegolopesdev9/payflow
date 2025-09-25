@@ -4,7 +4,11 @@ modules = ["nodejs-20", "web"]
 channel = "stable-25_05"
 
 # 👉 comando usado no botão "Run"
-run = ["npm", "run", "dev"]
+run = [
+  "bash",
+  "-lc",
+  "PORT=${PORT:-3000} npm run dev -- --host 0.0.0.0 --port $PORT",
+]
 
 [deployment]
 deploymentTarget = "autoscale"
@@ -49,3 +53,7 @@ externalPort = 80
 [[ports]]
 localPort = 24678
 externalPort = 3000
+
+[[ports]]
+localPort = 39983
+externalPort = 3001
