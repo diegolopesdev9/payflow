@@ -145,7 +145,30 @@ export class MemStorage implements IStorage {
 // Use PostgreSQL if DATABASE_URL is available, otherwise fallback to memory storage
 let storage: IStorage;
 
-if (process.env.DATABASE_URL) {
+// Priorizar Supabase se as variáveis estiverem configuradas
+if (process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY) {
+  try {
+    const { supabaseStorage } = require('./supabase');
+    storage = supabaseStorage;
+    console.log('📦 Using Supabase storage');
+  } catch (error) {
+    console.log('⚠️  Supabase not available, trying PostgreSQL...');
+    // Fallback para PostgreSQL
+    if (process.env.DATABASE_URL) {
+      try {
+        const { postgresStorage } = require('./db');
+        storage = postgresStorage;
+        console.log('📦 Using PostgreSQL storage');
+      } catch (pgError) {
+        console.log('⚠️  PostgreSQL not available, using memory storage');
+        storage = new MemStorage();
+      }
+    } else {
+      console.log('📦 Using memory storage');
+      storage = new MemStorage();
+    }
+  }
+} else if (process.env.DATABASE_URL) {
   try {
     const { postgresStorage } = require('./db');
     storage = postgresStorage;
@@ -155,7 +178,7 @@ if (process.env.DATABASE_URL) {
     storage = new MemStorage();
   }
 } else {
-  console.log('📦 Using memory storage (no DATABASE_URL found)');
+  console.log('📦 Using memory storage (no database configured)');
   storage = new MemStorage();
 }
 
