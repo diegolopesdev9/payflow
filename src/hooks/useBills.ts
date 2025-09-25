@@ -148,13 +148,13 @@ export const useBills = () => {
   const getTotalToPay = () => {
     return bills
       .filter(bill => !bill.isPaid)
-      .reduce((sum, bill) => sum + bill.amount, 0);
+      .reduce((sum, bill) => sum + (bill.amount / 100), 0); // Convert from cents
   };
 
   const getTotalPaid = () => {
     return bills
       .filter(bill => bill.isPaid)
-      .reduce((sum, bill) => sum + bill.amount, 0);
+      .reduce((sum, bill) => sum + (bill.amount / 100), 0); // Convert from cents
   };
 
   useEffect(() => {
