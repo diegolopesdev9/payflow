@@ -14,77 +14,46 @@ import {
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
-import { fetchWithAuth, useAuth } from "@/lib/auth";
-// Removed unused imports: useQuery, Bill, Category
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/lib/auth";
+import type { Bill, Category } from "../../shared/schema";
 
 const Dashboard = () => {
   const [location, setLocation] = useLocation();
   const { user, authenticated } = useAuth();
-  const [upcomingBills, setUpcomingBills] = useState([]);
-  const [totalToPay, setTotalToPay] = useState(0);
-  const [totalPaid, setTotalPaid] = useState(0);
   const [weeklyTotal, setWeeklyTotal] = useState(0);
-  const [allBills, setAllBills] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
 
+  // Redirect if not authenticated
   useEffect(() => {
-    if (!authenticated) {
+    if (authenticated === false) {
       setLocation("/login");
-      return;
     }
+  }, [authenticated, setLocation]);
 
-    if (!user?.id) {
-      return;
-    }
+  // Fetch all bills for calculations
+  const { data: allBills = [], isLoading: billsLoading, isError: billsError } = useQuery<Bill[]>({
+    queryKey: ['/api/bills'],
+    enabled: !!user?.id,
+  });
 
-    const fetchDashboardData = async () => {
-      try {
-        setLoading(true);
-        
-        // Buscar próximas contas (backend deve usar autenticação para filtrar por usuário)
-        const upcomingResponse = await fetchWithAuth(`/api/bills/upcoming?limit=5`);
-        const upcomingData = await upcomingResponse.json();
-        
-        // Buscar todas as contas para calcular totais
-        const allBillsResponse = await fetchWithAuth(`/api/bills`);
-        const allBills = await allBillsResponse.json();
+  // Fetch upcoming bills
+  const { data: upcomingData = [], isLoading: upcomingLoading, isError: upcomingError } = useQuery<Bill[]>({
+    queryKey: ['/api/bills/upcoming'],
+    enabled: !!user?.id,
+  });
 
-        // Calcular estatísticas (usar isPaid em vez de status)
-        const pending = allBills.filter(bill => !bill.isPaid);
-        const paid = allBills.filter(bill => bill.isPaid);
-        
-        const totalToPay = pending.reduce((sum, bill) => sum + (bill.amount / 100), 0); // Convert from cents
-        const totalPaid = paid.reduce((sum, bill) => sum + (bill.amount / 100), 0); // Convert from cents
-        
-        // Calcular dados semanais reais baseados nas contas dos próximos 7 dias
-        const weeklyTotal = calculateRealWeeklyTotal(allBills);
-        
-        // Store bills for weekly calculation
-        setAllBills(allBills);
+  // Fetch categories for mapping
+  const { data: categories = [], isLoading: categoriesLoading, isError: categoriesError } = useQuery<Category[]>({
+    queryKey: ['/api/categories'],
+    enabled: !!user?.id,
+  });
 
-        // Mapear dados das contas próximas com ícones
-        const billsWithIcons = upcomingData.map(bill => ({
-          ...bill,
-          name: bill.name || bill.description, // Use name field from schema
-          daysLeft: Math.ceil((new Date(bill.dueDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)),
-          icon: getIconForCategory(bill.category)
-        }));
+  // Create category mapping
+  const categoryMap = new Map(categories.map(cat => [cat.id, cat]));
 
-        setUpcomingBills(billsWithIcons);
-        setTotalToPay(totalToPay);
-        setTotalPaid(totalPaid);
-        setWeeklyTotal(weeklyTotal);
-      } catch (error) {
-        console.error('Erro ao carregar dados do dashboard:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchDashboardData();
-  }, [authenticated, user?.id]);
-
-  const getIconForCategory = (category) => {
+  // Helper function for category icons
+  const getIconForCategory = (category: string) => {
     const iconMap = {
       'Moradia': Home,
       'Telecom': CreditCard,
@@ -100,8 +69,8 @@ const Dashboard = () => {
     return iconMap[category] || CreditCard;
   };
 
-  // Função para calcular total semanal real
-  const calculateRealWeeklyTotal = (bills) => {
+  // Function to calculate real weekly total from bills due in next 7 days
+  const calculateRealWeeklyTotal = (bills: Bill[]) => {
     const today = new Date();
     const nextWeek = new Date(today.getTime() + (7 * 24 * 60 * 60 * 1000));
     
@@ -113,41 +82,97 @@ const Dashboard = () => {
       .reduce((sum, bill) => sum + (bill.amount / 100), 0); // Convert from cents
   };
 
-  // Calcular gastos reais por dia da semana (próximos 7 dias)
-  const calculateWeeklyExpenses = (bills) => {
+  // Function to calculate weekly expenses based on real bills grouped by day of week
+  const calculateWeeklyExpenses = (bills: Bill[]) => {
     const daysOfWeek = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
     const today = new Date();
     
-    // Próximos 7 dias a partir de hoje
-    const weeklyData = [];
-    for (let i = 0; i < 7; i++) {
-      const currentDate = new Date(today.getTime() + (i * 24 * 60 * 60 * 1000));
-      const dayName = daysOfWeek[currentDate.getDay()];
+    const weeklyData = daysOfWeek.map((day, index) => {
+      const targetDate = new Date(today);
+      targetDate.setDate(today.getDate() + index);
       
-      // Somar contas que vencem neste dia
-      const dayTotal = bills
-        .filter(bill => {
-          const billDate = new Date(bill.dueDate);
-          return billDate.toDateString() === currentDate.toDateString() && !bill.isPaid;
-        })
-        .reduce((sum, bill) => sum + (bill.amount / 100), 0); // Convert from cents
-      
-      weeklyData.push({
-        day: dayName,
-        amount: dayTotal
+      const dayBills = bills.filter(bill => {
+        const billDate = new Date(bill.dueDate);
+        return billDate.toDateString() === targetDate.toDateString() && !bill.isPaid;
       });
-    }
+      
+      const amount = dayBills.reduce((sum, bill) => sum + (bill.amount / 100), 0); // Convert from cents
+      
+      return {
+        day,
+        date: targetDate.getDate(),
+        amount
+      };
+    });
     return weeklyData;
   };
 
-  const weeklyExpenses = loading ? [] : calculateWeeklyExpenses(allBills);
+  // Calculate statistics from all bills
+  const pending = allBills.filter(bill => !bill.isPaid);
+  const paid = allBills.filter(bill => bill.isPaid);
+  
+  const totalToPay = pending.reduce((sum, bill) => sum + (bill.amount / 100), 0); // Convert from cents
+  const totalPaid = paid.reduce((sum, bill) => sum + (bill.amount / 100), 0); // Convert from cents
+  
+  // Calculate real weekly total from actual bills
+  const weeklyTotalCalculated = calculateRealWeeklyTotal(allBills);
+  
+  // Process upcoming bills with icons and days left
+  const upcomingBills = upcomingData.slice(0, 5).map(bill => {
+    const category = categoryMap.get(bill.categoryId);
+    const categoryName = category?.name ?? 'Sem categoria';
+    return {
+      ...bill,
+      name: bill.name || bill.description, // Use name field from schema
+      categoryName,
+      daysLeft: Math.ceil((new Date(bill.dueDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)),
+      icon: getIconForCategory(categoryName)
+    };
+  });
+
+  // Set weekly total when calculated
+  useEffect(() => {
+    if (weeklyTotalCalculated !== weeklyTotal) {
+      setWeeklyTotal(weeklyTotalCalculated);
+    }
+  }, [weeklyTotalCalculated, weeklyTotal]);
+
+
+  const weeklyExpenses = (billsLoading || upcomingLoading || categoriesLoading) ? [] : calculateWeeklyExpenses(allBills);
 
   const maxAmount = Math.max(...weeklyExpenses.map(d => d.amount), 1); // Avoid zero division
 
-  if (loading) {
+  if (authenticated === false) {
+    return null;
+  }
+
+  // Show loading while auth is resolving or data is loading
+  if (authenticated === null || (authenticated && !user) || billsLoading || upcomingLoading || categoriesLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary via-primary/95 to-secondary flex items-center justify-center">
-        <div className="text-primary-foreground text-lg">Carregando...</div>
+        <div className="text-primary-foreground text-lg" data-testid="loading-dashboard">Carregando dashboard...</div>
+      </div>
+    );
+  }
+
+  // Show error state if any queries failed
+  if (authenticated && user && (billsError || upcomingError || categoriesError)) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary via-primary/95 to-secondary flex items-center justify-center">
+        <div className="text-center text-primary-foreground">
+          <div className="text-lg mb-4" data-testid="error-dashboard">Erro ao carregar dados do dashboard</div>
+          <Button 
+            onClick={() => {
+              queryClient.invalidateQueries({ queryKey: ['/api/bills'] });
+              queryClient.invalidateQueries({ queryKey: ['/api/bills/upcoming'] });
+              queryClient.invalidateQueries({ queryKey: ['/api/categories'] });
+            }}
+            variant="secondary"
+            data-testid="button-retry"
+          >
+            Tentar novamente
+          </Button>
+        </div>
       </div>
     );
   }
@@ -306,7 +331,7 @@ const Dashboard = () => {
                       </div>
                       <div>
                         <div className="font-medium">{bill.name}</div>
-                        <div className="text-sm text-muted-foreground">{bill.category}</div>
+                        <div className="text-sm text-muted-foreground">{bill.categoryName}</div>
                       </div>
                     </div>
 
