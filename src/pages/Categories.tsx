@@ -254,7 +254,7 @@ const Categories = () => {
                       data-testid="input-category-name"
                     />
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label>Ícone</Label>
                     <div className="grid grid-cols-4 gap-2">
@@ -278,7 +278,7 @@ const Categories = () => {
                       })}
                     </div>
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label>Cor</Label>
                     <div className="grid grid-cols-4 gap-2">
@@ -301,7 +301,7 @@ const Categories = () => {
                       })}
                     </div>
                   </div>
-                  
+
                   <Button 
                     onClick={handleSaveCategory} 
                     className="btn-primary-financial w-full"
@@ -331,7 +331,7 @@ const Categories = () => {
                          style={{ backgroundColor: `${category.color}20` }}>
                       <IconComponent className="w-6 h-6" style={{ color: category.color }} />
                     </div>
-                    
+
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
                         <h3 className="font-semibold" data-testid={`text-category-name-${category.id}`}>
@@ -345,7 +345,7 @@ const Categories = () => {
                         ID: {String(category.id).slice(0, 8)}...
                       </p>
                     </div>
-                    
+
                     <div className="flex gap-2">
                       <Button
                         variant="outline"

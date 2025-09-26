@@ -2,12 +2,12 @@ import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/lib/supabase"; // Import supabase client
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input"; // se estiver usando <Input />
-import { Button } from "@/components/ui/button"; // se usa <Button />
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/lib/supabase";
+import { AlertCircle } from "lucide-react";
 
 
 const Login = () => {
