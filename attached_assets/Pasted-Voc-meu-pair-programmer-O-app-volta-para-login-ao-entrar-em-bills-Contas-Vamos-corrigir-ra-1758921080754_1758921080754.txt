@@ -1,0 +1,115 @@
+Você é meu pair programmer. O app volta para /login ao entrar em /bills (Contas).
+Vamos corrigir race de sessão e navegação.
+
+MOSTRE O DIFF de cada arquivo e aguarde minha confirmação antes de aplicar.
+
+1) Criar/atualizar rota protegida: src/routes/ProtectedRoute.tsx
+----------------------------------------------------------------
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
+import { Navigate } from "react-router-dom";
+
+export default function ProtectedRoute({ children }: { children: JSX.Element }) {
+  const [loading, setLoading] = useState(true);
+  const [authenticated, setAuthenticated] = useState<boolean>(false);
+
+  useEffect(() => {
+    let mounted = true;
+
+    // 1º check: sessão atual
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!mounted) return;
+      setAuthenticated(!!session);
+      setLoading(false);
+    });
+
+    // 2º: escuta mudanças de auth (login/refresh/logout)
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
+      if (!mounted) return;
+      setAuthenticated(!!session);
+    });
+
+    return () => {
+      mounted = false;
+      sub.subscription.unsubscribe();
+    };
+  }, []);
+
+  if (loading) return <div className="p-6 text-sm opacity-70">Carregando…</div>;
+  if (!authenticated) return <Navigate to="/login" replace />;
+  return children;
+}
+----------------------------------------------------------------
+
+2) Fortalecer fetchWithAuth com retry curto quando não há token (evita 401 de boot):
+- Editar src/lib/fetchWithAuth.ts substituindo TODO o conteúdo por:
+----------------------------------------------------------------
+import { supabase } from "./supabase";
+
+async function getTokenWithRetry(maxWaitMs = 1200): Promise<string | null> {
+  // tenta obter a sessão imediatamente; se não houver, espera pequenos intervalos
+  const started = Date.now();
+  while (Date.now() - started < maxWaitMs) {
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token ?? null;
+    if (token) return token;
+    await new Promise(r => setTimeout(r, 150));
+  }
+  const { data: { session } } = await supabase.auth.getSession();
+  return session?.access_token ?? null;
+}
+
+export async function fetchWithAuth(input: RequestInfo, init: RequestInit = {}) {
+  const headers = new Headers(init.headers || {});
+  const token = await getTokenWithRetry();
+
+  if (token) headers.set("Authorization", `Bearer ${token}`);
+  headers.set("Content-Type", headers.get("Content-Type") || "application/json");
+
+  const baseEnv = (import.meta.env.VITE_API_URL ?? "").trim();
+  const base = baseEnv ? baseEnv : "";
+  const url = typeof input === "string" ? base + input : input;
+
+  let res: Response;
+  try {
+    res = await fetch(url, { ...init, headers });
+  } catch (e) {
+    console.error("[fetchWithAuth] network fail:", { url, message: (e as Error).message });
+    throw e;
+  }
+
+  if (res.status === 401) {
+    // não derruba a sessão se ainda não tínhamos token (evita loop)
+    const hadToken = !!token;
+    console.warn("[fetchWithAuth] 401 unauthorized:", url, { hadToken });
+    if (hadToken) {
+      await supabase.auth.signOut();
+      if (location.pathname !== "/login") location.href = "/login";
+    }
+  }
+
+  return res;
+}
+----------------------------------------------------------------
+
+3) Trocar navegação <a href> por Link do router:
+- Procure e atualize estes arquivos (se existirem) trocando <a href="/alguma-rota"> por Link:
+  * src/components/Header*.tsx, Navbar*.tsx, Sidebar*.tsx
+  * src/pages/Dashboard.tsx (cartões/atalhos)
+  * Qualquer componente que navegue para "/bills" ou "/profile" ou "/dashboard"
+
+Regras:
+  - Importar do router (ex.: react-router-dom):  import { Link } from "react-router-dom";
+  - Exemplo de troca:
+      // antes
+      // <a href="/bills" className="...">Contas</a>
+      // depois
+      <Link to="/bills" className="...">Contas</Link>
+  - Se usar shadcn Button, permitir asChild:
+      import { Button } from "@/components/ui/button";
+      <Button asChild><Link to="/bills">Contas</Link></Button>
+
+4) Garanta que as páginas protegidas (Bills, Profile, etc.) estão dentro de <ProtectedRoute> na definição das rotas.
+
+5) NÃO mexa em outras partes.
+MOSTRE OS DIFFs dos arquivos alterados e aguarde minha confirmação.
