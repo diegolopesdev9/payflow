@@ -1,0 +1,172 @@
+Você é meu pair programmer. Vamos integrar Supabase Auth no projeto (FE + BE), sem mexer ainda no DB das "Contas".
+
+Tarefas (mostrar DIFF antes de aplicar e só então confirmar):
+
+## 1) Dependências
+- Adicione em dependencies:
+  "@supabase/supabase-js": "^2.45.0",
+  "zod": "^3.23.8"
+- Mantenha as outras conforme já estão.
+
+## 2) Frontend — cliente do Supabase
+Crie o arquivo: `src/lib/supabase.ts` com este conteúdo EXATO:
+-------------------------------------------------------
+import { createClient } from "@supabase/supabase-js";
+
+const url = import.meta.env.VITE_SUPABASE_URL!;
+const anon = import.meta.env.VITE_SUPABASE_ANON_KEY!;
+
+export const supabase = createClient(url, anon, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+  },
+});
+-------------------------------------------------------
+
+Crie `src/lib/fetchWithAuth.ts` para anexar o token do Supabase em todas as chamadas ao backend:
+-------------------------------------------------------
+import { supabase } from "./supabase";
+
+export async function fetchWithAuth(input: RequestInfo, init: RequestInit = {}) {
+  const { data: { session } } = await supabase.auth.getSession();
+  const headers = new Headers(init.headers || {});
+  const token = session?.access_token;
+  if (token) headers.set("Authorization", `Bearer ${token}`);
+  headers.set("Content-Type", headers.get("Content-Type") || "application/json");
+
+  const res = await fetch(input, { ...init, headers });
+
+  // se o token expirou ou é inválido
+  if (res.status === 401) {
+    await supabase.auth.signOut();
+    if (location.pathname !== "/login") location.href = "/login";
+  }
+  return res;
+}
+-------------------------------------------------------
+
+Atualize `src/pages/Login.tsx` para usar login do Supabase (substituir o fetch antigo):
+- Importar `supabase` de `@/lib/supabase`.
+- No submit:
+-------------------------------------------------------
+// dentro do handleSubmit
+const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+if (error) { setError(error.message); return; }
+window.location.href = "/dashboard";
+-------------------------------------------------------
+
+Atualize `src/pages/Register.tsx` para usar o signUp do Supabase:
+-------------------------------------------------------
+const { data, error } = await supabase.auth.signUp({
+  email,
+  password,
+  options: { data: { name } },
+});
+if (error) { setError(error.message); return; }
+window.location.href = "/dashboard";
+-------------------------------------------------------
+
+Atualize `src/pages/Profile.tsx` para buscar o perfil via backend:
+- Importar `fetchWithAuth` de `@/lib/fetchWithAuth`.
+- No effect:
+-------------------------------------------------------
+const res = await fetchWithAuth("/api/users/me");
+if (!res.ok) throw new Error(`HTTP ${res.status}`);
+const me = await res.json(); // { id, email, name? }
+setState({ loading: false, data: me });
+-------------------------------------------------------
+
+Crie (ou ajuste) `src/routes/ProtectedRoute.tsx` para esperar o estado da session:
+-------------------------------------------------------
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
+import { Navigate } from "react-router-dom";
+
+export default function ProtectedRoute({ children }: { children: JSX.Element }) {
+  const [loading, setLoading] = useState(true);
+  const [authenticated, setAuthenticated] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!mounted) return;
+      setAuthenticated(!!session);
+      setLoading(false);
+    });
+
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
+      if (!mounted) return;
+      setAuthenticated(!!session);
+    });
+
+    return () => { mounted = false; sub.subscription.unsubscribe(); };
+  }, []);
+
+  if (loading) return <div>Carregando…</div>;
+  if (!authenticated) return <Navigate to="/login" replace />;
+  return children;
+}
+-------------------------------------------------------
+
+## 3) Backend — middleware e rota /api/users/me usando Supabase
+
+Crie `server/supabase.ts` (cliente server-side):
+-------------------------------------------------------
+import { createClient } from "@supabase/supabase-js";
+
+export const supabaseServer = createClient(
+  process.env.SUPABASE_URL!,
+  process.env.SUPABASE_ANON_KEY!, // para validar tokens de usuário basta o anon
+  { auth: { persistSession: false, autoRefreshToken: false } }
+);
+-------------------------------------------------------
+
+Crie `server/supabaseAuth.ts` (middleware de autenticação via Supabase):
+-------------------------------------------------------
+import { createMiddleware } from "hono/factory";
+import { supabaseServer } from "./supabase";
+
+export const requireUser = createMiddleware(async (c, next) => {
+  const header = c.req.header("authorization");
+  if (!header?.startsWith("Bearer ")) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+  const token = header.slice(7);
+  const { data, error } = await supabaseServer.auth.getUser(token);
+  if (error || !data?.user) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+  c.set("userId", data.user.id);
+  c.set("userEmail", data.user.email || null);
+  c.set("user", data.user);
+  await next();
+});
+-------------------------------------------------------
+
+Edite `server/routes.ts` para adicionar:
+- `GET /api/users/me` protegido por `requireUser` que retorna `{ id, email, name }`.
+
+Exemplo do handler:
+-------------------------------------------------------
+import { requireUser } from "./supabaseAuth";
+
+app.get("/api/users/me", requireUser, async (c) => {
+  const user = c.get("user") as { id: string; email?: string; user_metadata?: any };
+  return c.json({
+    id: user.id,
+    email: user.email ?? null,
+    name: user.user_metadata?.name ?? null,
+  });
+});
+-------------------------------------------------------
+
+## 4) Env e build
+- NÃO comitar `.env`. Garanta os Secrets:
+  SUPABASE_URL, SUPABASE_ANON_KEY, (e VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY)
+- Não alterar servidor de produção deste passo (server/prod.ts permanece igual).
+- Não criar rotas de login no backend (login e register agora são feitos no FE com supabase-js).
+
+## 5) Sem mais alterações fora do escopo. Mostrar DIFFs e pedir minha confirmação antes de aplicar.
