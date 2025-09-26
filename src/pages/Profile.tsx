@@ -26,6 +26,8 @@ import {
   TrendingUp,
   Edit
 } from "lucide-react";
+import { fetchWithAuth } from "@/lib/fetchWithAuth";
+
 
 const Profile = () => {
   const [location, setLocation] = useLocation();
@@ -151,7 +153,7 @@ const Profile = () => {
                   {user.name.split(' ').map(n => n[0]).join('')}
                 </AvatarFallback>
               </Avatar>
-              
+
               <div className="flex-1">
                 <h2 className="text-2xl font-bold" data-testid="text-user-name">{user.name}</h2>
                 <p className="text-muted-foreground flex items-center gap-2 mt-1" data-testid="text-user-email">

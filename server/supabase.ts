@@ -180,3 +180,10 @@ export class SupabaseStorage implements IStorage {
 
 export const supabaseStorage = new SupabaseStorage();
 export { supabase };
+import { createClient } from "@supabase/supabase-js";
+
+export const supabaseServer = createClient(
+  process.env.SUPABASE_URL!,
+  process.env.SUPABASE_ANON_KEY!, // para validar tokens de usuário basta o anon
+  { auth: { persistSession: false, autoRefreshToken: false } }
+);

@@ -291,6 +291,15 @@ app.delete("/api/clear-all-data", async (c) => {
   }
 });
 
-// Use the storage with proper fallback logic from storage.ts
+// Rota para obter dados do usuário autenticado via Supabase
+app.get("/api/users/me", requireUser, async (c) => {
+  const user = c.get("user") as { id: string; email?: string; user_metadata?: any };
+  return c.json({
+    id: user.id,
+    email: user.email ?? null,
+    name: user.user_metadata?.name ?? null,
+  });
+});
 
+// Export the app
 export default app;

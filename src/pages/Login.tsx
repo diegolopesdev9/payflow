@@ -2,48 +2,58 @@ import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { signIn } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase"; // Import supabase client
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const [, setLocation] = useLocation();
+  const [, setLocation] = useLocation(); // Keep setLocation for navigation
+  const [error, setError] = useState(""); // State to hold error messages
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setError(""); // Clear previous errors
 
     try {
-      const { data, error } = await signIn(email, password);
+      // Use Supabase's signInWithPassword method
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
       if (error) {
+        // Display Supabase error
         toast({
           title: "Erro de login",
           description: error.message || "Credenciais inválidas.",
           variant: "destructive",
         });
       } else if (data.user) {
+        // Handle successful login
         toast({
           title: "Login realizado com sucesso!",
           description: "Bem-vindo de volta ao PayFlow.",
         });
-        
-        // Usar setLocation do wouter em vez de window.location.href
+
+        // Navigate after a short delay to allow toast to be visible
         setTimeout(() => {
           setLocation("/dashboard");
-        }, 1000); // Pequeno delay para mostrar o toast
+        }, 1000);
       }
-    } catch (error) {
+    } catch (err) {
+      // Catch any unexpected errors
       toast({
         title: "Erro de conexão",
         description: "Não foi possível conectar ao servidor. Tente novamente.",
         variant: "destructive",
       });
+      // Also set local error state for potential display within the form if needed
+      setError("Ocorreu um erro inesperado. Tente novamente.");
     } finally {
       setIsLoading(false);
     }
@@ -94,6 +104,14 @@ const Login = () => {
                   required
                 />
               </div>
+
+              {/* Display form-level error if any */}
+              {error && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
 
               <div className="text-center">
                 <Link

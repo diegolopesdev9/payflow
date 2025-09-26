@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { signUp } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase";
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -15,27 +15,34 @@ const Register = () => {
     confirmPassword: "",
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
   const { toast } = useToast();
   const [, setLocation] = useLocation();
 
+  const { name, email, password, confirmPassword } = formData;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
+    setError("");
 
-    if (formData.password !== formData.confirmPassword) {
-      toast({
-        title: "Erro",
-        description: "As senhas não coincidem.",
-        variant: "destructive",
-      });
+    if (password !== confirmPassword) {
+      setError("As senhas não coincidem");
+      setIsLoading(false);
       return;
     }
 
-    setIsLoading(true);
-
     try {
-      const { data, error } = await signUp(formData.email, formData.password, formData.name);
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { name },
+        },
+      });
 
       if (error) {
+        setError(error.message);
         toast({
           title: "Erro ao criar conta",
           description: error.message || "Não foi possível criar sua conta.",
@@ -44,15 +51,16 @@ const Register = () => {
       } else if (data.user) {
         toast({
           title: "Conta criada com sucesso!",
-          description: `Bem-vindo ao PayFlow, ${formData.name}!`,
+          description: `Bem-vindo ao PayFlow, ${name}!`,
         });
-        
+
         // Usar setLocation do wouter em vez de window.location.href
         setTimeout(() => {
           setLocation("/dashboard");
         }, 1000); // Pequeno delay para mostrar o toast
       }
-    } catch (error) {
+    } catch (err) {
+      setError("Erro de conexão. Tente novamente.");
       toast({
         title: "Erro",
         description: "Erro de conexão. Tente novamente.",
@@ -63,8 +71,8 @@ const Register = () => {
     }
   };
 
-  const updateField = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+  const updateField = (field: keyof typeof formData, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   return (
@@ -81,13 +89,19 @@ const Register = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             <form onSubmit={handleSubmit} className="space-y-4">
+              {error && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
               <div className="space-y-2">
                 <Label htmlFor="name">Nome completo</Label>
                 <Input
                   id="name"
                   type="text"
                   placeholder="João Silva"
-                  value={formData.name}
+                  value={name}
                   onChange={(e) => updateField("name", e.target.value)}
                   className="input-financial"
                   required
@@ -100,7 +114,7 @@ const Register = () => {
                   id="email"
                   type="email"
                   placeholder="seu@email.com"
-                  value={formData.email}
+                  value={email}
                   onChange={(e) => updateField("email", e.target.value)}
                   className="input-financial"
                   required
@@ -113,7 +127,7 @@ const Register = () => {
                   id="password"
                   type="password"
                   placeholder="••••••••"
-                  value={formData.password}
+                  value={password}
                   onChange={(e) => updateField("password", e.target.value)}
                   className="input-financial"
                   required
@@ -126,15 +140,15 @@ const Register = () => {
                   id="confirmPassword"
                   type="password"
                   placeholder="••••••••"
-                  value={formData.confirmPassword}
+                  value={confirmPassword}
                   onChange={(e) => updateField("confirmPassword", e.target.value)}
                   className="input-financial"
                   required
                 />
               </div>
 
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 className="w-full btn-financial py-6 text-lg"
                 disabled={isLoading}
               >
@@ -145,8 +159,8 @@ const Register = () => {
             <div className="text-center pt-4">
               <p className="text-muted-foreground">
                 Já tem uma conta?{" "}
-                <Link 
-                  to="/login" 
+                <Link
+                  to="/login"
                   className="text-primary hover:text-primary/80 font-medium transition-colors"
                 >
                   Entrar
