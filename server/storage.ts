@@ -1,8 +1,14 @@
-import { insertUserSchema, insertCategorySchema, insertBillSchema, type User, type Category, type Bill } from "../shared/schema";
-import { db } from "./db";
-import { users, categories, bills } from "../shared/schema";
-import { hashPassword } from "./auth";
-import { eq } from "drizzle-orm";
+import { 
+  insertUserSchema, 
+  insertCategorySchema, 
+  insertBillSchema, 
+  type User, 
+  type Category, 
+  type Bill,
+  type NewUser,
+  type NewCategory,
+  type NewBill
+} from "../shared/schema";
 
 export interface IStorage {
   // User operations
@@ -142,44 +148,55 @@ export class MemStorage implements IStorage {
   }
 }
 
-// Use PostgreSQL if DATABASE_URL is available, otherwise fallback to memory storage
-let storage: IStorage;
-
-// Priorizar Supabase se as variáveis estiverem configuradas
-if (process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY) {
-  try {
-    const { supabaseStorage } = require('./supabase');
-    storage = supabaseStorage;
-    console.log('📦 Using Supabase storage');
-  } catch (error) {
-    console.log('⚠️  Supabase not available, trying PostgreSQL...');
-    // Fallback para PostgreSQL
-    if (process.env.DATABASE_URL) {
-      try {
-        const { postgresStorage } = require('./db');
-        storage = postgresStorage;
-        console.log('📦 Using PostgreSQL storage');
-      } catch (pgError) {
-        console.log('⚠️  PostgreSQL not available, using memory storage');
-        storage = new MemStorage();
+// Initialize storage dynamically
+async function initializeStorage(): Promise<IStorage> {
+  // Priorizar Supabase se as variáveis estiverem configuradas
+  if (process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY) {
+    try {
+      const { supabaseStorage } = await import('./supabase.js');
+      console.log('📦 Using Supabase storage');
+      return supabaseStorage;
+    } catch (error) {
+      console.log('⚠️  Supabase not available, trying PostgreSQL...', error);
+      // Fallback para PostgreSQL
+      if (process.env.DATABASE_URL) {
+        try {
+          const { postgresStorage } = await import('./db.js');
+          console.log('📦 Using PostgreSQL storage');
+          return postgresStorage;
+        } catch (pgError) {
+          console.log('⚠️  PostgreSQL not available, using memory storage', pgError);
+          return new MemStorage();
+        }
+      } else {
+        console.log('📦 Using memory storage - no DATABASE_URL');
+        return new MemStorage();
       }
-    } else {
-      console.log('📦 Using memory storage');
-      storage = new MemStorage();
     }
+  } else if (process.env.DATABASE_URL) {
+    try {
+      const { postgresStorage } = await import('./db.js');
+      console.log('📦 Using PostgreSQL storage');
+      return postgresStorage;
+    } catch (error) {
+      console.log('⚠️  PostgreSQL not available, using memory storage', error);
+      return new MemStorage();
+    }
+  } else {
+    console.log('📦 Using memory storage (no database configured)');
+    return new MemStorage();
   }
-} else if (process.env.DATABASE_URL) {
-  try {
-    const { postgresStorage } = require('./db');
-    storage = postgresStorage;
-    console.log('📦 Using PostgreSQL storage');
-  } catch (error) {
-    console.log('⚠️  PostgreSQL not available, using memory storage');
-    storage = new MemStorage();
-  }
-} else {
-  console.log('📦 Using memory storage (no database configured)');
-  storage = new MemStorage();
 }
+
+// Initialize storage with fallback to memory storage
+let storage: IStorage = new MemStorage();
+
+// Replace with actual storage once initialized
+initializeStorage().then(storageInstance => {
+  storage = storageInstance;
+}).catch(error => {
+  console.error('Failed to initialize storage:', error);
+  storage = new MemStorage();
+});
 
 export { storage };

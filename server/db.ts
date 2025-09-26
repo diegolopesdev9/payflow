@@ -1,13 +1,15 @@
 
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
-import { users, categories, bills } from '../shared/schema';
+import { users, categories, bills, type User, type NewUser, type Category, type NewCategory, type Bill, type NewBill } from '../shared/schema';
 import { eq } from 'drizzle-orm';
-import { IStorage, User, NewUser, Category, NewCategory, Bill, NewBill } from './storage';
+import type { IStorage } from './storage';
 
+// Remove problematic pgbouncer parameter and configure SSL properly
+const dbUrl = process.env.DATABASE_URL?.replace('?pgbouncer=true&connection_limit=1', '');
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+  connectionString: dbUrl,
+  ssl: { rejectUnauthorized: false }
 });
 
 const db = drizzle(pool);
@@ -100,4 +102,6 @@ export class PostgreSQLStorage implements IStorage {
   }
 }
 
+// Export both the db instance and the storage
+export { db };
 export const postgresStorage = new PostgreSQLStorage();

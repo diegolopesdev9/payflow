@@ -3,9 +3,11 @@ import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import { users, categories, bills } from '../shared/schema';
 
+// Remove problematic pgbouncer parameter and configure SSL properly  
+const dbUrl = process.env.DATABASE_URL?.replace('?pgbouncer=true&connection_limit=1', '');
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+  connectionString: dbUrl,
+  ssl: { rejectUnauthorized: false }
 });
 
 const db = drizzle(pool);
