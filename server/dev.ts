@@ -3,8 +3,8 @@ import { serve } from "@hono/node-server";
 import { spawn } from "child_process";
 import routes from "./routes";
 
-// Start the API server on port 3001 as expected by Vite proxy config
-const API_PORT = 3001;
+// Start the API server on configurable port
+const API_PORT = Number(process.env.PORT) || 8080;
 
 console.log('📦 Using configured storage (check startup logs above for storage type)');
 
