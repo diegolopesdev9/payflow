@@ -1,0 +1,62 @@
+Você é meu pair programmer. Vamos diagnosticar e corrigir “Failed to fetch” no Dashboard (Preview Replit).
+
+Ações (mostrar DIFF e aguardar confirmação):
+
+1) Adicionar rota pública de saúde no backend:
+- Em `server/routes.ts`, adicione no topo das rotas:
+-------------------------------------------------------
+app.get("/api/healthz", (c) => c.json({ ok: true, time: new Date().toISOString() }));
+-------------------------------------------------------
+
+2) Fortalecer o fetchWithAuth com base relativa e logs:
+- Em `src/lib/fetchWithAuth.ts`, troque o bloco de construção da URL e adicione logs em erro:
+
+-------------------------------------------------------
+const baseEnv = (import.meta.env.VITE_API_URL ?? "").trim();
+const base = baseEnv ? baseEnv : ""; // em dev, string vazia para usar o proxy do Vite
+
+const url = typeof input === "string" ? base + input : input;
+
+let res: Response;
+try {
+  res = await fetch(url, { ...init, headers });
+} catch (e) {
+  console.error("[fetchWithAuth] network fail:", { url, message: (e as Error).message });
+  throw e;
+}
+
+if (res.status === 401) {
+  console.warn("[fetchWithAuth] 401 unauthorized:", url);
+  await supabase.auth.signOut();
+  if (location.pathname !== "/login") location.href = "/login";
+}
+return res;
+-------------------------------------------------------
+
+3) Garantir que o Dashboard usa fetchWithAuth:
+- Em todos os pontos onde o Dashboard chama:
+  fetch("/api/bills"), fetch("/api/bills/upcoming"), fetch("/api/categories")
+  substitua por:
+  fetchWithAuth("/api/bills"), fetchWithAuth("/api/bills/upcoming"), fetchWithAuth("/api/categories")
+- Se houver axios ou outro cliente, troque para usar fetchWithAuth por enquanto.
+
+4) Conferir vite.config.ts:
+- Em `vite.config.ts`, garanta a configuração do servidor de dev EXATAMENTE assim:
+
+-------------------------------------------------------
+server: {
+  host: "0.0.0.0",
+  port: 5000,
+  strictPort: true,
+  allowedHosts: true, // ou allowedHosts: [".replit.dev", ".repl.co"]
+  proxy: {
+    "/api": {
+      target: "http://localhost:8080",
+      changeOrigin: true,
+      rewrite: (p) => p,
+    },
+  },
+},
+-------------------------------------------------------
+
+5) NÃO alterar outras áreas do código. Apenas o descrito. Mostrar DIFF e aguardar minha confirmação.
