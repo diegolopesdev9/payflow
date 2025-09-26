@@ -25,12 +25,7 @@ const Dashboard = () => {
   const [weeklyTotal, setWeeklyTotal] = useState(0);
   const queryClient = useQueryClient();
 
-  // Redirect if not authenticated
-  useEffect(() => {
-    if (authenticated === false) {
-      setLocation("/login");
-    }
-  }, [authenticated, setLocation]);
+  // Auth is now handled by ProtectedRoute wrapper
 
   // Fetch all bills for calculations
   const { data: allBills = [], isLoading: billsLoading, isError: billsError } = useQuery<Bill[]>({
@@ -164,21 +159,8 @@ const Dashboard = () => {
 
   const maxAmount = Math.max(...weeklyExpenses.map(d => d.amount), 1); // Avoid zero division
 
-  if (authenticated === false) {
-    return null;
-  }
-
-  // Show loading while auth is resolving
-  if (loading || authenticated === null) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-primary via-primary/95 to-secondary flex items-center justify-center">
-        <div className="text-primary-foreground text-lg" data-testid="loading-dashboard">Carregando dashboard...</div>
-      </div>
-    );
-  }
-
-  // Show loading while data is loading (only if authenticated)
-  if (authenticated && user && (billsLoading || upcomingLoading || categoriesLoading)) {
+  // Show loading while data is loading
+  if (billsLoading || upcomingLoading || categoriesLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary via-primary/95 to-secondary flex items-center justify-center">
         <div className="text-primary-foreground text-lg" data-testid="loading-dashboard">Carregando dados...</div>
@@ -186,8 +168,8 @@ const Dashboard = () => {
     );
   }
 
-  // Show error state if any queries failed (but only if we're authenticated and not loading)
-  if (authenticated && user && !billsLoading && !upcomingLoading && !categoriesLoading && (billsError || upcomingError || categoriesError)) {
+  // Show error state if any queries failed
+  if (!billsLoading && !upcomingLoading && !categoriesLoading && (billsError || upcomingError || categoriesError)) {
     console.error('Dashboard query errors:', { billsError, upcomingError, categoriesError });
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary via-primary/95 to-secondary flex items-center justify-center">
