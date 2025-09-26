@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { signUp } from "@/lib/supabase";
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -31,37 +32,21 @@ const Register = () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: formData.name,
-          email: formData.email,
-          password: formData.password,
-        }),
-      });
+      const { data, error } = await signUp(formData.email, formData.password, formData.name);
 
-      const data = await response.json();
-
-      if (response.ok) {
-        // Salvar token no localStorage
-        localStorage.setItem('authToken', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
-
+      if (error) {
+        toast({
+          title: "Erro ao criar conta",
+          description: error.message || "Não foi possível criar sua conta.",
+          variant: "destructive",
+        });
+      } else if (data.user) {
         toast({
           title: "Conta criada com sucesso!",
-          description: `Bem-vindo ao PayFlow, ${data.user.name}!`,
+          description: `Bem-vindo ao PayFlow, ${formData.name}!`,
         });
         
         window.location.href = "/dashboard";
-      } else {
-        toast({
-          title: "Erro",
-          description: data.error || "Não foi possível criar a conta.",
-          variant: "destructive",
-        });
       }
     } catch (error) {
       toast({

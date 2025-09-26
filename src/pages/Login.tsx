@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { signIn } from "@/lib/supabase";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -17,36 +18,21 @@ const Login = () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email,
-          password,
-        }),
-      });
+      const { data, error } = await signIn(email, password);
 
-      const data = await response.json();
-
-      if (response.ok) {
-        // Salvar token no localStorage
-        localStorage.setItem('authToken', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
-
+      if (error) {
+        toast({
+          title: "Erro de login",
+          description: error.message || "Credenciais inválidas.",
+          variant: "destructive",
+        });
+      } else if (data.user) {
         toast({
           title: "Login realizado com sucesso!",
           description: "Bem-vindo de volta ao PayFlow.",
         });
         
         window.location.href = "/dashboard";
-      } else {
-        toast({
-          title: "Erro de login",
-          description: data.error || "Credenciais inválidas.",
-          variant: "destructive",
-        });
       }
     } catch (error) {
       toast({
