@@ -13,7 +13,7 @@ import {
   Plus
 } from "lucide-react";
 import { useState, useEffect } from "react";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
 import { fetchWithAuth } from "@/lib/fetchWithAuth";
@@ -394,24 +394,15 @@ const Dashboard = () => {
                 <Home className="w-5 h-5" />
                 <span className="text-sm">Home</span>
               </button>
-              <button
-                onClick={() => setLocation("/bills")}
-                className="nav-item"
-              >
+              <Link to="/bills" className="nav-item">
                 <CreditCard className="w-5 h-5" />
                 <span className="text-sm">Contas</span>
-              </button>
-              <button
-                onClick={() => setLocation("/reports")}
-                className="nav-item"
-              >
+              </Link>
+              <Link to="/reports" className="nav-item">
                 <TrendingUp className="w-5 h-5" />
                 <span className="text-sm">Relatórios</span>
-              </button>
-              <button
-                onClick={() => setLocation("/profile")}
-                className="nav-item"
-              >
+              </Link>
+              <Link to="/profile" className="nav-item">
                 <Wallet className="w-5 h-5" />
                 <span className="text-sm">Perfil</span>
               </button>
