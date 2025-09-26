@@ -38,7 +38,7 @@ app.use("*", async (c, next) => {
   return response;
 });
 
-const PORT = Number(process.env.PORT) || 3001;
+const PORT = Number(process.env.PORT) || 8080;
 
 console.log("🚀 Starting production server...");
 console.log(`📦 Serving static files from ./dist`);

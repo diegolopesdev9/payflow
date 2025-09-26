@@ -1,10 +1,9 @@
-
 import { serve } from "@hono/node-server";
 import { spawn } from "child_process";
 import routes from "./routes";
 
 // Start the API server on port 3001 as expected by Vite proxy config
-const API_PORT = 3001;
+const API_PORT = Number(process.env.PORT) || 8080;
 
 console.log('📦 Using configured storage (check startup logs above for storage type)');
 
@@ -21,12 +20,12 @@ serve({
 // Aguardar um pouco antes de iniciar o Vite para evitar conflitos
 setTimeout(() => {
   console.log(`🔌 Starting Vite frontend server on port 5000...`);
-  
+
   // Start Vite development server com configurações específicas para evitar o piscar
   const viteProcess = spawn('npx', ['vite', '--host', '0.0.0.0', '--port', '5000'], {
     stdio: 'inherit',
-    env: { 
-      ...process.env, 
+    env: {
+      ...process.env,
       PORT: '5000',
       VITE_HMR_PORT: '5000' // Força o HMR a usar a mesma porta
     }

@@ -9,8 +9,6 @@ export async function fetchWithAuth(input: RequestInfo, init: RequestInit = {}) 
   headers.set("Content-Type", headers.get("Content-Type") || "application/json");
 
   const res = await fetch(input, { ...init, headers });
-
-  // se o token expirou ou é inválido
   if (res.status === 401) {
     await supabase.auth.signOut();
     if (location.pathname !== "/login") location.href = "/login";
