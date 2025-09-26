@@ -1,7 +1,7 @@
 
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { jwtVerify } from 'jose';
+import { createClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 
 const JWT_SECRET = process.env.JWT_SECRET || (() => {
@@ -53,27 +53,45 @@ export const verifyToken = (token: string): { userId: string } | null => {
   }
 };
 
-// Verificar JWT do Supabase
+// Cliente admin do Supabase (singleton para melhor performance)
+let supabaseAdmin: ReturnType<typeof createClient> | null = null;
+
+const getSupabaseAdmin = () => {
+  if (supabaseAdmin) {
+    return supabaseAdmin;
+  }
+  
+  const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  
+  if (!supabaseUrl || !serviceRoleKey) {
+    console.warn('Supabase admin credentials not configured');
+    return null;
+  }
+  
+  supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
+  return supabaseAdmin;
+};
+
+// Verificar JWT do Supabase usando admin client (método mais robusto)
 export const verifySupabaseToken = async (token: string): Promise<{ userId: string } | null> => {
   try {
-    if (!process.env.VITE_SUPABASE_ANON_KEY) {
-      console.warn('VITE_SUPABASE_ANON_KEY not configured');
+    const admin = getSupabaseAdmin();
+    if (!admin) {
       return null;
     }
 
-    // Para tokens do Supabase, vamos verificar se é um JWT válido
-    // usando a chave pública do Supabase (jwt secret)
-    const secret = new TextEncoder().encode(process.env.VITE_SUPABASE_ANON_KEY);
+    // Verificar token usando o admin client
+    const { data, error } = await admin.auth.getUser(token);
     
-    const { payload } = await jwtVerify(token, secret);
-    
-    if (payload.sub) {
-      return { userId: payload.sub };
+    if (error || !data.user) {
+      console.log('Supabase token verification failed:', error?.message);
+      return null;
     }
     
-    return null;
+    return { userId: data.user.id };
   } catch (error) {
-    console.log('Supabase token verification failed:', error);
+    console.log('Supabase token verification error:', error);
     return null;
   }
 };
