@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,6 +16,7 @@ const Register = () => {
   });
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,7 +47,10 @@ const Register = () => {
           description: `Bem-vindo ao PayFlow, ${formData.name}!`,
         });
         
-        window.location.href = "/dashboard";
+        // Usar setLocation do wouter em vez de window.location.href
+        setTimeout(() => {
+          setLocation("/dashboard");
+        }, 1000); // Pequeno delay para mostrar o toast
       }
     } catch (error) {
       toast({
