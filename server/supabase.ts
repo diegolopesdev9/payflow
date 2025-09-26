@@ -1,6 +1,7 @@
 
 import { createClient } from '@supabase/supabase-js';
-import { IStorage, User, NewUser, Category, NewCategory, Bill, NewBill } from './storage';
+import { IStorage } from './storage';
+import type { User, Category, Bill, NewUser, NewCategory, NewBill } from '../shared/schema';
 
 const supabaseUrl = process.env.SUPABASE_URL || '';
 const supabaseKey = process.env.SUPABASE_ANON_KEY || '';
