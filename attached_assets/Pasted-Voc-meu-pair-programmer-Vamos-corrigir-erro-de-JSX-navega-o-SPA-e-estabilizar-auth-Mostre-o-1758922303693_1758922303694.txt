@@ -1,0 +1,138 @@
+Você é meu pair programmer. Vamos corrigir erro de JSX, navegação SPA e estabilizar auth. 
+Mostre o DIFF de cada arquivo e aguarde minha confirmação antes de aplicar.
+
+Tarefas:
+
+────────────────────────────────────────────────────────
+1) Corrigir JSX e navegação no Dashboard
+Arquivo: src/pages/Dashboard.tsx
+
+- Trocar qualquer <a href="/..."> por navegação SPA com Link:
+  import { Link } from "react-router-dom";
+  import { Button } from "@/components/ui/button";
+
+  Padrão:
+  <Button asChild className="nav-item">
+    <Link to="/Rota" className="flex items-center gap-2">
+      {/* ícone opcional */}
+      <span className="text-sm">Texto</span>
+    </Link>
+  </Button>
+
+- Onde estiver algo assim (exemplo do erro atual):
+    <Link to="/profile" className="nav-item">
+      <Wallet className="w-5 h-5" />
+      <span className="text-sm">Perfil</span>
+    </Link>
+  NÃO feche com </button>. Feche com </Link> (ou use Button asChild conforme padrão acima).
+  Aplique o mesmo para os atalhos de “Contas” (/bills), “Dashboard”, etc.
+
+- Garantir imports no topo (sem duplicar):
+  import { Link } from "react-router-dom";
+  import { Button } from "@/components/ui/button";
+  import { Wallet } from "lucide-react"; // e demais ícones utilizados
+
+────────────────────────────────────────────────────────
+2) Rota protegida que aguarda sessão (evita race)
+Arquivo: src/routes/ProtectedRoute.tsx (crie ou substitua)
+
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
+import { Navigate } from "react-router-dom";
+
+export default function ProtectedRoute({ children }: { children: JSX.Element }) {
+  const [loading, setLoading] = useState(true);
+  const [authenticated, setAuthenticated] = useState<boolean>(false);
+
+  useEffect(() => {
+    let mounted = true;
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!mounted) return;
+      setAuthenticated(!!session);
+      setLoading(false);
+    });
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
+      if (!mounted) return;
+      setAuthenticated(!!session);
+    });
+    return () => { mounted = false; sub.subscription.unsubscribe(); };
+  }, []);
+
+  if (loading) return <div className="p-6 text-sm opacity-70">Carregando…</div>;
+  if (!authenticated) return <Navigate to="/login" replace />;
+  return children;
+}
+
+────────────────────────────────────────────────────────
+3) fetchWithAuth com base relativa e retry curto
+Arquivo: src/lib/fetchWithAuth.ts (substitua conteúdo)
+
+import { supabase } from "./supabase";
+
+async function getTokenWithRetry(maxWaitMs = 1200): Promise<string | null> {
+  const started = Date.now();
+  while (Date.now() - started < maxWaitMs) {
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token ?? null;
+    if (token) return token;
+    await new Promise(r => setTimeout(r, 150));
+  }
+  const { data: { session } } = await supabase.auth.getSession();
+  return session?.access_token ?? null;
+}
+
+export async function fetchWithAuth(input: RequestInfo, init: RequestInit = {}) {
+  const headers = new Headers(init.headers || {});
+  const token = await getTokenWithRetry();
+  if (token) headers.set("Authorization", `Bearer ${token}`);
+  headers.set("Content-Type", headers.get("Content-Type") || "application/json");
+
+  const baseEnv = (import.meta.env.VITE_API_URL ?? "").trim();
+  const base = baseEnv ? baseEnv : ""; // em DEV deixa vazio p/ usar proxy do Vite
+  const url = typeof input === "string" ? base + input : input;
+
+  let res: Response;
+  try {
+    res = await fetch(url, { ...init, headers });
+  } catch (e) {
+    console.error("[fetchWithAuth] network fail:", { url, message: (e as Error).message });
+    throw e;
+  }
+
+  if (res.status === 401) {
+    const hadToken = !!token;
+    console.warn("[fetchWithAuth] 401 unauthorized:", url, { hadToken });
+    if (hadToken) {
+      await supabase.auth.signOut();
+      if (location.pathname !== "/login") location.href = "/login";
+    }
+  }
+  return res;
+}
+
+────────────────────────────────────────────────────────
+4) Backend: rota pública de saúde p/ diagnosticar rede
+Arquivo: server/routes.ts  (adicionar no topo das rotas)
+
+app.get("/api/healthz", (c) => c.json({ ok: true, time: new Date().toISOString() }));
+
+────────────────────────────────────────────────────────
+5) Conferir vite.config.ts (proxy e allowedHosts já ajustados)
+Arquivo: vite.config.ts  (garantir este bloco)
+
+server: {
+  host: "0.0.0.0",
+  port: 5000,
+  strictPort: true,
+  allowedHosts: true, // ou [".replit.dev", ".repl.co"]
+  proxy: {
+    "/api": {
+      target: "http://localhost:8080",
+      changeOrigin: true,
+      rewrite: (p) => p,
+    },
+  },
+},
+
+────────────────────────────────────────────────────────
+Não mude nada além do escopo acima. Mostre os DIFFs e aguarde minha confirmação.
