@@ -72,24 +72,24 @@ export const rateLimitMiddleware = (rateLimit: RateLimit) => {
 // Middleware de autenticação
 export const authMiddleware = async (c: Context<{ Variables: ContextVariables }>, next: Next) => {
   const authHeader = c.req.header('Authorization');
-  const auth = authenticateToken(authHeader);
+  const auth = await authenticateToken(authHeader);
 
   if (!auth) {
     return c.json({ error: 'Token de acesso inválido ou expirado' }, 401);
   }
 
   // Adicionar userId ao contexto para uso nas rotas
-  c.set('userId', auth.userId);
+  c.set('userId', auth.user.id);
   await next();
 };
 
 // Middleware de autenticação opcional (não bloqueia se não autenticado)
 export const optionalAuthMiddleware = async (c: Context<{ Variables: ContextVariables }>, next: Next) => {
   const authHeader = c.req.header('Authorization');
-  const auth = authenticateToken(authHeader);
+  const auth = await authenticateToken(authHeader);
 
   if (auth) {
-    c.set('userId', auth.userId);
+    c.set('userId', auth.user.id);
   }
 
   await next();

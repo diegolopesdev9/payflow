@@ -1,6 +1,7 @@
 
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { jwtVerify } from 'jose';
 import { z } from 'zod';
 
 const JWT_SECRET = process.env.JWT_SECRET || (() => {
@@ -52,14 +53,58 @@ export const verifyToken = (token: string): { userId: string } | null => {
   }
 };
 
-// Middleware para autenticação
-export const authenticateToken = (authHeader?: string): { userId: string } | null => {
+// Verificar JWT do Supabase
+export const verifySupabaseToken = async (token: string): Promise<{ userId: string } | null> => {
+  try {
+    if (!process.env.VITE_SUPABASE_ANON_KEY) {
+      console.warn('VITE_SUPABASE_ANON_KEY not configured');
+      return null;
+    }
+
+    // Para tokens do Supabase, vamos verificar se é um JWT válido
+    // usando a chave pública do Supabase (jwt secret)
+    const secret = new TextEncoder().encode(process.env.VITE_SUPABASE_ANON_KEY);
+    
+    const { payload } = await jwtVerify(token, secret);
+    
+    if (payload.sub) {
+      return { userId: payload.sub };
+    }
+    
+    return null;
+  } catch (error) {
+    console.log('Supabase token verification failed:', error);
+    return null;
+  }
+};
+
+// Middleware para autenticação (legacy JWT ou Supabase)
+export const authenticateToken = async (authHeader?: string): Promise<{ user: { id: string } } | null> => {
   if (!authHeader?.startsWith('Bearer ')) {
     return null;
   }
 
   const token = authHeader.substring(7);
-  return verifyToken(token);
+  
+  // Tentar verificar como token do Supabase primeiro
+  const supabaseAuth = await verifySupabaseToken(token);
+  if (supabaseAuth) {
+    return { user: { id: supabaseAuth.userId } };
+  }
+  
+  // Fallback para JWT customizado (compatibilidade)
+  const decoded = verifyToken(token);
+  if (decoded) {
+    return { user: { id: decoded.userId } };
+  }
+
+  return null;
+};
+
+// Extrair userId do token válido
+export const extractUserId = async (authHeader?: string): Promise<string | null> => {
+  const auth = await authenticateToken(authHeader);
+  return auth?.user?.id || null;
 };
 
 // Rate limiting para tentativas de login
