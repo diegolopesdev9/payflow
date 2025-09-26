@@ -1,3 +1,4 @@
+
 import { serve } from "@hono/node-server";
 import { spawn } from "child_process";
 import routes from "./routes";
@@ -5,7 +6,7 @@ import routes from "./routes";
 // Start the API server on port 3001 as expected by Vite proxy config
 const API_PORT = 3001;
 
-console.log('⚠️  PostgreSQL not available, using memory storage');
+console.log('📦 Using configured storage (check startup logs above for storage type)');
 
 // Start API server
 serve({
@@ -15,16 +16,36 @@ serve({
 }, () => {
   console.log(`🚀 API server running on port ${API_PORT}`);
   console.log(`📡 API endpoints available at http://0.0.0.0:${API_PORT}/api`);
+});
 
-  // Start Vite development server
-  const viteProcess = spawn('npm', ['run', 'dev'], {
+// Aguardar um pouco antes de iniciar o Vite para evitar conflitos
+setTimeout(() => {
+  console.log(`🔌 Starting Vite frontend server on port 5000...`);
+  
+  // Start Vite development server com configurações específicas para evitar o piscar
+  const viteProcess = spawn('npx', ['vite', '--host', '0.0.0.0', '--port', '5000'], {
     stdio: 'inherit',
-    env: { ...process.env, PORT: '5000' }
+    env: { 
+      ...process.env, 
+      PORT: '5000',
+      VITE_HMR_PORT: '5000' // Força o HMR a usar a mesma porta
+    }
   });
 
   viteProcess.on('error', (error) => {
     console.error('Failed to start Vite:', error);
   });
 
-  console.log(`🔌 Starting Vite frontend server on port 5000...`);
-});
+  // Capturar sinais para fazer cleanup
+  process.on('SIGINT', () => {
+    console.log('\n🛑 Shutting down development servers...');
+    viteProcess.kill('SIGINT');
+    process.exit(0);
+  });
+
+  process.on('SIGTERM', () => {
+    console.log('\n🛑 Shutting down development servers...');
+    viteProcess.kill('SIGTERM');
+    process.exit(0);
+  });
+}, 2000);

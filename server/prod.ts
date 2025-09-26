@@ -38,19 +38,18 @@ app.use("*", async (c, next) => {
   return response;
 });
 
-const PORT = Number(process.env.API_PORT) || 3001;
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`API on http://0.0.0.0:${PORT}`);
+const PORT = Number(process.env.PORT) || 3001;
+
 console.log("🚀 Starting production server...");
 console.log(`📦 Serving static files from ./dist`);
 console.log(`🔌 API available at /api`);
 
 serve({
   fetch: app.fetch,
-  port,
+  port: PORT,
   hostname: "0.0.0.0"
 }, () => {
-  console.log(`✅ Production server running on port ${port}`);
-  console.log(`🌐 App: http://localhost:${port}`);
-  console.log(`🔌 API: http://localhost:${port}/api`);
+  console.log(`✅ Production server running on port ${PORT}`);
+  console.log(`🌐 App: http://0.0.0.0:${PORT}`);
+  console.log(`🔌 API: http://0.0.0.0:${PORT}/api`);
 });

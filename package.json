@@ -81,6 +81,7 @@
     "sonner": "^1.7.4",
     "tailwind-merge": "^2.6.0",
     "tailwindcss-animate": "^1.0.7",
+    "ts-node": "^10.9.2",
     "tsx": "^4.20.5",
     "vaul": "^0.9.9",
     "vitest": "^3.2.4",
