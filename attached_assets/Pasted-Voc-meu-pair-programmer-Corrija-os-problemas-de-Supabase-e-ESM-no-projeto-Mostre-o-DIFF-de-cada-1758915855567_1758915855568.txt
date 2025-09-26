@@ -1,0 +1,68 @@
+Você é meu pair programmer. Corrija os problemas de Supabase e ESM no projeto. Mostre o DIFF de cada arquivo e aguarde minha confirmação antes de aplicar.
+
+1) Remova qualquer inclusão do Supabase por CDN no frontend:
+- Abra `index.html` (ou `public/index.html`). Se existir linha como:
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@..."></script>
+  REMOVA essa linha.
+- Garanta que não há outras tags <script> que definam `createClient` globalmente.
+
+2) Garanta um único cliente do Supabase no FE:
+- Crie/normalize `src/lib/supabase.ts` com ESTE conteúdo exato:
+
+-------------------------------------------------------
+import { createClient } from "@supabase/supabase-js";
+
+const url = import.meta.env.VITE_SUPABASE_URL!;
+const anon = import.meta.env.VITE_SUPABASE_ANON_KEY!;
+
+export const supabase = createClient(url, anon, {
+  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
+});
+-------------------------------------------------------
+
+- Faça uma busca por TODO o repo `src/` por `createClient` e:
+  * Se houver `const createClient = ...` em qualquer arquivo de frontend, renomeie a variável local para evitar conflito OU remova se for duplicata indevida. 
+  * Se houver outro arquivo exportando um cliente do Supabase, remova esse cliente e troque as importações para usar sempre `@/lib/supabase`.
+
+3) Ajuste `src/lib/fetchWithAuth.ts` (se ainda não estiver) para usar o token do Supabase:
+
+-------------------------------------------------------
+import { supabase } from "./supabase";
+
+export async function fetchWithAuth(input: RequestInfo, init: RequestInit = {}) {
+  const { data: { session } } = await supabase.auth.getSession();
+  const headers = new Headers(init.headers || {});
+  const token = session?.access_token;
+  if (token) headers.set("Authorization", `Bearer ${token}`);
+  headers.set("Content-Type", headers.get("Content-Type") || "application/json");
+
+  const res = await fetch(input, { ...init, headers });
+  if (res.status === 401) {
+    await supabase.auth.signOut();
+    if (location.pathname !== "/login") location.href = "/login";
+  }
+  return res;
+}
+-------------------------------------------------------
+
+4) Padronize o dev script e a porta do servidor:
+- No `package.json`, ajuste scripts para ESM com tsx:
+
+-------------------------------------------------------
+{
+  "scripts": {
+    "dev": "tsx server/dev.ts",
+    "build": "vite build",
+    "start": "tsx server/prod.ts"
+  }
+}
+-------------------------------------------------------
+
+- Em `server/dev.ts`, troque qualquer porta fixa por:
+  `const port = Number(process.env.PORT) || 8080;`
+  e `server.listen(port, "0.0.0.0", ...)`.
+- Se existir `server/index.ts`:
+  * Se NÃO é usado, remova o arquivo.
+  * Se é usado, troque a porta por `Number(process.env.PORT) || 8080` também.
+
+5) NÃO faça outras alterações. Mostre DIFFs e aguarde minha confirmação.
