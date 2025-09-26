@@ -16,6 +16,7 @@ import {
   authRateLimit 
 } from "./middleware";
 import { ContextVariables } from "./types";
+import { requireUser } from "./supabaseAuth";
 
 const app = new Hono<{ Variables: ContextVariables }>();
 
@@ -293,11 +294,11 @@ app.delete("/api/clear-all-data", async (c) => {
 
 // Rota para obter dados do usuário autenticado via Supabase
 app.get("/api/users/me", requireUser, async (c) => {
-  const user = c.get("user") as { id: string; email?: string; user_metadata?: any };
+  const user: any = c.get("user");
   return c.json({
-    id: user.id,
-    email: user.email ?? null,
-    name: user.user_metadata?.name ?? null,
+    id: user?.id ?? null,
+    email: user?.email ?? null,
+    name: user?.user_metadata?.name ?? null,
   });
 });
 
