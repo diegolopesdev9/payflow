@@ -16,6 +16,7 @@ import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
+import { fetchWithAuth } from "@/lib/fetchWithAuth";
 import type { Bill, Category } from "../../shared/schema";
 
 const Dashboard = () => {
@@ -34,6 +35,11 @@ const Dashboard = () => {
   // Fetch all bills for calculations
   const { data: allBills = [], isLoading: billsLoading, isError: billsError } = useQuery<Bill[]>({
     queryKey: ['/api/bills'],
+    queryFn: async () => {
+      const response = await fetchWithAuth(`/api/bills?userId=${user?.id}`);
+      if (!response.ok) throw new Error('Failed to fetch bills');
+      return response.json();
+    },
     enabled: authenticated === true && !!user?.id,
     retry: 3,
     retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
@@ -42,6 +48,11 @@ const Dashboard = () => {
   // Fetch upcoming bills
   const { data: upcomingData = [], isLoading: upcomingLoading, isError: upcomingError } = useQuery<Bill[]>({
     queryKey: ['/api/bills/upcoming'],
+    queryFn: async () => {
+      const response = await fetchWithAuth(`/api/bills/upcoming?userId=${user?.id}`);
+      if (!response.ok) throw new Error('Failed to fetch upcoming bills');
+      return response.json();
+    },
     enabled: authenticated === true && !!user?.id,
     retry: 3,
     retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
@@ -50,6 +61,11 @@ const Dashboard = () => {
   // Fetch categories for mapping
   const { data: categories = [], isLoading: categoriesLoading, isError: categoriesError } = useQuery<Category[]>({
     queryKey: ['/api/categories'],
+    queryFn: async () => {
+      const response = await fetchWithAuth(`/api/categories?userId=${user?.id}`);
+      if (!response.ok) throw new Error('Failed to fetch categories');
+      return response.json();
+    },
     enabled: authenticated === true && !!user?.id,
     retry: 3,
     retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),

@@ -12,7 +12,7 @@ export async function fetchWithAuth(input: RequestInfo, init: RequestInit = {}) 
   const base = import.meta.env.VITE_API_URL || "";
   const url = typeof input === "string" ? base + input : input;
 
-  const res = await fetch(input, { ...init, headers });
+  const res = await fetch(url, { ...init, headers });
   if (res.status === 401) {
     await supabase.auth.signOut();
     if (location.pathname !== "/login") location.href = "/login";

@@ -6,18 +6,14 @@ import { componentTagger } from "lovable-tagger";
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   server: {
-    host: true,
-    port: Number(process.env.PORT) || 8080, // será sobrescrito pelo --port $PORT do .replit
+    host: "0.0.0.0",
+    port: 5000,
     strictPort: true,
-    allowedHosts: true,
     proxy: {
       "/api": {
-        target: "http://0.0.0.0:3001",
+        target: "http://localhost:8080",
         changeOrigin: true,
-        secure: false,
-        ws: true,
-        // se suas rotas no backend NÃO incluem /api, descomente:
-        // rewrite: (path) => path.replace(/^\/api/, ''),
+        rewrite: (p) => p,
       },
     },
     hmr: {
