@@ -20,6 +20,9 @@ import { requireUser } from "./supabaseAuth";
 
 const app = new Hono<{ Variables: ContextVariables }>();
 
+// Rota pública de saúde
+app.get("/api/healthz", (c) => c.json({ ok: true, time: new Date().toISOString() }));
+
 // Aplicar rate limiting global para todas as rotas API
 app.use('/api/*', rateLimitMiddleware(apiRateLimit));
 

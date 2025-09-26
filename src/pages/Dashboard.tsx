@@ -2,10 +2,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { 
-  TrendingUp, 
-  TrendingDown, 
-  DollarSign, 
+import {
+  TrendingUp,
+  TrendingDown,
+  DollarSign,
   Calendar,
   CreditCard,
   Wallet,
@@ -95,7 +95,7 @@ const Dashboard = () => {
   const calculateRealWeeklyTotal = (bills: Bill[]) => {
     const today = new Date();
     const nextWeek = new Date(today.getTime() + (7 * 24 * 60 * 60 * 1000));
-    
+
     return bills
       .filter(bill => {
         const dueDate = new Date(bill.dueDate);
@@ -108,18 +108,18 @@ const Dashboard = () => {
   const calculateWeeklyExpenses = (bills: Bill[]) => {
     const daysOfWeek = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
     const today = new Date();
-    
+
     const weeklyData = daysOfWeek.map((day, index) => {
       const targetDate = new Date(today);
       targetDate.setDate(today.getDate() + index);
-      
+
       const dayBills = bills.filter(bill => {
         const billDate = new Date(bill.dueDate);
         return billDate.toDateString() === targetDate.toDateString() && !bill.isPaid;
       });
-      
+
       const amount = dayBills.reduce((sum, bill) => sum + (bill.amount / 100), 0); // Convert from cents
-      
+
       return {
         day,
         date: targetDate.getDate(),
@@ -132,13 +132,13 @@ const Dashboard = () => {
   // Calculate statistics from all bills
   const pending = allBills.filter(bill => !bill.isPaid);
   const paid = allBills.filter(bill => bill.isPaid);
-  
+
   const totalToPay = pending.reduce((sum, bill) => sum + (bill.amount / 100), 0); // Convert from cents
   const totalPaid = paid.reduce((sum, bill) => sum + (bill.amount / 100), 0); // Convert from cents
-  
+
   // Calculate real weekly total from actual bills
   const weeklyTotalCalculated = calculateRealWeeklyTotal(allBills);
-  
+
   // Process upcoming bills with icons and days left
   const upcomingBills = upcomingData.slice(0, 5).map(bill => {
     const category = categoryMap.get(bill.categoryId);
@@ -193,7 +193,7 @@ const Dashboard = () => {
       <div className="min-h-screen bg-gradient-to-br from-primary via-primary/95 to-secondary flex items-center justify-center">
         <div className="text-center text-primary-foreground">
           <div className="text-lg mb-4" data-testid="error-dashboard">Erro ao carregar dados do dashboard</div>
-          <Button 
+          <Button
             onClick={() => {
               queryClient.invalidateQueries({ queryKey: ['/api/bills'] });
               queryClient.invalidateQueries({ queryKey: ['/api/bills/upcoming'] });
@@ -219,7 +219,7 @@ const Dashboard = () => {
               <h1 className="text-2xl font-bold text-primary-foreground">Visão Geral</h1>
               <p className="text-primary-foreground/80">Seus gastos desta semana</p>
             </div>
-            <Button 
+            <Button
               onClick={() => setLocation("/new-bill")}
               className="btn-secondary-financial"
             >
@@ -257,9 +257,9 @@ const Dashboard = () => {
                     <div key={day.day} className="text-center">
                       <div className="text-xs text-muted-foreground mb-2">{day.day}</div>
                       <div className="relative">
-                        <div 
+                        <div
                           className="bg-secondary rounded-t-md transition-all duration-500 ease-out min-h-[20px]"
-                          style={{ 
+                          style={{
                             height: maxAmount > 1 ? `${(day.amount / maxAmount) * 100}px` : '0px',
                             animationDelay: `${index * 100}ms`
                           }}
@@ -347,40 +347,40 @@ const Dashboard = () => {
                 upcomingBills.map((bill) => {
                   const Icon = bill.icon;
                   const isUrgent = bill.daysLeft <= 3;
-                
-                return (
-                  <div 
-                    key={bill.id} 
-                    className={`flex items-center justify-between p-4 rounded-xl border transition-all duration-300 hover:shadow-md ${
-                      isUrgent ? 'bg-destructive/5 border-destructive/20' : 'bg-card border-border'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                        isUrgent ? 'bg-destructive/10' : 'bg-primary/10'
-                      }`}>
-                        <Icon className={`w-5 h-5 ${isUrgent ? 'text-destructive' : 'text-primary'}`} />
-                      </div>
-                      <div>
-                        <div className="font-medium">{bill.name}</div>
-                        <div className="text-sm text-muted-foreground">{bill.categoryName}</div>
-                      </div>
-                    </div>
 
-                    <div className="text-right">
-                      <div className="font-semibold">
-                        R$ {(bill.amount / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  return (
+                    <div
+                      key={bill.id}
+                      className={`flex items-center justify-between p-4 rounded-xl border transition-all duration-300 hover:shadow-md ${
+                        isUrgent ? 'bg-destructive/5 border-destructive/20' : 'bg-card border-border'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                          isUrgent ? 'bg-destructive/10' : 'bg-primary/10'
+                        }`}>
+                          <Icon className={`w-5 h-5 ${isUrgent ? 'text-destructive' : 'text-primary'}`} />
+                        </div>
+                        <div>
+                          <div className="font-medium">{bill.name}</div>
+                          <div className="text-sm text-muted-foreground">{bill.categoryName}</div>
+                        </div>
                       </div>
-                      <div className={`text-sm flex items-center gap-1 ${
-                        isUrgent ? 'text-destructive' : 'text-muted-foreground'
-                      }`}>
-                        <Calendar className="w-3 h-3" />
-                        <span>Vencimento em {bill.daysLeft} dias</span>
+
+                      <div className="text-right">
+                        <div className="font-semibold">
+                          R$ {(bill.amount / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </div>
+                        <div className={`text-sm flex items-center gap-1 ${
+                          isUrgent ? 'text-destructive' : 'text-muted-foreground'
+                        }`}>
+                          <Calendar className="w-3 h-3" />
+                          <span>Vencimento em {bill.daysLeft} dias</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })
+                  );
+                })
               )}
             </div>
           </CardContent>
@@ -394,21 +394,21 @@ const Dashboard = () => {
                 <Home className="w-5 h-5" />
                 <span className="text-sm">Home</span>
               </button>
-              <button 
+              <button
                 onClick={() => setLocation("/bills")}
                 className="nav-item"
               >
                 <CreditCard className="w-5 h-5" />
                 <span className="text-sm">Contas</span>
               </button>
-              <button 
+              <button
                 onClick={() => setLocation("/reports")}
                 className="nav-item"
               >
                 <TrendingUp className="w-5 h-5" />
                 <span className="text-sm">Relatórios</span>
               </button>
-              <button 
+              <button
                 onClick={() => setLocation("/profile")}
                 className="nav-item"
               >
