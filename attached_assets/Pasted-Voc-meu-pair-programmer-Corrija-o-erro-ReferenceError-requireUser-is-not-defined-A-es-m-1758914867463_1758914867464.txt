@@ -1,0 +1,52 @@
+Você é meu pair programmer. Corrija o erro "ReferenceError: requireUser is not defined".
+
+Ações (mostrar DIFF e pedir confirmação antes de aplicar):
+
+1) Crie (ou substitua) o arquivo `server/supabaseAuth.ts` com ESTE conteúdo exato:
+--------------------------------------------------------------------------------
+import { createMiddleware } from "hono/factory";
+import { createClient } from "@supabase/supabase-js";
+
+export const supabaseServer = createClient(
+  process.env.SUPABASE_URL!,
+  process.env.SUPABASE_ANON_KEY!, // anon é suficiente para validar tokens de usuário
+  { auth: { persistSession: false, autoRefreshToken: false } }
+);
+
+// Middleware que valida o token do Supabase e injeta user no contexto
+export const requireUser = createMiddleware(async (c, next) => {
+  const header = c.req.header("authorization");
+  if (!header?.startsWith("Bearer ")) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+  const token = header.slice(7);
+  const { data, error } = await supabaseServer.auth.getUser(token);
+  if (error || !data?.user) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+  // injeta informações úteis no contexto
+  c.set("userId", data.user.id);
+  c.set("userEmail", data.user.email ?? null);
+  c.set("user", data.user);
+  await next();
+});
+--------------------------------------------------------------------------------
+
+2) Em `server/routes.ts`, no topo do arquivo, ADICIONE a importação:
+--------------------------------------------------------------------------------
+import { requireUser } from "./supabaseAuth";
+--------------------------------------------------------------------------------
+
+3) Confirme que a rota existe assim (ajuste caso necessário):
+--------------------------------------------------------------------------------
+app.get("/api/users/me", requireUser, async (c) => {
+  const user: any = c.get("user");
+  return c.json({
+    id: user?.id ?? null,
+    email: user?.email ?? null,
+    name: user?.user_metadata?.name ?? null,
+  });
+});
+--------------------------------------------------------------------------------
+
+4) NÃO mude nada além do listado acima. Mostre os DIFFs e aguarde minha confirmação.
