@@ -8,11 +8,11 @@ export const queryClient = new QueryClient({
       queryFn: async ({ queryKey }) => {
         const url = queryKey[0] as string;
         const response = await fetchWithAuth(url);
-        
+
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
-        
+
         return response.json();
       },
       staleTime: 1000 * 60 * 5, // 5 minutes
@@ -42,6 +42,17 @@ export const apiRequest = async (url: string, options: RequestInit = {}) => {
 
   if (!response.ok) {
     throw new Error(`API request failed: ${response.statusText}`);
+  }
+
+  return response.json();
+};
+
+// Wrapper para requisições autenticadas
+export const authenticatedApiRequest = async (url: string, options?: RequestInit) => {
+  const response = await fetchWithAuth(url, options);
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
   }
 
   return response.json();

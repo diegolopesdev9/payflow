@@ -32,12 +32,13 @@ const Profile = () => {
   const { user: authUser, authenticated, logout } = useAuth();
   const { toast } = useToast();
 
-  // Redirect if not authenticated
+  // Redirect if not authenticated - mas só depois que o loading terminar
   useEffect(() => {
-    if (authenticated === false) {
+    if (!authenticated && !loading && authenticated === false) {
+      console.log('Profile: Not authenticated, redirecting to login');
       setLocation("/login");
     }
-  }, [authenticated, setLocation]);
+  }, [authenticated, loading, setLocation]);
 
   // Fetch user details using React Query
   const { data: user, isLoading, isError } = useQuery<User>({
@@ -45,12 +46,22 @@ const Profile = () => {
     enabled: !!authUser?.id,
   });
 
+  // Aguardar o carregamento do auth antes de decidir qualquer coisa
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary via-primary/95 to-secondary flex items-center justify-center">
+        <div className="text-primary-foreground text-lg" data-testid="loading-profile">Carregando autenticação...</div>
+      </div>
+    );
+  }
+
+  // Se não autenticado, não renderizar nada (redirect será feito pelo useEffect)
   if (authenticated === false) {
     return null;
   }
 
-  // Show loading while auth is resolving or user data is loading
-  if (authenticated === null || (authenticated && !authUser) || isLoading) {
+  // Show loading while user data is loading
+  if (isLoading || (authenticated && !authUser)) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary via-primary/95 to-secondary flex items-center justify-center">
         <div className="text-primary-foreground text-lg" data-testid="loading-profile">Carregando perfil...</div>
