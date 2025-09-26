@@ -13,7 +13,8 @@ import {
   Plus
 } from "lucide-react";
 import { useState, useEffect } from "react";
-import { useLocation, Link } from "wouter";
+import { useLocation } from "wouter";
+import { Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
 import { fetchWithAuth } from "@/lib/fetchWithAuth";
@@ -376,18 +377,24 @@ const Dashboard = () => {
                 <Home className="w-5 h-5" />
                 <span className="text-sm">Home</span>
               </button>
-              <Link to="/bills" className="nav-item">
-                <CreditCard className="w-5 h-5" />
-                <span className="text-sm">Contas</span>
-              </Link>
-              <Link to="/reports" className="nav-item">
-                <TrendingUp className="w-5 h-5" />
-                <span className="text-sm">Relatórios</span>
-              </Link>
-              <Link to="/profile" className="nav-item">
-                <Wallet className="w-5 h-5" />
-                <span className="text-sm">Perfil</span>
-              </button>
+              <Button asChild className="nav-item">
+                <Link to="/bills" className="flex items-center gap-2">
+                  <CreditCard className="w-5 h-5" />
+                  <span className="text-sm">Contas</span>
+                </Link>
+              </Button>
+              <Button asChild className="nav-item">
+                <Link to="/reports" className="flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5" />
+                  <span className="text-sm">Relatórios</span>
+                </Link>
+              </Button>
+              <Button asChild className="nav-item">
+                <Link to="/profile" className="flex items-center gap-2">
+                  <Wallet className="w-5 h-5" />
+                  <span className="text-sm">Perfil</span>
+                </Link>
+              </Button>
             </div>
           </div>
         </div>
