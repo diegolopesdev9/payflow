@@ -1,0 +1,54 @@
+Você é meu pair programmer. Aplique as mudanças exatamente como descritas abaixo, mostrando DIFF de cada arquivo antes de confirmar. Não altere nada fora do escopo.
+
+Objetivo: ter um deploy estável em PROD, com um único servidor Hono servindo dist (Vite) + API via process.env.PORT.
+
+1) Crie o arquivo `server/prod.ts` com este conteúdo EXATO:
+-------------------------------------------------------
+import { Hono } from "hono";
+import { serve } from "@hono/node-server";
+import routes from "./routes";
+import { serveStatic } from "hono/serve-static.module";
+
+const app = new Hono();
+
+// monta todas as rotas da API (ex.: /api/*) já definidas em routes
+app.route("/", routes);
+
+// serve os arquivos estáticos do build Vite
+app.get("/*", serveStatic({ root: "./dist" }));
+
+const port = Number(process.env.PORT) || 8080;
+serve({ fetch: app.fetch, port }, () => {
+  console.log(`[prod] Server listening on :${port}`);
+});
+-------------------------------------------------------
+
+2) No `package.json`, ajuste (ou crie) estes scripts EXATOS:
+-------------------------------------------------------
+{
+  "scripts": {
+    "dev": "tsx server/dev.ts",
+    "build": "vite build",
+    "start": "tsx server/prod.ts"
+  }
+}
+-------------------------------------------------------
+Obs.: Se não existir `tsx` como devDependency, adicione `"tsx": "^4.0.0"` em devDependencies.
+
+3) Unifique PORTA nos servidores Node:
+- Em `server/dev.ts`: substitua a porta fixa pelo uso de `Number(process.env.PORT) || 8080` e bind em "0.0.0.0".
+- Se existir `server/index.ts` e ele for usado, troque também para `Number(process.env.PORT) || 8080`. Se não for usado, REMOVA o arquivo.
+
+4) Limpe o arquivo `.replit` para ficar EXATAMENTE assim (remova [[ports]] e quaisquer placeholders tipo "..."):
+-------------------------------------------------------
+[deployment]
+deploymentTarget = "autoscale"
+run = ["npm", "run", "start"]
+build = ["npm", "run", "build"]
+-------------------------------------------------------
+
+5) Dependências:
+- Garanta que `hono` e `@hono/node-server` estejam instalados (prod). Se não estiverem, adicione ao package.json.
+- Se `tsx` não estiver instalado, adicione como devDependency.
+
+6) Não faça nenhuma outra modificação. Mostre o DIFF de cada arquivo e peça minha confirmação ANTES de aplicar.
