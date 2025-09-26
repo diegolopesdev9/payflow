@@ -20,7 +20,7 @@ import type { Bill, Category } from "../../shared/schema";
 
 const Dashboard = () => {
   const [location, setLocation] = useLocation();
-  const { user, authenticated } = useAuth();
+  const { user, authenticated, loading } = useAuth();
   const [weeklyTotal, setWeeklyTotal] = useState(0);
   const queryClient = useQueryClient();
 
@@ -34,14 +34,7 @@ const Dashboard = () => {
   // Fetch all bills for calculations
   const { data: allBills = [], isLoading: billsLoading, isError: billsError } = useQuery<Bill[]>({
     queryKey: ['/api/bills'],
-    queryFn: async () => {
-      const response = await fetch('/api/bills');
-      if (!response.ok) {
-        throw new Error('Failed to fetch bills');
-      }
-      return response.json();
-    },
-    enabled: !!user?.id,
+    enabled: authenticated === true && !!user?.id,
     retry: 3,
     retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
@@ -49,14 +42,7 @@ const Dashboard = () => {
   // Fetch upcoming bills
   const { data: upcomingData = [], isLoading: upcomingLoading, isError: upcomingError } = useQuery<Bill[]>({
     queryKey: ['/api/bills/upcoming'],
-    queryFn: async () => {
-      const response = await fetch('/api/bills/upcoming');
-      if (!response.ok) {
-        throw new Error('Failed to fetch upcoming bills');
-      }
-      return response.json();
-    },
-    enabled: !!user?.id,
+    enabled: authenticated === true && !!user?.id,
     retry: 3,
     retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
@@ -64,14 +50,7 @@ const Dashboard = () => {
   // Fetch categories for mapping
   const { data: categories = [], isLoading: categoriesLoading, isError: categoriesError } = useQuery<Category[]>({
     queryKey: ['/api/categories'],
-    queryFn: async () => {
-      const response = await fetch('/api/categories');
-      if (!response.ok) {
-        throw new Error('Failed to fetch categories');
-      }
-      return response.json();
-    },
-    enabled: !!user?.id,
+    enabled: authenticated === true && !!user?.id,
     retry: 3,
     retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
@@ -174,7 +153,7 @@ const Dashboard = () => {
   }
 
   // Show loading while auth is resolving
-  if (authenticated === null || (authenticated && !user)) {
+  if (loading || authenticated === null) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary via-primary/95 to-secondary flex items-center justify-center">
         <div className="text-primary-foreground text-lg" data-testid="loading-dashboard">Carregando dashboard...</div>
@@ -193,6 +172,7 @@ const Dashboard = () => {
 
   // Show error state if any queries failed (but only if we're authenticated and not loading)
   if (authenticated && user && !billsLoading && !upcomingLoading && !categoriesLoading && (billsError || upcomingError || categoriesError)) {
+    console.error('Dashboard query errors:', { billsError, upcomingError, categoriesError });
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary via-primary/95 to-secondary flex items-center justify-center">
         <div className="text-center text-primary-foreground">
