@@ -17,22 +17,19 @@ import { useLocation } from "wouter";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
 import type { Bill, Category } from "../../shared/schema";
-import { useToast } from "@/components/ui/use-toast"; // Assuming useToast is in this path
 
 const Dashboard = () => {
-  const [, setLocation] = useLocation();
-  const { user, authenticated, loading, logout } = useAuth();
-  const { toast } = useToast();
+  const [location, setLocation] = useLocation();
+  const { user, authenticated, loading } = useAuth();
   const [weeklyTotal, setWeeklyTotal] = useState(0);
   const queryClient = useQueryClient();
 
-  // Redirect if not authenticated - mas só depois que o loading terminar
+  // Redirect if not authenticated
   useEffect(() => {
-    if (!loading && authenticated === false) {
-      console.log('Dashboard: Not authenticated, redirecting to login');
+    if (authenticated === false) {
       setLocation("/login");
     }
-  }, [authenticated, loading, setLocation]);
+  }, [authenticated, setLocation]);
 
   // Fetch all bills for calculations
   const { data: allBills = [], isLoading: billsLoading, isError: billsError } = useQuery<Bill[]>({
@@ -82,7 +79,7 @@ const Dashboard = () => {
   const calculateRealWeeklyTotal = (bills: Bill[]) => {
     const today = new Date();
     const nextWeek = new Date(today.getTime() + (7 * 24 * 60 * 60 * 1000));
-
+    
     return bills
       .filter(bill => {
         const dueDate = new Date(bill.dueDate);
@@ -95,18 +92,18 @@ const Dashboard = () => {
   const calculateWeeklyExpenses = (bills: Bill[]) => {
     const daysOfWeek = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
     const today = new Date();
-
+    
     const weeklyData = daysOfWeek.map((day, index) => {
       const targetDate = new Date(today);
       targetDate.setDate(today.getDate() + index);
-
+      
       const dayBills = bills.filter(bill => {
         const billDate = new Date(bill.dueDate);
         return billDate.toDateString() === targetDate.toDateString() && !bill.isPaid;
       });
-
+      
       const amount = dayBills.reduce((sum, bill) => sum + (bill.amount / 100), 0); // Convert from cents
-
+      
       return {
         day,
         date: targetDate.getDate(),
@@ -119,13 +116,13 @@ const Dashboard = () => {
   // Calculate statistics from all bills
   const pending = allBills.filter(bill => !bill.isPaid);
   const paid = allBills.filter(bill => bill.isPaid);
-
+  
   const totalToPay = pending.reduce((sum, bill) => sum + (bill.amount / 100), 0); // Convert from cents
   const totalPaid = paid.reduce((sum, bill) => sum + (bill.amount / 100), 0); // Convert from cents
-
+  
   // Calculate real weekly total from actual bills
   const weeklyTotalCalculated = calculateRealWeeklyTotal(allBills);
-
+  
   // Process upcoming bills with icons and days left
   const upcomingBills = upcomingData.slice(0, 5).map(bill => {
     const category = categoryMap.get(bill.categoryId);
@@ -334,7 +331,7 @@ const Dashboard = () => {
                 upcomingBills.map((bill) => {
                   const Icon = bill.icon;
                   const isUrgent = bill.daysLeft <= 3;
-
+                
                 return (
                   <div 
                     key={bill.id} 
