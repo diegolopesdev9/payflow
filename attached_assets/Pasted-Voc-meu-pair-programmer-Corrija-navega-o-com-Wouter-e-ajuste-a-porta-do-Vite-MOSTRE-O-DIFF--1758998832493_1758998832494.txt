@@ -1,0 +1,78 @@
+Você é meu pair programmer. Corrija navegação com Wouter e ajuste a porta do Vite.
+
+MOSTRE O DIFF e aguarde minha confirmação antes de aplicar.
+
+1) Trocar imports de react-router-dom por Wouter:
+   - Faça uma busca em src/ por:  react-router-dom
+   - Em cada arquivo que tiver `import { Link } from "react-router-dom";`,
+     substituir por: `import { Link } from "wouter";`
+   - Ajustar o uso do Link: Wouter usa `href` (não `to`).
+
+2) Consertar o Dashboard.tsx:
+   - Arquivo: src/pages/Dashboard.tsx
+   - Garanta os imports (sem duplicar):
+       import { Link } from "wouter";
+       import { Button } from "@/components/ui/button";
+       import { Wallet } from "lucide-react"; // e demais ícones usados
+   - Onde houver navegação, usar o padrão do Wouter (Link por fora, Button por dentro):
+       <Link href="/profile">
+         <Button className="nav-item flex items-center gap-2">
+           <Wallet className="w-5 h-5" />
+           <span className="text-sm">Perfil</span>
+         </Button>
+       </Link>
+     Faça o mesmo para “/bills”, “/dashboard”, etc.
+   - Remover quaisquer `</button>` que tenham ficado sem `<button>`.
+
+3) ProtectedRoute para Wouter (criar/atualizar):
+   - Arquivo: src/routes/ProtectedRoute.tsx
+-------------------------------------------------------
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
+import { useLocation } from "wouter";
+
+export default function ProtectedRoute({ children }: { children: JSX.Element }) {
+  const [loading, setLoading] = useState(true);
+  const [authenticated, setAuthenticated] = useState(false);
+  const [, navigate] = useLocation();
+
+  useEffect(() => {
+    let mounted = true;
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!mounted) return;
+      setAuthenticated(!!session);
+      setLoading(false);
+    });
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
+      if (!mounted) return;
+      setAuthenticated(!!session);
+    });
+    return () => { mounted = false; sub.subscription.unsubscribe(); };
+  }, []);
+
+  if (loading) return <div className="p-6 text-sm opacity-70">Carregando…</div>;
+  if (!authenticated) { navigate("/login"); return null; }
+  return children;
+}
+-------------------------------------------------------
+
+4) Ajustar Vite para evitar conflito de porta:
+   - Arquivo: vite.config.ts
+   - No bloco `server`, defina:
+-------------------------------------------------------
+server: {
+  host: "0.0.0.0",
+  port: 5173,
+  strictPort: true,
+  allowedHosts: true, // ou [".replit.dev", ".repl.co"]
+  proxy: {
+    "/api": {
+      target: "http://localhost:8080",
+      changeOrigin: true,
+      rewrite: (p) => p,
+    },
+  },
+},
+-------------------------------------------------------
+
+5) Não mexer em mais nada fora do escopo acima. Mostrar os DIFFs e aguardar minha confirmação.
