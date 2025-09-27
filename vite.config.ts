@@ -10,16 +10,16 @@ export default defineConfig(({ mode }) => ({
     port: 5173,
     strictPort: true,
     allowedHosts: true,
+    hmr: {
+      clientPort: 443,
+      protocol: "wss",
+    },
     proxy: {
       "/api": {
         target: "http://localhost:8080",
         changeOrigin: true,
         rewrite: (p) => p,
       },
-    },
-    hmr: {
-      clientPort: 443,
-      protocol: "wss",
     },
   },
   preview: {
