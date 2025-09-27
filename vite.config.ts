@@ -11,8 +11,8 @@ export default defineConfig(({ mode }) => ({
     strictPort: true,
     allowedHosts: true,
     hmr: {
-      clientPort: 443,
       protocol: "wss",
+      clientPort: 443,
     },
     proxy: {
       "/api": {
