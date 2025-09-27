@@ -1,23 +1,20 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { Navigate } from "react-router-dom";
+import { useLocation } from "wouter";
 
 export default function ProtectedRoute({ children }: { children: JSX.Element }) {
   const [loading, setLoading] = useState(true);
   const [authenticated, setAuthenticated] = useState<boolean>(false);
+  const [, navigate] = useLocation();
 
   useEffect(() => {
     let mounted = true;
-
-    // 1º check: sessão atual
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!mounted) return;
       setAuthenticated(!!session);
       setLoading(false);
     });
-
-    // 2º: escuta mudanças de auth (login/refresh/logout)
     const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
       if (!mounted) return;
       setAuthenticated(!!session);
@@ -30,6 +27,6 @@ export default function ProtectedRoute({ children }: { children: JSX.Element }) 
   }, []);
 
   if (loading) return <div className="p-6 text-sm opacity-70">Carregando…</div>;
-  if (!authenticated) return <Navigate to="/login" replace />;
+  if (!authenticated) { navigate("/login"); return null; }
   return children;
 }

@@ -19,15 +19,15 @@ serve({
 
 // Aguardar um pouco antes de iniciar o Vite para evitar conflitos
 setTimeout(() => {
-  console.log(`🔌 Starting Vite frontend server on port 5000...`);
+  console.log(`🔌 Starting Vite frontend server on port 5173...`);
 
   // Start Vite development server com configurações específicas para evitar o piscar
-  const viteProcess = spawn('npx', ['vite', '--host', '0.0.0.0', '--port', '5000'], {
+  const viteProcess = spawn('npx', ['vite', '--host', '0.0.0.0', '--port', '5173'], {
     stdio: 'inherit',
     env: {
       ...process.env,
-      PORT: '5000',
-      VITE_HMR_PORT: '5000' // Força o HMR a usar a mesma porta
+      PORT: '5173',
+      VITE_HMR_PORT: '5173' // Força o HMR a usar a mesma porta
     }
   });
 

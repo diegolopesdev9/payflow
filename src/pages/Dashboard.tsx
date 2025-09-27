@@ -377,24 +377,24 @@ const Dashboard = () => {
                 <Home className="w-5 h-5" />
                 <span className="text-sm">Home</span>
               </button>
-              <Button asChild className="nav-item">
-                <Link to="/bills" className="flex items-center gap-2">
+              <Link href="/bills">
+                <Button className="nav-item flex items-center gap-2">
                   <CreditCard className="w-5 h-5" />
                   <span className="text-sm">Contas</span>
-                </Link>
-              </Button>
-              <Button asChild className="nav-item">
-                <Link to="/reports" className="flex items-center gap-2">
+                </Button>
+              </Link>
+              <Link href="/reports">
+                <Button className="nav-item flex items-center gap-2">
                   <TrendingUp className="w-5 h-5" />
                   <span className="text-sm">Relatórios</span>
-                </Link>
-              </Button>
-              <Button asChild className="nav-item">
-                <Link to="/profile" className="flex items-center gap-2">
+                </Button>
+              </Link>
+              <Link href="/profile">
+                <Button className="nav-item flex items-center gap-2">
                   <Wallet className="w-5 h-5" />
                   <span className="text-sm">Perfil</span>
-                </Link>
-              </Button>
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
