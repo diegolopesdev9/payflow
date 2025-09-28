@@ -1,3 +1,4 @@
+
 import { createClient } from "@supabase/supabase-js";
 import type { Context, Next } from "hono";
 
@@ -20,7 +21,7 @@ export async function requireUser(c: Context, next: Next) {
     return c.json({ error: "invalid token" }, 401);
   }
 
-  // @ts-ignore -> Hono Context store
+  // @ts-ignore store no contexto do Hono
   c.set("user", data.user);
   await next();
 }
@@ -29,3 +30,6 @@ export function getUser(c: Context) {
   // @ts-ignore
   return c.get("user");
 }
+
+// Alias de compatibilidade com código antigo:
+export const authenticateToken = requireUser;

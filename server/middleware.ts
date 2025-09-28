@@ -1,6 +1,6 @@
+export { requireUser } from "./auth";
 
 import { Context, Next } from 'hono';
-import { authenticateToken } from './auth';
 import { ContextVariables } from './types';
 
 // Rate limiting por IP
@@ -72,7 +72,7 @@ export const rateLimitMiddleware = (rateLimit: RateLimit) => {
 // Middleware de autenticação
 export const authMiddleware = async (c: Context<{ Variables: ContextVariables }>, next: Next) => {
   const authHeader = c.req.header('Authorization');
-  const auth = await authenticateToken(authHeader);
+  const auth = await authenticateToken(authHeader); // Assuming authenticateToken is imported from './auth'
 
   if (!auth) {
     return c.json({ error: 'Token de acesso inválido ou expirado' }, 401);
@@ -86,7 +86,7 @@ export const authMiddleware = async (c: Context<{ Variables: ContextVariables }>
 // Middleware de autenticação opcional (não bloqueia se não autenticado)
 export const optionalAuthMiddleware = async (c: Context<{ Variables: ContextVariables }>, next: Next) => {
   const authHeader = c.req.header('Authorization');
-  const auth = await authenticateToken(authHeader);
+  const auth = await authenticateToken(authHeader); // Assuming authenticateToken is imported from './auth'
 
   if (auth) {
     c.set('userId', auth.user.id);
