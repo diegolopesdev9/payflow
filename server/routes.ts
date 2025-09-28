@@ -9,6 +9,7 @@ import {
   generateToken,
   loginAttempts 
 } from "./auth";
+import { requireUser, getUser } from "./auth";
 import { 
   authMiddleware, 
   rateLimitMiddleware, 
@@ -22,6 +23,11 @@ const app = new Hono<{ Variables: ContextVariables }>();
 
 // Rota pública de saúde
 app.get("/api/healthz", (c) => c.json({ ok: true, time: new Date().toISOString() }));
+
+app.get("/api/whoami", requireUser, (c) => {
+  const user = getUser(c);
+  return c.json({ user });
+});
 
 // Aplicar rate limiting global para todas as rotas API
 app.use('/api/*', rateLimitMiddleware(apiRateLimit));
@@ -155,9 +161,9 @@ app.get("/api/users/:id", authMiddleware, async (c) => {
 });
 
 // Category routes
-app.get("/api/categories", authMiddleware, async (c) => {
-  const userId = c.get('userId');
-  const categories = await storage.getCategories(userId);
+app.get("/api/categories", requireUser, async (c) => {
+  const user = getUser(c);
+  const categories = await storage.getCategories(user.id);
   return c.json(categories);
 });
 
@@ -201,16 +207,16 @@ app.delete("/api/categories/:id", authMiddleware, async (c) => {
 });
 
 // Bill routes
-app.get("/api/bills", authMiddleware, async (c) => {
-  const userId = c.get('userId');
-  const bills = await storage.getBills(userId);
+app.get("/api/bills", requireUser, async (c) => {
+  const user = getUser(c);
+  const bills = await storage.getBills(user.id);
   return c.json(bills);
 });
 
-app.get("/api/bills/upcoming", authMiddleware, async (c) => {
-  const userId = c.get('userId');
+app.get("/api/bills/upcoming", requireUser, async (c) => {
+  const user = getUser(c);
   const limit = c.req.query("limit");
-  const bills = await storage.getUpcomingBills(userId, limit ? parseInt(limit) : undefined);
+  const bills = await storage.getUpcomingBills(user.id, limit ? parseInt(limit) : undefined);
   return c.json(bills);
 });
 
