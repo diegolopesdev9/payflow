@@ -1,0 +1,65 @@
+Você é meu pair programmer. Corrija a resolução dos imports com alias @ e ajuste o import do ProtectedRoute.
+
+Mostre o DIFF de cada arquivo e aguarde minha confirmação antes de aplicar.
+
+1) Vite: adicionar alias '@' -> 'src'
+   Arquivo: vite.config.ts
+   - Adicionar: import path from "node:path";
+   - Em export default defineConfig(...), incluir:
+     resolve: {
+       alias: {
+         "@": path.resolve(__dirname, "src"),
+       },
+     }
+
+   - Manter o bloco server como já ajustamos (5173, strictPort, allowedHosts, proxy /api e hmr se já existir).
+
+2) TypeScript: paths do alias
+   Arquivo: tsconfig.json (ou tsconfig.app.json se existir; escolha o que o projeto usa para o Vite)
+   - Em "compilerOptions", garantir:
+     "baseUrl": ".",
+     "paths": {
+       "@/*": ["src/*"]
+     }
+
+3) Ajustar import incorreto do ProtectedRoute:
+   Arquivo: src/App.tsx
+   - Onde houver:  import ProtectedRoute from "@/components/ProtectedRoute";
+     trocar por:   import ProtectedRoute from "@/routes/ProtectedRoute";
+
+4) Verificar se os caminhos de componentes existem em src/components/ui.
+   NÃO reescreva arquivos desses componentes; apenas mantenha os imports como:
+     "@/components/ui/toaster"
+     "@/components/ui/sonner"
+     "@/components/ui/tooltip"
+     "@/components/ui/card"
+     "@/components/ui/button"
+     "@/components/ui/input"
+     "@/components/ui/switch"
+     "@/components/ui/badge"
+     "@/components/ui/label"
+     "@/components/ui/separator"
+     "@/components/ui/tabs"
+     "@/components/ui/alert-dialog"
+     "@/components/ui/alert"
+     "@/components/ui/select"
+     "@/components/ui/textarea"
+     "@/components/ui/accordion"
+     "@/components/ui/calendar"
+     "@/components/ui/progress"
+     "@/components/ui/avatar"
+     "@/components/ui/popover"
+     "@/components/ui/dialog"
+   Se alguma dessas pastas/arquivos não existir, NOTIFICAR no diff (não criar placeholders agora).
+
+5) Verificar e corrigir estes imports para alias @:
+   - "@/lib/queryClient"  → arquivo deve ser src/lib/queryClient.ts
+   - "@/lib/auth"         → arquivo deve ser src/lib/auth.ts
+   - "@/hooks/use-toast"  → arquivo deve ser src/hooks/use-toast.ts
+   - "@/hooks/useBills"   → arquivo deve ser src/hooks/useBills.ts
+   - "@/lib/supabase"     → arquivo deve ser src/lib/supabase.ts
+   - "@/lib/fetchWithAuth"→ arquivo deve ser src/lib/fetchWithAuth.ts
+   - "@/lib/utils"        → arquivo deve ser src/lib/utils.ts
+   Se algum NÃO existir, mostrar aviso no diff (não criar stubs sem minha permissão).
+
+6) Não alterar nada fora do escopo acima. Mostrar os DIFFs e aguardar minha confirmação.
