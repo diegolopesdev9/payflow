@@ -1,0 +1,59 @@
+Você é meu pair programmer. Quero padronizar a autenticação no backend, corrigir nomes e adicionar duas rotas de diagnóstico.
+
+1) Criar/atualizar `server/auth.ts` com este conteúdo (use Supabase Service Role):
+
+-------------------------------------------------------
+import { createClient } from "@supabase/supabase-js";
+import type { Context, Next } from "hono";
+
+const supabaseAdmin = createClient(
+  process.env.SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
+
+export async function requireUser(c: Context, next: Next) {
+  const auth = c.req.header("authorization") || "";
+  const token = auth.startsWith("Bearer ") ? auth.slice(7) : null;
+
+  if (!token) {
+    return c.json({ error: "missing bearer token" }, 401);
+  }
+
+  const { data, error } = await supabaseAdmin.auth.getUser(token);
+  if (error || !data?.user) {
+    console.error("[requireUser] invalid token:", error?.message);
+    return c.json({ error: "invalid token" }, 401);
+  }
+
+  // @ts-ignore store no contexto do Hono
+  c.set("user", data.user);
+  await next();
+}
+
+export function getUser(c: Context) {
+  // @ts-ignore
+  return c.get("user");
+}
+
+// Alias de compatibilidade com código antigo:
+export const authenticateToken = requireUser;
+-------------------------------------------------------
+
+2) Corrigir `server/middleware.ts` para não importar nomes inexistentes.
+- Se o arquivo existir, substitua qualquer `import { authenticateToken } from "./auth"` por:
+  `import { requireUser } from "./auth"`
+- Se `middleware.ts` existir só para re-exportar, deixe algo assim:
+-------------------------------------------------------
+export { requireUser } from "./auth";
+-------------------------------------------------------
+
+3) Em `server/routes.ts` (ou o arquivo que registra as rotas da API):
+- Importar:
+  `import { requireUser, getUser } from "./auth";`
+- Adicionar rota pública de saúde:
+  `app.get("/api/healthz", (c) => c.json({ ok: true, time: new Date().toISOString() }));`
+- Adicionar rota protegida de diagnóstico:
+  `app.get("/api/whoami", requireUser, (c) => c.json({ user: getUser(c) }));`
+- Em TODAS as rotas privadas (ex.: /api/bills, /api/bills/upcoming, /api/categories, /api/users/me etc.), garantir que passam por `requireUser` e usam `const user = getUser(c);` em vez de ler userId por querystring.
+
+Mostre os DIFFs e aguarde minha confirmação antes de aplicar.
