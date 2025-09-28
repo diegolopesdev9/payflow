@@ -34,11 +34,13 @@ export async function fetchWithAuth(input: RequestInfo, init: RequestInit = {}) 
   }
 
   if (res.status === 401) {
+    // não derruba a sessão se ainda não tínhamos token (evita loop)
     const hadToken = !!token;
-    console.warn("[fetchWithAuth] 401 from API:", { url, hadToken });
-    // Em vez de deslogar de cara, só marcamos e deixamos a tela lidar.
-    // Isso evita loop de logout quando a API está mal configurada.
-    return res;
+    console.warn("[fetchWithAuth] 401 unauthorized:", url, { hadToken });
+    if (hadToken) {
+      await supabase.auth.signOut();
+      if (location.pathname !== "/login") location.href = "/login";
+    }
   }
 
   return res;
