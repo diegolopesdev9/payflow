@@ -1,19 +1,27 @@
+
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
-import path from "path";
-import { componentTagger } from "lovable-tagger";
 
-// https://vitejs.dev/config/
-export default defineConfig(({ mode }) => ({
+const isReplit = !!process.env.REPL_SLUG && !!process.env.REPL_OWNER;
+const replitHost = isReplit
+  ? `${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co`
+  : "localhost";
+
+export default defineConfig({
+  plugins: [react()],
   server: {
     host: "0.0.0.0",
     port: 5173,
     strictPort: true,
-    allowedHosts: true,
-    hmr: {
-      protocol: "wss",
-      clientPort: 443,
-    },
+    allowedHosts: true, // aceita *.replit.dev / *.repl.co
+    origin: isReplit ? `https://${replitHost}` : undefined,
+    hmr: isReplit
+      ? {
+          protocol: "wss",
+          host: replitHost,
+          clientPort: 443,
+        }
+      : undefined,
     proxy: {
       "/api": {
         target: "http://localhost:8080",
@@ -22,16 +30,4 @@ export default defineConfig(({ mode }) => ({
       },
     },
   },
-  preview: {
-    host: true,
-    port: Number(process.env.PORT) || 8080,
-  },
-  plugins: [react(), mode === "development" && componentTagger()].filter(
-    Boolean,
-  ),
-  resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "./src"),
-    },
-  },
-}));
+});
