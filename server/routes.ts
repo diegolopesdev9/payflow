@@ -8,7 +8,7 @@ import {
   verifyPassword, 
   generateToken,
   loginAttempts 
-} from "./auth";
+} from "./legacyAuth";
 import { 
   authMiddleware, 
   rateLimitMiddleware, 
@@ -16,12 +16,18 @@ import {
   authRateLimit 
 } from "./middleware";
 import { ContextVariables } from "./types";
-import { requireUser } from "./supabaseAuth";
+import { requireUser, getUser } from "./auth";
 
 const app = new Hono<{ Variables: ContextVariables }>();
 
 // Rota pública de saúde
 app.get("/api/healthz", (c) => c.json({ ok: true, time: new Date().toISOString() }));
+
+// Rota de diagnóstico auth
+app.get("/api/whoami", requireUser, (c) => {
+  const user = getUser(c);
+  return c.json({ user });
+});
 
 // Aplicar rate limiting global para todas as rotas API
 app.use('/api/*', rateLimitMiddleware(apiRateLimit));
@@ -135,36 +141,37 @@ app.post("/api/users", async (c) => {
   return c.json({ error: "Use /api/auth/register para criar conta" }, 400);
 });
 
-app.get("/api/users/:id", authMiddleware, async (c) => {
-  const userId = c.get('userId');
+app.get("/api/users/:id", requireUser, async (c) => {
+  const user = getUser(c);
   const id = c.req.param("id");
 
   // Usuários só podem acessar seus próprios dados
-  if (userId !== id) {
+  if (user.id !== id) {
     return c.json({ error: "Acesso negado" }, 403);
   }
 
-  const user = await storage.getUser(id);
-  if (!user) {
+  const userData = await storage.getUser(id);
+  if (!userData) {
     return c.json({ error: "Usuário não encontrado" }, 404);
   }
 
   // Remover senha do retorno
-  const { passwordHash, ...userWithoutPassword } = user;
+  const { passwordHash, ...userWithoutPassword } = userData;
   return c.json(userWithoutPassword);
 });
 
 // Category routes
-app.get("/api/categories", authMiddleware, async (c) => {
-  const userId = c.get('userId');
-  const categories = await storage.getCategories(userId);
+app.get("/api/categories", requireUser, async (c) => {
+  const user = getUser(c);
+  const categories = await storage.getCategories(user.id);
   return c.json(categories);
 });
 
-app.post("/api/categories", authMiddleware, async (c) => {
+app.post("/api/categories", requireUser, async (c) => {
   try {
+    const user = getUser(c);
     const body = await c.req.json();
-    const categoryData = insertCategorySchema.parse(body);
+    const categoryData = insertCategorySchema.parse({ ...body, userId: user.id });
     const category = await storage.createCategory(categoryData);
     return c.json(category, 201);
   } catch (error) {
@@ -172,7 +179,8 @@ app.post("/api/categories", authMiddleware, async (c) => {
   }
 });
 
-app.put("/api/categories/:id", authMiddleware, async (c) => {
+app.put("/api/categories/:id", requireUser, async (c) => {
+  const user = getUser(c);
   const id = c.req.param("id");
   try {
     const body = await c.req.json();
@@ -189,7 +197,8 @@ app.put("/api/categories/:id", authMiddleware, async (c) => {
   }
 });
 
-app.delete("/api/categories/:id", authMiddleware, async (c) => {
+app.delete("/api/categories/:id", requireUser, async (c) => {
+  const user = getUser(c);
   const id = c.req.param("id");
   const deleted = await storage.deleteCategory(id);
 
@@ -201,21 +210,21 @@ app.delete("/api/categories/:id", authMiddleware, async (c) => {
 });
 
 // Bill routes
-app.get("/api/bills", authMiddleware, async (c) => {
-  const userId = c.get('userId');
-  const bills = await storage.getBills(userId);
+app.get("/api/bills", requireUser, async (c) => {
+  const user = getUser(c);
+  const bills = await storage.getBills(user.id);
   return c.json(bills);
 });
 
-app.get("/api/bills/upcoming", authMiddleware, async (c) => {
-  const userId = c.get('userId');
+app.get("/api/bills/upcoming", requireUser, async (c) => {
+  const user = getUser(c);
   const limit = c.req.query("limit");
-  const bills = await storage.getUpcomingBills(userId, limit ? parseInt(limit) : undefined);
+  const bills = await storage.getUpcomingBills(user.id, limit ? parseInt(limit) : undefined);
   return c.json(bills);
 });
 
-app.get("/api/bills/:id", authMiddleware, async (c) => {
-  const userId = c.get('userId');
+app.get("/api/bills/:id", requireUser, async (c) => {
+  const user = getUser(c);
   const id = c.req.param("id");
   const bill = await storage.getBill(id);
 
@@ -224,18 +233,18 @@ app.get("/api/bills/:id", authMiddleware, async (c) => {
   }
 
   // Verificar se a conta pertence ao usuário autenticado
-  if (bill.userId !== userId) {
+  if (bill.userId !== user.id) {
     return c.json({ error: "Acesso negado" }, 403);
   }
 
   return c.json(bill);
 });
 
-app.post("/api/bills", authMiddleware, async (c) => {
+app.post("/api/bills", requireUser, async (c) => {
   try {
-    const userId = c.get('userId');
+    const user = getUser(c);
     const body = await c.req.json();
-    const billData = insertBillSchema.parse({ ...body, userId });
+    const billData = insertBillSchema.parse({ ...body, userId: user.id });
     const bill = await storage.createBill(billData);
     return c.json(bill, 201);
   } catch (error) {
@@ -243,8 +252,8 @@ app.post("/api/bills", authMiddleware, async (c) => {
   }
 });
 
-app.put("/api/bills/:id", authMiddleware, async (c) => {
-  const userId = c.get('userId');
+app.put("/api/bills/:id", requireUser, async (c) => {
+  const user = getUser(c);
   const id = c.req.param("id");
 
   // Verificar se a conta existe e pertence ao usuário
@@ -253,7 +262,7 @@ app.put("/api/bills/:id", authMiddleware, async (c) => {
     return c.json({ error: "Bill not found" }, 404);
   }
 
-  if (existingBill.userId !== userId) {
+  if (existingBill.userId !== user.id) {
     return c.json({ error: "Acesso negado" }, 403);
   }
 
@@ -267,8 +276,8 @@ app.put("/api/bills/:id", authMiddleware, async (c) => {
   }
 });
 
-app.delete("/api/bills/:id", authMiddleware, async (c) => {
-  const userId = c.get('userId');
+app.delete("/api/bills/:id", requireUser, async (c) => {
+  const user = getUser(c);
   const id = c.req.param("id");
 
   // Verificar se a conta existe e pertence ao usuário
@@ -277,7 +286,7 @@ app.delete("/api/bills/:id", authMiddleware, async (c) => {
     return c.json({ error: "Bill not found" }, 404);
   }
 
-  if (existingBill.userId !== userId) {
+  if (existingBill.userId !== user.id) {
     return c.json({ error: "Acesso negado" }, 403);
   }
 
@@ -296,8 +305,8 @@ app.delete("/api/clear-all-data", async (c) => {
 });
 
 // Rota para obter dados do usuário autenticado via Supabase
-app.get("/api/users/me", requireUser, async (c) => {
-  const user: any = c.get("user");
+app.get("/api/users/me", requireUser, (c) => {
+  const user = getUser(c);
   return c.json({
     id: user?.id ?? null,
     email: user?.email ?? null,
