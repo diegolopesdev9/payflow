@@ -19,20 +19,13 @@ export default defineConfig({
     host: "0.0.0.0",
     port: 5173,
     strictPort: true,
-    allowedHosts: true, // aceita *.replit.dev / *.repl.co
-    origin: isReplit ? `https://${replitHost}` : undefined,
-    hmr: isReplit
-      ? {
-          protocol: "wss",
-          host: replitHost,
-          clientPort: 443,
-        }
-      : undefined,
+    allowedHosts: true,
+    hmr: false,
     proxy: {
       "/api": {
         target: "http://localhost:8080",
         changeOrigin: true,
-        rewrite: (p) => p,
+        rewrite: p => p,
       },
     },
   },
