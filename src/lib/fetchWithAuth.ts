@@ -1,6 +1,7 @@
+
 import { supabase } from "@/lib/supabase";
 
-export default async function fetchWithAuth(
+export async function fetchWithAuth(
   input: RequestInfo | URL,
   init: RequestInit = {}
 ) {
@@ -17,3 +18,6 @@ export default async function fetchWithAuth(
 
   return fetch(url, { ...init, headers });
 }
+
+// Também exportar como default, para compatibilidade:
+export default fetchWithAuth;
