@@ -29,6 +29,23 @@ app.get("/api/whoami", requireUser, (c) => {
   return c.json({ user });
 });
 
+// Rotas simplificadas para diagnóstico
+app.get("/api/categories", requireUser, (c) => {
+  // Log rápido de diagnóstico
+  // console.log("[GET] /api/categories for", getUser(c)?.id);
+  return c.json({ categories: [] }); // responder vazio (shape seguro)
+});
+
+app.get("/api/bills", requireUser, (c) => {
+  // console.log("[GET] /api/bills for", getUser(c)?.id);
+  return c.json({ bills: [] }); // responder vazio (shape seguro)
+});
+
+app.get("/api/bills/upcoming", requireUser, (c) => {
+  // console.log("[GET] /api/bills/upcoming for", getUser(c)?.id);
+  return c.json({ upcoming: [] }); // responder vazio (shape seguro)
+});
+
 // Aplicar rate limiting global para todas as rotas API
 app.use('/api/*', rateLimitMiddleware(apiRateLimit));
 
