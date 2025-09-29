@@ -2,18 +2,18 @@ import { Hono } from "hono";
 import { z } from "zod";
 import { storage } from "./storage";
 import { insertUserSchema, insertCategorySchema, insertBillSchema } from "../shared/schema";
-import { 
-  registerSchema, 
-  loginSchema, 
-  verifyPassword, 
+import {
+  registerSchema,
+  loginSchema,
+  verifyPassword,
   generateToken,
-  loginAttempts 
+  loginAttempts
 } from "./legacyAuth";
-import { 
-  authMiddleware, 
-  rateLimitMiddleware, 
-  apiRateLimit, 
-  authRateLimit 
+import {
+  authMiddleware,
+  rateLimitMiddleware,
+  apiRateLimit,
+  authRateLimit
 } from "./middleware";
 import { ContextVariables } from "./types";
 import { requireUser, getUser } from "./auth";
@@ -60,8 +60,8 @@ app.post("/api/auth/register", async (c) => {
     // Retornar dados sem a senha
     const { passwordHash, ...userWithoutPassword } = user;
 
-    return c.json({ 
-      user: userWithoutPassword, 
+    return c.json({
+      user: userWithoutPassword,
       token,
       message: "Conta criada com sucesso!"
     }, 201);
@@ -70,13 +70,13 @@ app.post("/api/auth/register", async (c) => {
       // Verificar se há erro de senha para mostrar mensagem mais específica
       const passwordError = error.errors.find(e => e.path.includes('password'));
       if (passwordError) {
-        return c.json({ 
-          error: "A senha deve conter pelo menos 8 caracteres, incluindo: letras maiúsculas, minúsculas, números e caracteres especiais (@$!%*?&)" 
+        return c.json({
+          error: "A senha deve conter pelo menos 8 caracteres, incluindo: letras maiúsculas, minúsculas, números e caracteres especiais (@$!%*?&)"
         }, 400);
       }
-      return c.json({ 
-        error: "Dados inválidos", 
-        details: error.errors.map(e => e.message) 
+      return c.json({
+        error: "Dados inválidos",
+        details: error.errors.map(e => e.message)
       }, 400);
     }
     return c.json({ error: "Erro interno do servidor" }, 500);
@@ -91,8 +91,8 @@ app.post("/api/auth/login", async (c) => {
     // Verificar rate limiting
     if (loginAttempts.isBlocked(loginData.email)) {
       const remainingTime = Math.ceil(loginAttempts.getRemainingTime(loginData.email) / 1000 / 60);
-      return c.json({ 
-        error: `Muitas tentativas de login. Tente novamente em ${remainingTime} minutos.` 
+      return c.json({
+        error: `Muitas tentativas de login. Tente novamente em ${remainingTime} minutos.`
       }, 429);
     }
 
@@ -119,16 +119,16 @@ app.post("/api/auth/login", async (c) => {
     // Retornar dados sem a senha
     const { passwordHash, ...userWithoutPassword } = user;
 
-    return c.json({ 
-      user: userWithoutPassword, 
+    return c.json({
+      user: userWithoutPassword,
       token,
       message: "Login realizado com sucesso!"
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return c.json({ 
-        error: "Dados inválidos", 
-        details: error.errors.map(e => e.message) 
+      return c.json({
+        error: "Dados inválidos",
+        details: error.errors.map(e => e.message)
       }, 400);
     }
     return c.json({ error: "Erro interno do servidor" }, 500);

@@ -31,5 +31,5 @@ export function getUser(c: Context) {
   return c.get("user");
 }
 
-// Alias de compatibilidade com código antigo:
+// Alias de compatibilidade (se alguém ainda importar):
 export const authenticateToken = requireUser;
