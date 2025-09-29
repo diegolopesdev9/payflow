@@ -32,9 +32,10 @@ const Dashboard = () => {
   const { data: allBills = [], isLoading: billsLoading, isError: billsError } = useQuery<Bill[]>({
     queryKey: ['/api/bills'],
     queryFn: async () => {
-      const response = await fetchWithAuth(`/api/bills?userId=${user?.id}`);
+      const response = await fetchWithAuth(`/api/bills`);
       if (!response.ok) throw new Error('Failed to fetch bills');
-      return response.json();
+      const json = await response.json();
+      return Array.isArray(json) ? json : (json?.bills ?? []);
     },
     enabled: authenticated === true && !!user?.id,
     retry: 3,
@@ -45,9 +46,10 @@ const Dashboard = () => {
   const { data: upcomingData = [], isLoading: upcomingLoading, isError: upcomingError } = useQuery<Bill[]>({
     queryKey: ['/api/bills/upcoming'],
     queryFn: async () => {
-      const response = await fetchWithAuth(`/api/bills/upcoming?userId=${user?.id}`);
+      const response = await fetchWithAuth(`/api/bills/upcoming`);
       if (!response.ok) throw new Error('Failed to fetch upcoming bills');
-      return response.json();
+      const json = await response.json();
+      return Array.isArray(json) ? json : (json?.upcoming ?? []);
     },
     enabled: authenticated === true && !!user?.id,
     retry: 3,
@@ -58,9 +60,10 @@ const Dashboard = () => {
   const { data: categories = [], isLoading: categoriesLoading, isError: categoriesError } = useQuery<Category[]>({
     queryKey: ['/api/categories'],
     queryFn: async () => {
-      const response = await fetchWithAuth(`/api/categories?userId=${user?.id}`);
+      const response = await fetchWithAuth(`/api/categories`);
       if (!response.ok) throw new Error('Failed to fetch categories');
-      return response.json();
+      const json = await response.json();
+      return Array.isArray(json) ? json : (json?.categories ?? []);
     },
     enabled: authenticated === true && !!user?.id,
     retry: 3,
