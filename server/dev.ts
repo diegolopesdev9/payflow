@@ -1,11 +1,15 @@
 import { serve } from "@hono/node-server";
 import { spawn } from "child_process";
 import routes from "./routes";
+import { gate } from "./middleware";
 
 // Start the API server on port 3001 as expected by Vite proxy config
-const API_PORT = Number(process.env.PORT) || 8080;
+const API_PORT = Number(process.env.PORT) || 3001;
 
 console.log('📦 Using configured storage (check startup logs above for storage type)');
+
+// Aplicar gate middleware antes das rotas
+routes.use("*", gate);
 
 // Start API server
 serve({

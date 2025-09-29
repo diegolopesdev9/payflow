@@ -19,7 +19,7 @@ build = ["npm", "run", "build"]
 expertMode = true
 
 [workflows]
-runButton = "Project"
+runButton = "Start Development"
 
 [[workflows.workflow]]
 name = "Project"
@@ -41,6 +41,15 @@ waitForPort = 5000
 
 [workflows.workflow.metadata]
 outputType = "webview"
+
+[[workflows.workflow]]
+name = "Start Development"
+author = 47643903
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "tsx server/dev.ts"
 
 [[ports]]
 localPort = 3001

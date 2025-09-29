@@ -2,6 +2,35 @@ export { requireUser } from "./auth";
 
 import { Context, Next } from 'hono';
 import { ContextVariables } from './types';
+import type { Context as HonoContext, Next as HonoNext } from "hono";
+
+// Rotas que devem passar SEM exigir Bearer ou API Key:
+const PUBLIC_PATHS = ["/api/healthz", "/api/whoami", "/api/users/me"];
+
+export async function gate(c: HonoContext, next: HonoNext) {
+  const url = new URL(c.req.url);
+  const path = url.pathname;
+
+  // Público: healthz, whoami, users/me
+  if (PUBLIC_PATHS.some((p) => path.startsWith(p))) {
+    return next();
+  }
+
+  // Se vier Bearer token, deixa passar (rotas protegidas via requireUser lidarão depois)
+  const auth = c.req.header("authorization") || "";
+  if (auth.startsWith("Bearer ")) {
+    return next();
+  }
+
+  // (Opcional) Chave interna para jobs/scripts
+  const apiKey = c.req.header("x-api-key");
+  if (apiKey && apiKey === process.env.INTERNAL_API_KEY) {
+    return next();
+  }
+
+  // Caso contrário, bloqueia
+  return c.json({ error: "Acesso negado" }, 403);
+}
 
 // Rate limiting por IP
 class RateLimit {
