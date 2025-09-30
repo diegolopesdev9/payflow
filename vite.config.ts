@@ -16,17 +16,15 @@ export default defineConfig({
     },
   },
   server: {
-    host: "0.0.0.0",
     port: 5173,
     strictPort: true,
     allowedHosts: true,
-    hmr: false,
     proxy: {
       "/api": {
-        target: "http://localhost:8080",
+        target: "http://127.0.0.1:8080",
         changeOrigin: true,
-        rewrite: p => p,
-      },
-    },
+        secure: false
+      }
+    }
   },
 });
