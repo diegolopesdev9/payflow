@@ -1,15 +1,41 @@
 import type { Context } from "hono";
-import { getUserFromRequest } from "./auth";
+import { getUser } from "./auth";
 import { ContextVariables } from './types';
 import type { Context as HonoContext, Next as HonoNext } from "hono";
 
 // Middleware que exige usuário autenticado
 export async function requireUser(c: Context, next: () => Promise<void>) {
-  const { error, user } = await getUserFromRequest(c.req.raw);
-  if (error || !user) {
-    return c.json({ error: "Acesso negado" }, 403);
+  // 1) Tenta Authorization: Bearer <token>
+  const authHeader = c.req.header("Authorization");
+  let accessToken: string | undefined;
+
+  if (authHeader?.toLowerCase().startsWith("bearer ")) {
+    accessToken = authHeader.slice(7).trim();
   }
-  // anexa user no contexto
+
+  // 2) Fallback: cookie 'sb-access-token'
+  if (!accessToken) {
+    const cookieHeader = c.req.header("cookie") || "";
+    const m = /(?:^|;\s*)sb-access-token=([^;]+)/i.exec(cookieHeader);
+    if (m) {
+      try {
+        accessToken = decodeURIComponent(m[1]);
+      } catch {
+        accessToken = m[1];
+      }
+    }
+  }
+
+  if (!accessToken) {
+    return c.json({ error: "missing bearer token" }, 401);
+  }
+
+  const user = await getUser(accessToken);
+  if (!user) {
+    return c.json({ error: "invalid token" }, 401);
+  }
+
+  // anexa o user na Context (se você já usa outra chave, mantenha)
   // @ts-ignore
   c.set("user", user);
   await next();
