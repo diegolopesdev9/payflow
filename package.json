@@ -4,11 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "run-p dev:api dev:web",
-    "dev:api": "tsx server/dev.ts",
-    "dev:web": "vite",
-    "build": "tsc -b && vite build",
-    "preview": "vite preview --port 5173"
+    "dev": "tsx server/dev.ts",
+    "build": "vite build",
+    "preview": "vite preview"
   },
   "dependencies": {
     "@hono/node-server": "^1.19.4",
