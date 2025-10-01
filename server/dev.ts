@@ -15,14 +15,37 @@ async function start() {
   app.use(express.json())
 
   // ==== SUAS ROTAS DE API EXISTENTES AQUI ====
-  // Exemplo: app.use('/api', require('./router').default)
-  // ou importe e use o que você já tem hoje:
-  // import { router } from './router'
-  // app.use('/api', router)
+  // Integração das rotas Hono existentes
+  import { app as honoApp } from './routes.js';
+  
+  // Adaptador para usar rotas Hono no Express
+  app.use('/api', async (req, res, next) => {
+    try {
+      // Cria um Request compatível com Hono
+      const url = new URL(req.url, `http://${req.headers.host}`);
+      const request = new Request(url, {
+        method: req.method,
+        headers: req.headers as Record<string, string>,
+        body: req.method !== 'GET' && req.method !== 'HEAD' ? JSON.stringify(req.body) : undefined,
+      });
 
-  // Se você tem middlewares de autenticação, mantenha-os antes das rotas:
-  // import { requireUser } from './middleware'
-  // app.use('/api/secure', requireUser, secureRouter)
+      // Executa a aplicação Hono
+      const response = await honoApp.fetch(request);
+      
+      // Converte a resposta Hono para Express
+      const body = await response.text();
+      res.status(response.status);
+      
+      // Copia headers da resposta
+      response.headers.forEach((value, key) => {
+        res.setHeader(key, value);
+      });
+      
+      res.send(body);
+    } catch (error) {
+      next(error);
+    }
+  });
 
   // ==== Vite como middleware (DEV) ====
   const vite = await createViteServer({
