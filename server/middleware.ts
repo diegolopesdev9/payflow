@@ -1,8 +1,23 @@
-export { requireUser } from "./auth";
-
-import { Context, Next } from 'hono';
+import type { Context } from "hono";
+import { getUserFromRequest } from "./auth";
 import { ContextVariables } from './types';
 import type { Context as HonoContext, Next as HonoNext } from "hono";
+
+// Middleware que exige usuário autenticado
+export async function requireUser(c: Context, next: () => Promise<void>) {
+  const { error, user } = await getUserFromRequest(c.req.raw);
+  if (error || !user) {
+    return c.json({ error: "Acesso negado" }, 403);
+  }
+  // anexa user no contexto
+  // @ts-ignore
+  c.set("user", user);
+  await next();
+}
+
+export function ok(c: Context) {
+  return c.json({ ok: true, time: new Date().toISOString() });
+}
 
 // Rotas que devem passar SEM exigir Bearer ou API Key:
 const PUBLIC_PATHS = ["/api/healthz", "/api/whoami", "/api/users/me"];
@@ -81,16 +96,16 @@ export const authRateLimit = new RateLimit(10, 15 * 60 * 1000);  // 10 reqs/15mi
 // Middleware de rate limiting
 export const rateLimitMiddleware = (rateLimit: RateLimit) => {
   return async (c: Context, next: Next) => {
-    const ip = c.req.header('x-forwarded-for')?.split(',')[0]?.trim() 
-              || c.req.header('x-real-ip') 
-              || c.env?.remoteAddr 
+    const ip = c.req.header('x-forwarded-for')?.split(',')[0]?.trim()
+              || c.req.header('x-real-ip')
+              || c.env?.remoteAddr
               || 'unknown';
 
     if (rateLimit.isBlocked(ip)) {
       const remainingTime = Math.ceil(rateLimit.getRemainingTime(ip) / 1000 / 60);
-      return c.json({ 
+      return c.json({
         error: 'Muitas requisições. Tente novamente em alguns minutos.',
-        retryAfter: remainingTime 
+        retryAfter: remainingTime
       }, 429);
     }
 
