@@ -4,9 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "tsx server/dev.mts",
-    "build": "vite build",
-    "preview": "vite preview"
+    "dev:web": "vite",
+    "dev:api": "node --loader ts-node/esm server/dev.ts",
+    "dev": "pkill -f 'server/dev.ts' || true && pkill -f vite || true && npm-run-all -p dev:api dev:web"
   },
   "dependencies": {
     "@hono/node-server": "^1.19.4",
