@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev:web": "vite",
-    "dev:api": "ts-node --esm server/dev.ts",
+    "dev:api": "node --loader ts-node/esm server/dev.ts",
     "dev": "npm-run-all -p dev:api dev:web"
   },
   "dependencies": {
