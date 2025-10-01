@@ -1,28 +1,23 @@
 
 import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react-swc";
+import react from "@vitejs/plugin-react";
+import path from "path";
 
 export default defineConfig({
   plugins: [react()],
-  server: {
-    host: true,
-    port: 5173,
-    allowedHosts: true, // aceita hosts dinâmicos do replit
-    proxy: {
-      "/api": {
-        target: "http://127.0.0.1:8080",
-        changeOrigin: true,
-        secure: false,
-      },
-    },
-  },
-  // aliases usados no projeto
   resolve: {
     alias: {
-      "@": "/src",
-      "@lib": "/src/lib",
-      "@components": "/src/components",
-      "@pages": "/src/pages",
+      "@": path.resolve(__dirname, "src"),
     },
   },
+  server: {
+    host: true,          // expõe para o preview do Replit
+    port: 5173,
+    strictPort: true,
+    allowedHosts: true,  // aceita host dinâmico do preview
+    hmr: { clientPort: 443 }, // evita loop de reconexão no iframed preview
+    proxy: {
+      "/api": "http://localhost:8080"
+    }
+  }
 });
