@@ -1,35 +1,30 @@
 
 import { createClient } from "@supabase/supabase-js";
-import type { Context, Next } from "hono";
 
-const supabaseAdmin = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+const SUPABASE_URL = process.env.SUPABASE_URL!;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
-export async function requireUser(c: Context, next: Next) {
-  const auth = c.req.header("authorization") || "";
-  const token = auth.startsWith("Bearer ") ? auth.slice(7) : null;
+if (!SUPABASE_URL) throw new Error("SUPABASE_URL ausente");
+if (!SUPABASE_SERVICE_ROLE_KEY) throw new Error("SUPABASE_SERVICE_ROLE_KEY ausente");
 
-  if (!token) {
-    return c.json({ error: "missing bearer token" }, 401);
-  }
+// Cliente admin (server-side) para validar JWT de usuário
+export const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+  auth: { persistSession: false },
+});
 
+// Extrai bearer do header Authorization
+export function getBearer(req: Request): string | null {
+  const auth = req.headers.get("authorization") || req.headers.get("Authorization");
+  if (!auth) return null;
+  const [, token] = auth.split(" ");
+  return token || null;
+}
+
+// Valida token do usuário usando o service role (getUser)
+export async function getUserFromRequest(req: Request) {
+  const token = getBearer(req);
+  if (!token) return { error: "missing bearer token" as const, user: null };
   const { data, error } = await supabaseAdmin.auth.getUser(token);
-  if (error || !data?.user) {
-    console.error("[requireUser] invalid token:", error?.message);
-    return c.json({ error: "invalid token" }, 401);
-  }
-
-  // @ts-ignore store no contexto do Hono
-  c.set("user", data.user);
-  await next();
+  if (error || !data?.user) return { error: "invalid token" as const, user: null };
+  return { error: null, user: data.user };
 }
-
-export function getUser(c: Context) {
-  // @ts-ignore
-  return c.get("user");
-}
-
-// Alias de compatibilidade (se alguém ainda importar):
-export const authenticateToken = requireUser;
