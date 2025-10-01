@@ -2,16 +2,17 @@
 {
   "compilerOptions": {
     "target": "ES2020",
+    "lib": ["ES2020", "DOM"],
     "module": "ESNext",
     "moduleResolution": "Bundler",
-    "lib": ["ES2020", "DOM"],
     "jsx": "react-jsx",
     "strict": true,
-    "isolatedModules": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    },
     "esModuleInterop": true,
-    "skipLibCheck": true,
     "resolveJsonModule": true,
-    "types": ["node"]
-  },
-  "include": ["src", "server", "env.d.ts"]
+    "skipLibCheck": true
+  }
 }
