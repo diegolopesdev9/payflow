@@ -16,17 +16,15 @@ export default defineConfig({
     host: true,           // escuta em 0.0.0.0 (necessário no Replit)
     port: 5173,
     strictPort: true,
-    // Permite os hosts do preview do Replit
-    allowedHosts: [
-      ".replit.dev",
-      ".spock.replit.dev"
-    ],
-    // HMR via WSS para funcionar atrás do proxy do Replit
-    hmr: {
-      protocol: "wss",
-      clientPort: 443,
-      overlay: true,      // se quiser, pode trocar para false se o overlay ficar "preso"
-    },
+    
+    // Desliga HMR e o overlay no Preview do Replit (instável com WS)
+    hmr: false,
+    // Evita overlay de erro tomar a tela
+    hmrOverlay: false as unknown as undefined, // (para Vite <6 ignore, para Vite 5 o 'overlay' fica dentro de hmr, mas aqui estamos forçando off)
+    // Garante polling de arquivos (FS do Replit às vezes perde eventos)
+    watch: { usePolling: true },
+    // Evita bloqueio de host com o domínio dinâmico do Preview do Replit
+    allowedHosts: true,
     // Garante que as chamadas a /api cheguem no servidor (8080)
     proxy: {
       "/api": {
