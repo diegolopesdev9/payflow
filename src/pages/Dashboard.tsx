@@ -17,7 +17,7 @@ import { useLocation } from "wouter";
 import { Link } from "wouter";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
-import { fetchWithAuth } from "@/lib/fetchWithAuth";
+import fetchWithAuth from "@/lib/fetchWithAuth";
 import type { Bill, Category } from "../../shared/schema";
 
 const Dashboard = () => {

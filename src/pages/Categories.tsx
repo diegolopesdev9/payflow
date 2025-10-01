@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
-import { queryClient, apiRequest } from "@/lib/queryClient";
+import { queryClient } from "@/lib/queryClient";
+import fetchWithAuth from "@/lib/fetchWithAuth";
 import { useToast } from "@/hooks/use-toast";
 import type { Category } from "@shared/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -82,10 +83,11 @@ const Categories = () => {
   // Create category mutation
   const createCategoryMutation = useMutation({
     mutationFn: async (categoryData: { name: string; icon: string; color: string }) => {
-      return apiRequest('/api/categories', {
+      const res = await fetchWithAuth('/api/categories', {
         method: 'POST',
         body: JSON.stringify(categoryData),
       });
+      return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/categories'] });
@@ -106,10 +108,11 @@ const Categories = () => {
   // Update category mutation
   const updateCategoryMutation = useMutation({
     mutationFn: async ({ id, ...categoryData }: { id: string; name: string; icon: string; color: string }) => {
-      return apiRequest(`/api/categories/${id}`, {
+      const res = await fetchWithAuth(`/api/categories/${id}`, {
         method: 'PUT',
         body: JSON.stringify(categoryData),
       });
+      return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/categories'] });
@@ -130,9 +133,10 @@ const Categories = () => {
   // Delete category mutation
   const deleteCategoryMutation = useMutation({
     mutationFn: async (id: string) => {
-      return apiRequest(`/api/categories/${id}`, {
+      const res = await fetchWithAuth(`/api/categories/${id}`, {
         method: 'DELETE',
       });
+      return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/categories'] });
