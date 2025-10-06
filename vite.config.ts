@@ -12,6 +12,15 @@ export default defineConfig({
       '@shared': path.resolve(__dirname, './shared'),
     },
   },
+  optimizeDeps: {
+    // Excluir Prisma do bundle frontend
+    exclude: ['@prisma/client', '.prisma/client']
+  },
+  build: {
+    rollupOptions: {
+      external: ['@prisma/client', '.prisma/client']
+    }
+  },
   server: {
     host: true,            // escuta em 0.0.0.0 (necessário no Replit)
     port: 5173,

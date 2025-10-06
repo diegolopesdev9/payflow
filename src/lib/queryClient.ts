@@ -1,48 +1,42 @@
 import { QueryClient } from "@tanstack/react-query";
-import { fetchWithAuth } from "./auth";
 
-// Create query client
+const defaultQueryFn = async ({ queryKey }: { queryKey: string[] }) => {
+  const url = queryKey[0];
+  const res = await fetch(url, {
+    credentials: "include",
+  });
+
+  if (!res.ok) {
+    throw new Error(`Network response was not ok: ${res.statusText}`);
+  }
+
+  return res.json();
+};
+
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      queryFn: async ({ queryKey }) => {
-        const url = queryKey[0] as string;
-        const response = await fetchWithAuth(url);
-        
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-        
-        return response.json();
-      },
-      staleTime: 1000 * 60 * 5, // 5 minutes
-      refetchOnWindowFocus: false,
-      retry: (failureCount, error: any) => {
-        // Don't retry on authentication errors
-        if (error?.status === 401 || error?.status === 403) {
-          return false;
-        }
-        // Retry up to 3 times for other errors
-        return failureCount < 3;
-      },
-      retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
+      queryFn: defaultQueryFn,
+      staleTime: 1000 * 60, // 1 minute
+      retry: 1,
     },
   },
 });
 
-// API request helper
-export const apiRequest = async (url: string, options: RequestInit = {}) => {
-  const response = await fetch(url, {
+// Helper for authenticated requests (frontend only - uses fetch API)
+export const apiRequest = async (url: string, options?: RequestInit) => {
+  const res = await fetch(url, {
+    ...options,
+    credentials: "include",
     headers: {
       "Content-Type": "application/json",
-      ...options.headers,
+      ...options?.headers,
     },
-    ...options,
   });
 
-  if (!response.ok) {
-    throw new Error(`API request failed: ${response.statusText}`);
+  if (!res.ok) {
+    throw new Error(`API request failed: ${res.statusText}`);
   }
 
-  return response.json();
+  return res.json();
 };
