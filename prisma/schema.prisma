@@ -1,23 +1,71 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+// prisma/schema.prisma - VERSÃO COMPLETA FUNCIONAL
 
 datasource db {
   provider   = "postgresql"
-  url        = env("DATABASE_URL")   // pooler 6543 + pgbouncer=true
-  directUrl  = env("DIRECT_URL")     // session pooler 5432
-  schemas    = ["public", "auth"]    // 👈 obrigatório por causa do auth.users
+  url        = env("DATABASE_URL")
+  directUrl  = env("DIRECT_URL")
 }
-
 
 generator client {
   provider = "prisma-client-js"
 }
 
+// ===================================
+// MODELS
+// ===================================
+
 model User {
-  id         Int      @id @default(autoincrement())
-  email      String   @unique
-  createdAt  DateTime @default(now())
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  bills      Bill[]
+  categories Category[]
+  
+  @@map("users")
+}
+
+model Category {
+  id        String   @id @default(uuid())
+  name      String
+  color     String?
+  icon      String?
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bills Bill[]
+  
+  @@unique([userId, name])
+  @@map("categories")
+}
+
+model Bill {
+  id          String    @id @default(uuid())
+  name        String
+  description String?
+  amount      Int
+  dueDate     DateTime
+  isPaid      Boolean   @default(false)
+  paidAt      DateTime?
+  recurring   Boolean   @default(false)
+  recurrence  String?
+  userId      String
+  categoryId  String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  // Relations
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id])
+  
+  @@index([userId, dueDate])
+  @@index([userId, isPaid])
+  @@map("bills")
 }
