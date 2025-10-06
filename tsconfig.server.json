@@ -10,3 +10,22 @@
   },
   "include": ["server/**/*.ts"]
 }
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "strict": true,
+    "types": ["node"],
+    "outDir": "./dist",
+    "rootDir": "./server"
+  },
+  "ts-node": {
+    "esm": true,
+    "experimentalSpecifierResolution": "node"
+  },
+  "include": ["server/**/*"],
+  "exclude": ["node_modules", "dist"]
+}
