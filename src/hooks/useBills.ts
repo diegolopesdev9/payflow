@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { fetchWithAuth, useAuth } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
-import type { Bill } from '../../shared/schema';
+import type { Bill } from '@shared/schema';
 
 // Bill type is now imported from shared/schema.ts to ensure consistency
 // Add computed priority field locally
