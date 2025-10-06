@@ -1,57 +1,65 @@
-import { pgTable, text, integer, timestamp, boolean, uuid } from "drizzle-orm/pg-core";
-import { createInsertSchema } from "drizzle-zod";
-import { z } from "zod";
 
-// Users table
-export const users = pgTable("users", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  name: text("name").notNull(),
-  email: text("email").notNull().unique(),
-  passwordHash: text("password_hash").notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+// shared/schema.ts - Types compartilhados entre frontend e backend
 
-// Categories table
-export const categories = pgTable("categories", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  name: text("name").notNull(),
-  color: text("color").default("#3b82f6"),
-  icon: text("icon").default("CreditCard"),
-  userId: uuid("user_id").references(() => users.id).notNull(),
-});
+export interface User {
+  id: string;
+  email: string;
+  name?: string;
+  createdAt: string;
+  updatedAt: string;
+}
 
-// Bills table
-export const bills = pgTable("bills", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  name: text("name").notNull(),
-  amount: integer("amount").notNull(), // Store as cents
-  dueDate: timestamp("due_date").notNull(),
-  isPaid: boolean("is_paid").default(false),
-  description: text("description"),
-  categoryId: uuid("category_id").references(() => categories.id),
-  userId: uuid("user_id").references(() => users.id).notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+export interface Category {
+  id: string;
+  name: string;
+  color?: string;
+  icon?: string;
+  userId: string;
+  createdAt: string;
+  updatedAt: string;
+}
 
-// Insert schemas
-export const insertUserSchema = createInsertSchema(users).omit({
-  id: true,
-  createdAt: true,
-});
+export interface Bill {
+  id: string;
+  name: string;
+  description?: string;
+  amount: number;
+  dueDate: string;
+  isPaid: boolean;
+  paidAt?: string;
+  recurring: boolean;
+  recurrence?: string;
+  userId: string;
+  categoryId: string;
+  createdAt: string;
+  updatedAt: string;
+  category?: Category;
+}
 
-export const insertCategorySchema = createInsertSchema(categories).omit({
-  id: true,
-});
+export interface CreateBillDTO {
+  name: string;
+  description?: string;
+  amount: number;
+  dueDate: string;
+  categoryId: string;
+  recurring?: boolean;
+  recurrence?: string;
+}
 
-export const insertBillSchema = createInsertSchema(bills).omit({
-  id: true,
-  createdAt: true,
-});
+export interface UpdateBillDTO {
+  name?: string;
+  description?: string;
+  amount?: number;
+  dueDate?: string;
+  categoryId?: string;
+  isPaid?: boolean;
+  paidAt?: string;
+  recurring?: boolean;
+  recurrence?: string;
+}
 
-// Types
-export type User = typeof users.$inferSelect;
-export type NewUser = typeof users.$inferInsert;
-export type Category = typeof categories.$inferSelect;
-export type NewCategory = typeof categories.$inferInsert;
-export type Bill = typeof bills.$inferSelect;
-export type NewBill = typeof bills.$inferInsert;
+export interface CreateCategoryDTO {
+  name: string;
+  color?: string;
+  icon?: string;
+}
