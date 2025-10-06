@@ -1,0 +1,82 @@
+TAREFA: Substituir o arquivo prisma/schema.prisma com a versão completa do schema do banco de dados.
+
+INSTRUÇÕES CRÍTICAS:
+- Substitua APENAS o arquivo prisma/schema.prisma
+- NÃO modifique nenhum outro arquivo
+- Mostre o diff completo antes de aplicar
+- Aguarde minha aprovação antes de fazer qualquer alteração
+
+ARQUIVO A MODIFICAR: prisma/schema.prisma
+
+CONTEÚDO COMPLETO DO NOVO ARQUIVO:
+```prisma
+// prisma/schema.prisma - VERSÃO COMPLETA FUNCIONAL
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  directUrl  = env("DIRECT_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ===================================
+// MODELS
+// ===================================
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  bills      Bill[]
+  categories Category[]
+  
+  @@map("users")
+}
+
+model Category {
+  id        String   @id @default(uuid())
+  name      String
+  color     String?
+  icon      String?
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bills Bill[]
+  
+  @@unique([userId, name])
+  @@map("categories")
+}
+
+model Bill {
+  id          String    @id @default(uuid())
+  name        String
+  description String?
+  amount      Int
+  dueDate     DateTime
+  isPaid      Boolean   @default(false)
+  paidAt      DateTime?
+  recurring   Boolean   @default(false)
+  recurrence  String?
+  userId      String
+  categoryId  String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  // Relations
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id])
+  
+  @@index([userId, dueDate])
+  @@index([userId, isPaid])
+  @@map("bills")
+}
