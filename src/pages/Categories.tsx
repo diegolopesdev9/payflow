@@ -1,9 +1,8 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useAuth } from "@/lib/auth";
+import { useAuth, fetchWithAuth } from "@/lib/auth";
 import { queryClient } from "@/lib/queryClient";
-import fetchWithAuth from "@/lib/fetchWithAuth";
 import { useToast } from "@/hooks/use-toast";
 import type { Category } from "@shared/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

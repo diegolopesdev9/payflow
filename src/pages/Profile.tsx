@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import fetchWithAuth from "@/lib/fetchWithAuth";
+import { fetchWithAuth } from "@/lib/auth";
 
 type Me = {
   id: string;

@@ -18,8 +18,7 @@ import {
   Check
 } from "lucide-react";
 import { useLocation } from "wouter";
-import { useAuth } from "@/lib/auth";
-import fetchWithAuth from "@/lib/fetchWithAuth";
+import { useAuth, fetchWithAuth } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
 
 const Bills = () => {
