@@ -55,7 +55,6 @@
     "embla-carousel-react": "^8.6.0",
     "express": "^5.1.0",
     "express-rate-limit": "^8.1.0",
-    "hono": "^4.9.8",
     "input-otp": "^1.4.2",
     "joi": "^18.0.1",
     "jose": "^6.1.0",
