@@ -25,11 +25,7 @@ export default defineConfig({
     host: true,            // escuta em 0.0.0.0 (necessário no Replit)
     port: 5173,
     strictPort: true,
-    // ✅ libera o domínio do Replit (e quaisquer *.replit.dev)
-    allowedHosts: [
-      /.+\.replit\.dev$/,
-      /\.spock\.replit\.dev$/
-    ],
+    allowedHosts: true,
     // HMR via 443 no preview do Replit
     hmr: { clientPort: 443 },
     // proxy do front para a API local (8080)
