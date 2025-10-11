@@ -1,73 +1,181 @@
-# Welcome to your Lovable project
 
-## Project info
+# PayFlow 💰
 
-**URL**: https://lovable.dev/projects/79bb1c3f-102d-4555-9363-8b3240bd66df
+Sistema inteligente de controle financeiro pessoal para gerenciar suas contas a pagar, nunca mais esquecer vencimentos e ter total visibilidade dos seus gastos.
 
-## How can I edit this code?
+## 📋 Sobre o Projeto
 
-There are several ways of editing your application.
+PayFlow é uma aplicação web moderna e intuitiva desenvolvida para ajudar pessoas a organizarem suas finanças pessoais. Com interface responsiva e recursos avançados de visualização de dados, você mantém o controle total sobre suas despesas mensais.
 
-**Use Lovable**
+## ✨ Funcionalidades
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/79bb1c3f-102d-4555-9363-8b3240bd66df) and start prompting.
+### Gestão de Contas
+- Cadastro de contas a pagar com data de vencimento
+- Categorização personalizada de despesas
+- Marcação de contas como pagas
+- Alertas de vencimento próximo
+- Histórico completo de pagamentos
 
-Changes made via Lovable will be committed automatically to this repo.
+### Visualização e Relatórios
+- Dashboard interativo com visão geral financeira
+- Gráficos de despesas por categoria
+- Análise de gastos mensais e anuais
+- Insights sobre padrões de consumo
+- Acompanhamento de metas financeiras
 
-**Use your preferred IDE**
+### Experiência do Usuário
+- Interface moderna e intuitiva
+- Design responsivo mobile-first
+- Modo claro e escuro
+- Performance otimizada
+- Notificações de vencimentos
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## 🚀 Tecnologias Utilizadas
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### Frontend
+- React 18.3 - Biblioteca para construção de interfaces
+- TypeScript - Tipagem estática e desenvolvimento seguro
+- Vite - Build tool moderna e extremamente rápida
+- Tailwind CSS - Framework CSS utility-first
+- shadcn/ui - Componentes UI acessíveis e customizáveis
+- React Query - Gerenciamento de estado servidor
+- Wouter - Roteamento leve para React
+- date-fns - Manipulação de datas
 
-Follow these steps:
+### Backend
+- Node.js - Runtime JavaScript
+- Express - Framework web minimalista
+- Supabase - Backend as a Service (autenticação e banco de dados)
+- TypeScript - Tipagem no servidor
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+### Infraestrutura
+- Supabase PostgreSQL - Banco de dados relacional
+- Autenticação JWT via Supabase Auth
+- Rate limiting para segurança da API
+- CORS configurado para segurança
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+## 📦 Instalação e Configuração
 
-# Step 3: Install the necessary dependencies.
-npm i
+### Pré-requisitos
+- Node.js 18+ e npm
+- Conta no Supabase (gratuita)
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+### Passos para rodar localmente
+
+1. **Clone o repositório**
+```bash
+git clone <url-do-repositorio>
+cd payflow
+```
+
+2. **Instale as dependências**
+```bash
+npm install
+```
+
+3. **Configure as variáveis de ambiente**
+
+Crie um arquivo `.env` na raiz do projeto:
+```env
+# Supabase
+SUPABASE_URL=sua-url-do-supabase
+SUPABASE_SERVICE_ROLE_KEY=sua-chave-service-role
+
+# Frontend (Vite)
+VITE_SUPABASE_URL=sua-url-do-supabase
+VITE_SUPABASE_ANON_KEY=sua-chave-anon
+
+# API
+PORT_API=8080
+CORS_ORIGIN=true
+```
+
+4. **Execute o projeto em modo desenvolvimento**
+```bash
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+Isso iniciará:
+- Frontend na porta 5173
+- Backend API na porta 8080
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## 🗂️ Estrutura do Projeto
 
-**Use GitHub Codespaces**
+```
+payflow/
+├── src/                    # Frontend React
+│   ├── components/         # Componentes reutilizáveis
+│   ├── pages/             # Páginas da aplicação
+│   ├── hooks/             # Custom hooks
+│   └── lib/               # Utilitários e configurações
+├── server/                # Backend Node.js
+│   ├── dev.ts            # Servidor de desenvolvimento
+│   └── supabase.ts       # Integração Supabase
+├── shared/               # Tipos compartilhados
+└── prisma/              # Schema do banco de dados
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## 🔐 Segurança
 
-## What technologies are used for this project?
+- Autenticação via Supabase Auth com JWT
+- Proteção de rotas no frontend e backend
+- Rate limiting para prevenir abuso da API
+- Validação de dados com Zod
+- CORS configurado adequadamente
+- Senhas hasheadas (gerenciadas pelo Supabase)
 
-This project is built with:
+## 📱 Funcionalidades Principais
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+### Dashboard
+Visão geral com:
+- Total de contas a pagar no mês
+- Contas vencendo hoje/esta semana
+- Gráfico de despesas por categoria
+- Histórico de pagamentos recentes
 
-## How can I deploy this project?
+### Gerenciamento de Contas
+- Criar nova conta com título, valor, categoria e vencimento
+- Editar contas existentes
+- Marcar como paga/não paga
+- Excluir contas
+- Filtrar por categoria, status e período
 
-Simply open [Lovable](https://lovable.dev/projects/79bb1c3f-102d-4555-9363-8b3240bd66df) and click on Share -> Publish.
+### Categorias Personalizadas
+- Criar categorias customizadas
+- Definir ícones e cores
+- Organizar despesas por tipo
 
-## Can I connect a custom domain to my Lovable project?
+### Relatórios
+- Análise mensal de gastos
+- Comparativo entre categorias
+- Evolução de despesas ao longo do tempo
+- Exportação de dados (em desenvolvimento)
 
-Yes, you can!
+## 🎨 Design
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+- Interface moderna com shadcn/ui
+- Paleta de cores personalizada
+- Ícones do Lucide React
+- Responsivo para mobile, tablet e desktop
+- Suporte a modo escuro/claro
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+## 🚧 Roadmap
+
+- [ ] Notificações por email de vencimento
+- [ ] Exportação de relatórios em PDF
+- [ ] Integração com Open Banking
+- [ ] App mobile nativo
+- [ ] Metas de economia
+- [ ] Previsão de gastos com IA
+
+## 📄 Licença
+
+Este projeto está sob a licença MIT.
+
+## 🤝 Contribuindo
+
+Contribuições são bem-vindas! Sinta-se à vontade para abrir issues e pull requests.
+
+---
+
+Desenvolvido com ❤️ para ajudar você a ter controle total das suas finanças.
