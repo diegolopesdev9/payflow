@@ -1,0 +1,64 @@
+TAREFA URGENTE: Corrigir arquivo .replit para servir frontend e backend corretamente, resolvendo "Cannot GET /" no preview.
+
+PROBLEMA IDENTIFICADO:
+O preview mostra "Cannot GET /" porque o arquivo .replit está com configuração incorreta. O comando run está tentando executar "npm run dev -- --host 0.0.0.0 --port $PORT" mas o package.json não tem esse script configurado assim. O projeto usa npm-run-all para rodar frontend (vite na 5173) e backend (tsx server/dev.ts na 8080) em paralelo.
+
+SOLUÇÃO:
+Modificar APENAS o arquivo .replit para simplificar e usar o script correto do package.json.
+
+ARQUIVO A MODIFICAR: .replit
+
+CÓDIGO CORRETO COMPLETO DO .replit:
+```
+modules = ["nodejs-20", "web", "postgresql-16"]
+
+[nix]
+channel = "stable-25_05"
+
+run = ["npm", "run", "dev"]
+
+[deployment]
+deploymentTarget = "autoscale"
+run = ["npm", "run", "start"]
+build = ["npm", "run", "build"]
+
+[[ports]]
+localPort = 5173
+externalPort = 80
+
+[[ports]]
+localPort = 8080
+externalPort = 8080
+```
+
+IMPORTANTE - O QUE FOI REMOVIDO:
+1. Removido comando bash complexo que não funciona
+2. Removido [agent] expertMode
+3. Removido [workflows] completos (desnecessários)
+4. Removido portas extras (3001, 3002, 5000, 5555, 24678, 43423, 45915)
+5. Mantido apenas portas essenciais: 5173 (frontend) e 8080 (backend)
+
+COMO FUNCIONA:
+- O comando "npm run dev" executa: "npm-run-all -p dev:api dev:web"
+- Isso roda em paralelo:
+  - dev:api: tsx watch server/dev.ts (backend na porta 8080)
+  - dev:web: vite (frontend na porta 5173)
+- O Vite faz proxy de /api para localhost:8080 (já configurado)
+- O preview do Replit acessa a porta 5173 (frontend)
+- O frontend faz requisições para /api que são proxied para 8080
+
+VALIDAÇÃO:
+Após aplicar, o preview deve:
+1. Carregar o frontend React na porta 5173
+2. API responder em /api/healthz
+3. Navegação funcionar sem "Cannot GET /"
+
+AÇÃO SOLICITADA:
+1. SUBSTITUA TODO o conteúdo do arquivo .replit pelo código acima
+2. Mostre o diff antes de aplicar
+3. Aguarde minha confirmação
+4. Aplique as mudanças
+5. Clique em Stop e depois Run no Replit
+6. O preview deve abrir na porta 5173 com o frontend funcionando
+
+NÃO MODIFIQUE outros arquivos. O package.json já está correto com os scripts necessários.
