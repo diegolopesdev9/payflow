@@ -1,0 +1,86 @@
+TAREFA: Melhorar o fetchWithAuth para resolver "Failed to fetch" e race conditions de autenticação no Dashboard.
+
+INSTRUÇÕES CRÍTICAS:
+- MODIFIQUE APENAS o arquivo src/lib/auth.ts
+- SUBSTITUA a função fetchWithAuth existente pela versão melhorada
+- ADICIONE a função auxiliar getTokenWithRetry
+- NÃO modifique nenhum outro arquivo
+- Mostre o diff antes de aplicar
+
+ARQUIVO A MODIFICAR: src/lib/auth.ts
+
+PROBLEMA IDENTIFICADO:
+O fetchWithAuth atual em src/lib/auth.ts não tem retry logic e não trata adequadamente o caso onde a sessão ainda está carregando. Isso causa "Failed to fetch" e race conditions onde o token não está disponível quando a requisição é feita, resultando em redirecionamentos indevidos para /login.
+
+SOLUÇÃO:
+Substituir a função fetchWithAuth existente por uma versão melhorada que: (1) Tenta obter o token com retry (aguarda até 1.2s se necessário), (2) Adiciona logs detalhados para debug, (3) Usa base URL relativa corretamente, (4) Só redireciona para login se havia token e ele expirou (evita loops).
+
+CÓDIGO A SUBSTITUIR:
+Localize a função fetchWithAuth existente (está logo após a função convertSupabaseUser) e substitua por este bloco completo:
+
+// Função auxiliar: tenta obter token com retry curto
+async function getTokenWithRetry(maxWaitMs = 1200): Promise<string | null> {
+  const started = Date.now();
+  while (Date.now() - started < maxWaitMs) {
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token ?? null;
+    if (token) return token;
+    await new Promise(r => setTimeout(r, 150));
+  }
+  const { data: { session } } = await supabase.auth.getSession();
+  return session?.access_token ?? null;
+}
+
+// Interceptor melhorado para adicionar token nas requisições
+export const fetchWithAuth = async (url: string, options: RequestInit = {}): Promise<Response> => {
+  const token = await getTokenWithRetry();
+  
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(options.headers || {}),
+  };
+
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const baseEnv = (import.meta.env.VITE_API_URL ?? "").trim();
+  const base = baseEnv ? baseEnv : "";
+  const fullUrl = base + url;
+
+  let response: Response;
+  try {
+    response = await fetch(fullUrl, {
+      ...options,
+      headers,
+    });
+  } catch (e) {
+    console.error("[fetchWithAuth] network fail:", { url: fullUrl, message: (e as Error).message });
+    throw e;
+  }
+
+  if (response.status === 401) {
+    const hadToken = !!token;
+    console.warn("[fetchWithAuth] 401 unauthorized:", fullUrl, { hadToken });
+    if (hadToken) {
+      await supabase.auth.signOut();
+      window.location.href = '/login';
+    }
+    return response;
+  }
+
+  return response;
+};
+
+IMPORTANTE: Mantenha todo o resto do arquivo src/lib/auth.ts intacto (User interface, convertSupabaseUser, useAuth hook, logout function). Substitua APENAS a função fetchWithAuth e adicione a função auxiliar getTokenWithRetry logo antes dela.
+
+VALIDAÇÃO:
+Após aplicar, verifique se: (1) O arquivo src/lib/auth.ts foi modificado corretamente, (2) A função getTokenWithRetry foi adicionada, (3) A função fetchWithAuth foi substituída, (4) Nenhuma outra parte do arquivo foi alterada, (5) O Dashboard para de dar "Failed to fetch".
+
+AÇÃO SOLICITADA:
+1. Mostre o diff completo da mudança em src/lib/auth.ts
+2. Aguarde minha confirmação
+3. Aplique SOMENTE após aprovação
+4. Confirme que foi aplicado com sucesso
+
+NÃO ALTERE outros arquivos. APENAS substitua a função fetchWithAuth e adicione getTokenWithRetry no arquivo src/lib/auth.ts conforme especificado.
