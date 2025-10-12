@@ -104,8 +104,8 @@ app.get('/api/bills', authenticateUser, async (req: any, res) => {
     const { data, error } = await supabase
       .from('bills')
       .select('*')
-      .eq('userId', req.user.id)
-      .order('dueDate', { ascending: false })
+      .eq('user_id', req.user.id)
+      .order('due_date', { ascending: false })
 
     if (error) throw error
     res.json(data)
@@ -120,10 +120,10 @@ app.get('/api/bills/upcoming', authenticateUser, async (req: any, res) => {
     const { data, error } = await supabase
       .from('bills')
       .select('*')
-      .eq('userId', req.user.id)
-      .eq('isPaid', false)
-      .gte('dueDate', today)
-      .order('dueDate', { ascending: true })
+      .eq('user_id', req.user.id)
+      .eq('is_paid', false)
+      .gte('due_date', today)
+      .order('due_date', { ascending: true })
       .limit(10)
 
     if (error) throw error
@@ -139,7 +139,7 @@ app.get('/api/bills/:id', authenticateUser, async (req: any, res) => {
       .from('bills')
       .select('*')
       .eq('id', req.params.id)
-      .eq('userId', req.user.id)
+      .eq('user_id', req.user.id)
       .single()
 
     if (error) throw error
@@ -155,7 +155,7 @@ app.post('/api/bills', authenticateUser, async (req: any, res) => {
   try {
     const billData = {
       ...req.body,
-      userId: req.user.id
+      user_id: req.user.id
     }
 
     const { data, error } = await supabase
@@ -177,7 +177,7 @@ app.put('/api/bills/:id', authenticateUser, async (req: any, res) => {
       .from('bills')
       .update(req.body)
       .eq('id', req.params.id)
-      .eq('userId', req.user.id)
+      .eq('user_id', req.user.id)
       .select()
       .single()
 
@@ -196,7 +196,7 @@ app.delete('/api/bills/:id', authenticateUser, async (req: any, res) => {
       .from('bills')
       .delete()
       .eq('id', req.params.id)
-      .eq('userId', req.user.id)
+      .eq('user_id', req.user.id)
 
     if (error) throw error
     res.status(204).send()
@@ -211,7 +211,7 @@ app.get('/api/categories', authenticateUser, async (req: any, res) => {
     const { data, error } = await supabase
       .from('categories')
       .select('*')
-      .eq('userId', req.user.id)
+      .eq('user_id', req.user.id)
 
     if (error) throw error
     res.json(data)
@@ -259,7 +259,7 @@ async function seedDefaultCategories(userId: string) {
     try {
       await supabase
         .from('categories')
-        .upsert({ ...cat, userId: userId }, { onConflict: 'userId,name' })
+        .upsert({ ...cat, user_id: userId }, { onConflict: 'user_id,name' })
     } catch (e) {
       console.error('Erro ao criar categoria:', cat.name, e)
     }
