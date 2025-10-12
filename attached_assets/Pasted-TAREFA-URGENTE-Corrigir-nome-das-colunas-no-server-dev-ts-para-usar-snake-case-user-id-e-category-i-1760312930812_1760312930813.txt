@@ -1,0 +1,69 @@
+TAREFA URGENTE: Corrigir nome das colunas no server/dev.ts para usar snake_case user_id e category_id ao invés de camelCase userId e categoryId.
+
+INSTRUÇÕES CRÍTICAS:
+- MODIFIQUE APENAS o arquivo server/dev.ts
+- SUBSTITUA todas as ocorrências de userId por user_id
+- SUBSTITUA todas as ocorrências de categoryId por category_id
+- SUBSTITUA todas as ocorrências de isPaid por is_paid
+- SUBSTITUA todas as ocorrências de dueDate por due_date
+- NÃO modifique nenhum outro arquivo
+- Mostre o diff completo antes de aplicar
+
+PROBLEMA IDENTIFICADO:
+O arquivo server/dev.ts está usando nomes de colunas em camelCase (userId, categoryId, isPaid, dueDate) mas o schema do banco de dados Supabase/PostgreSQL usa snake_case (user_id, category_id, is_paid, due_date). Isso causa erro 500 quando tenta fazer queries no banco.
+
+SOLUÇÃO:
+No arquivo server/dev.ts, fazer busca e substituição:
+
+1. SUBSTITUIR todas as ocorrências de:
+   .eq('userId', req.user.id)
+   POR:
+   .eq('user_id', req.user.id)
+
+2. SUBSTITUIR:
+   .eq('isPaid', false)
+   POR:
+   .eq('is_paid', false)
+
+3. SUBSTITUIR:
+   .eq('categoryId', ...)
+   POR:
+   .eq('category_id', ...)
+
+4. SUBSTITUIR:
+   .gte('dueDate', today)
+   POR:
+   .gte('due_date', today)
+
+5. SUBSTITUIR:
+   .order('dueDate', { ascending: false })
+   POR:
+   .order('due_date', { ascending: false })
+
+ATENÇÃO: Manter os nomes no req.body como estão, mudar APENAS nos .eq(), .gte(), .order() das queries do Supabase.
+
+EXEMPLO DE MUDANÇA:
+ANTES:
+app.get('/api/bills', authenticateUser, async (req: any, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('bills')
+      .select('*')
+      .eq('userId', req.user.id)
+      .order('dueDate', { ascending: false })
+
+DEPOIS:
+app.get('/api/bills', authenticateUser, async (req: any, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('bills')
+      .select('*')
+      .eq('user_id', req.user.id)
+      .order('due_date', { ascending: false })
+
+VALIDAÇÃO APÓS APLICAR:
+1. Parar o servidor (Stop)
+2. Rodar novamente (Run)
+3. Recarregar o Dashboard
+4. Verificar que as rotas /api/bills e /api/categories retornam status 200
+5. Confirmar que o Dashboard carrega os dados corretamente
