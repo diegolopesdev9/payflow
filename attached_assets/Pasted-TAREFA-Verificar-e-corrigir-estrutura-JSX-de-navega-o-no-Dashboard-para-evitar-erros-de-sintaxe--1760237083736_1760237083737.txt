@@ -1,0 +1,99 @@
+TAREFA: Verificar e corrigir estrutura JSX de navegação no Dashboard para evitar erros de sintaxe.
+
+INSTRUÇÕES CRÍTICAS:
+- MODIFIQUE APENAS o arquivo src/pages/Dashboard.tsx
+- CORRIJA apenas a seção de navegação no rodapé (Bottom Navigation)
+- NÃO modifique nenhuma outra parte do arquivo
+- Mostre o diff antes de aplicar
+
+ARQUIVO A MODIFICAR: src/pages/Dashboard.tsx
+
+PROBLEMA IDENTIFICADO:
+Na seção "Bottom Navigation" (rodapé fixo com navegação), há uma estrutura JSX inconsistente onde um botão está sem abertura correta, misturando elementos nativos (button) com componentes do wouter (Link) e shadcn (Button). Isso pode causar erros de compilação ou comportamento inesperado na navegação.
+
+SOLUÇÃO:
+Padronizar todos os itens de navegação do rodapé para usar a mesma estrutura: Link do wouter envolvendo o conteúdo (sem Button do shadcn, usando apenas classes CSS).
+
+LOCALIZAÇÃO NO ARQUIVO:
+Procure pela seção comentada como "Bottom Navigation" (próximo ao final do arquivo, dentro de uma div com className="fixed bottom-0").
+
+CÓDIGO ATUAL (APROXIMADO):
+<div className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-sm border-t border-border">
+  <div className="container mx-auto px-4">
+    <div className="grid grid-cols-4 gap-1">
+      <button className="nav-item active">
+        <Home className="w-5 h-5" />
+        <span className="text-sm">Home</span>
+      </button>
+      <Link href="/bills">
+        <Button className="nav-item flex items-center gap-2">
+          <CreditCard className="w-5 h-5" />
+          <span className="text-sm">Contas</span>
+        </Button>
+      </Link>
+      <Link href="/reports">
+        <Button className="nav-item flex items-center gap-2">
+          <TrendingUp className="w-5 h-5" />
+          <span className="text-sm">Relatórios</span>
+        </Button>
+      </Link>
+      <Link href="/profile">
+        <Button className="nav-item flex items-center gap-2">
+          <Wallet className="w-5 h-5" />
+          <span className="text-sm">Perfil</span>
+        </Button>
+      </Link>
+    </div>
+  </div>
+</div>
+
+CÓDIGO CORRETO (SUBSTITUIR POR):
+<div className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-sm border-t border-border">
+  <div className="container mx-auto px-4">
+    <div className="grid grid-cols-4 gap-1">
+      <Link href="/dashboard">
+        <div className="nav-item active flex flex-col items-center gap-1 py-3 cursor-pointer">
+          <Home className="w-5 h-5" />
+          <span className="text-sm">Home</span>
+        </div>
+      </Link>
+      <Link href="/bills">
+        <div className="nav-item flex flex-col items-center gap-1 py-3 cursor-pointer">
+          <CreditCard className="w-5 h-5" />
+          <span className="text-sm">Contas</span>
+        </div>
+      </Link>
+      <Link href="/reports">
+        <div className="nav-item flex flex-col items-center gap-1 py-3 cursor-pointer">
+          <TrendingUp className="w-5 h-5" />
+          <span className="text-sm">Relatórios</span>
+        </div>
+      </Link>
+      <Link href="/profile">
+        <div className="nav-item flex flex-col items-center gap-1 py-3 cursor-pointer">
+          <Wallet className="w-5 h-5" />
+          <span className="text-sm">Perfil</span>
+        </div>
+      </Link>
+    </div>
+  </div>
+</div>
+
+IMPORTANTE: 
+1. Remova TODOS os componentes Button do shadcn na navegação
+2. Substitua por divs com as classes apropriadas
+3. Mantenha o Link do wouter (import { Link } from "wouter")
+4. Garanta que TODOS os 4 itens de navegação usem a mesma estrutura
+5. O primeiro item (Home/Dashboard) deve ter a classe "active" adicional
+
+VALIDAÇÃO:
+Após aplicar, verifique se: (1) Não há erros de compilação do TypeScript, (2) A navegação funciona sem recarregar a página, (3) Todos os 4 botões do rodapé têm estrutura idêntica, (4) A classe active está apenas no botão Home.
+
+AÇÃO SOLICITADA:
+1. Localize a seção Bottom Navigation no arquivo src/pages/Dashboard.tsx
+2. Mostre o diff completo da mudança
+3. Aguarde minha confirmação
+4. Aplique SOMENTE após aprovação
+5. Confirme que foi aplicado com sucesso
+
+NÃO ALTERE outras partes do Dashboard. APENAS corrija a seção Bottom Navigation conforme especificado.
