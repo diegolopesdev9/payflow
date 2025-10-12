@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { User as SupabaseUser } from '@supabase/supabase-js';
 import { supabase } from './supabase';
@@ -23,11 +22,23 @@ const convertSupabaseUser = (supabaseUser: SupabaseUser): User => {
   };
 };
 
-// Interceptor para adicionar token nas requisições
-export const fetchWithAuth = async (url: string, options: RequestInit = {}): Promise<Response> => {
+// Função auxiliar: tenta obter token com retry curto
+async function getTokenWithRetry(maxWaitMs = 1200): Promise<string | null> {
+  const started = Date.now();
+  while (Date.now() - started < maxWaitMs) {
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token ?? null;
+    if (token) return token;
+    await new Promise(r => setTimeout(r, 150));
+  }
   const { data: { session } } = await supabase.auth.getSession();
-  const token = session?.access_token;
-  
+  return session?.access_token ?? null;
+}
+
+// Interceptor melhorado para adicionar token nas requisições
+export const fetchWithAuth = async (url: string, options: RequestInit = {}): Promise<Response> => {
+  const token = await getTokenWithRetry();
+
   const headers = {
     'Content-Type': 'application/json',
     ...(options.headers || {}),
@@ -37,15 +48,28 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}): Pro
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const response = await fetch(url, {
-    ...options,
-    headers,
-  });
+  const baseEnv = (import.meta.env.VITE_API_URL ?? "").trim();
+  const base = baseEnv ? baseEnv : "";
+  const fullUrl = base + url;
 
-  // Se receber 401, redirecionar para login
+  let response: Response;
+  try {
+    response = await fetch(fullUrl, {
+      ...options,
+      headers,
+    });
+  } catch (e) {
+    console.error("[fetchWithAuth] network fail:", { url: fullUrl, message: (e as Error).message });
+    throw e;
+  }
+
   if (response.status === 401) {
-    await supabase.auth.signOut();
-    window.location.href = '/login';
+    const hadToken = !!token;
+    console.warn("[fetchWithAuth] 401 unauthorized:", fullUrl, { hadToken });
+    if (hadToken) {
+      await supabase.auth.signOut();
+      window.location.href = '/login';
+    }
     return response;
   }
 
