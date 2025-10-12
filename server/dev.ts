@@ -1,8 +1,8 @@
-
 // server/dev.ts - VERSÃO COMPLETA E SEGURA
 import express from 'express'
 import cors from 'cors'
-import rateLimit from 'express-rate-limit'
+// Rate limiter desabilitado no Replit devido a conflito com proxy
+// import rateLimit from 'express-rate-limit';
 import { createClient } from '@supabase/supabase-js'
 
 const app = express()
@@ -37,19 +37,19 @@ app.use(cors({
 app.use(express.json())
 
 // Rate limiting
-const limiter = rateLimit({
-  windowMs: Number(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000,
-  max: Number(process.env.RATE_LIMIT_MAX_REQUESTS) || 100,
-  message: 'Muitas requisições. Tente novamente mais tarde.'
-})
-app.use('/api', limiter)
+// Rate limiter desabilitado no Replit devido a conflito com proxy
+// const limiter = rateLimit({
+//   windowMs: 15 * 60 * 1000,
+//   max: 100
+// });
+// app.use(limiter);
 
 // ===================================
 // MIDDLEWARE DE AUTENTICAÇÃO
 // ===================================
 const authenticateUser = async (req: any, res: any, next: any) => {
   const authHeader = req.headers.authorization
-  
+
   if (!authHeader?.startsWith('Bearer ')) {
     return res.status(401).json({ error: 'Token de autenticação não fornecido' })
   }
@@ -58,7 +58,7 @@ const authenticateUser = async (req: any, res: any, next: any) => {
 
   try {
     const { data: { user }, error } = await supabase.auth.getUser(token)
-    
+
     if (error || !user) {
       return res.status(401).json({ error: 'Token inválido ou expirado' })
     }
@@ -144,7 +144,7 @@ app.get('/api/bills/:id', authenticateUser, async (req: any, res) => {
 
     if (error) throw error
     if (!data) return res.status(404).json({ error: 'Conta não encontrada' })
-    
+
     res.json(data)
   } catch (error: any) {
     res.status(500).json({ error: error.message })
@@ -183,7 +183,7 @@ app.put('/api/bills/:id', authenticateUser, async (req: any, res) => {
 
     if (error) throw error
     if (!data) return res.status(404).json({ error: 'Conta não encontrada' })
-    
+
     res.json(data)
   } catch (error: any) {
     res.status(500).json({ error: error.message })
