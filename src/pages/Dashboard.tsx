@@ -375,27 +375,29 @@ const Dashboard = () => {
         <div className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-sm border-t border-border">
           <div className="container mx-auto px-4">
             <div className="grid grid-cols-4 gap-1">
-              <button className="nav-item active">
-                <Home className="w-5 h-5" />
-                <span className="text-sm">Home</span>
-              </button>
+              <Link href="/dashboard">
+                <div className="nav-item active flex flex-col items-center gap-1 py-3 cursor-pointer">
+                  <Home className="w-5 h-5" />
+                  <span className="text-sm">Home</span>
+                </div>
+              </Link>
               <Link href="/bills">
-                <Button className="nav-item flex items-center gap-2">
+                <div className="nav-item flex flex-col items-center gap-1 py-3 cursor-pointer">
                   <CreditCard className="w-5 h-5" />
                   <span className="text-sm">Contas</span>
-                </Button>
+                </div>
               </Link>
               <Link href="/reports">
-                <Button className="nav-item flex items-center gap-2">
+                <div className="nav-item flex flex-col items-center gap-1 py-3 cursor-pointer">
                   <TrendingUp className="w-5 h-5" />
                   <span className="text-sm">Relatórios</span>
-                </Button>
+                </div>
               </Link>
               <Link href="/profile">
-                <Button className="nav-item flex items-center gap-2">
+                <div className="nav-item flex flex-col items-center gap-1 py-3 cursor-pointer">
                   <Wallet className="w-5 h-5" />
                   <span className="text-sm">Perfil</span>
-                </Button>
+                </div>
               </Link>
             </div>
           </div>
