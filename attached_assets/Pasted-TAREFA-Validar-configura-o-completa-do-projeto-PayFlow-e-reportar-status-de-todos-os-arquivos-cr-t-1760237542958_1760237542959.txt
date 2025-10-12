@@ -1,0 +1,87 @@
+TAREFA: Validar configuração completa do projeto PayFlow e reportar status de todos os arquivos críticos modificados.
+
+INSTRUÇÕES CRÍTICAS:
+- NÃO MODIFIQUE NENHUM ARQUIVO
+- APENAS LEIA e VALIDE os arquivos listados
+- REPORTE o status de cada arquivo
+- IDENTIFIQUE potenciais problemas
+
+OBJETIVO:
+Verificar se todas as correções das Etapas 1, 2 e 3 foram aplicadas corretamente e se o projeto está em estado funcional.
+
+## ARQUIVOS A VALIDAR
+
+### 1. tsconfig.app.json
+Verificar se contém:
+- "baseUrl": "."
+- "paths" com "@/*": ["./src/*"] E "@shared/*": ["./shared/*"]
+
+### 2. src/lib/auth.ts
+Verificar se contém:
+- Função getTokenWithRetry (retry logic)
+- Função fetchWithAuth melhorada com logs
+- Tratamento correto de 401 sem loops
+
+### 3. src/pages/Dashboard.tsx
+Verificar na seção Bottom Navigation se:
+- TODOS os 4 botões usam Link do wouter
+- NÃO há componentes Button do shadcn na navegação
+- Estrutura é Link > div (não Link > Button)
+- Import correto: import { Link } from "wouter"
+
+### 4. vite.config.ts
+Verificar se tem a configuração server com:
+- host: true ou "0.0.0.0"
+- port: 5173
+- strictPort: true
+- allowedHosts: true
+- hmr: { clientPort: 443 }
+- proxy: /api para localhost:8080
+
+### 5. server/dev.ts
+Verificar se contém:
+- Rota GET /api/healthz funcionando
+- PORT configurável via env (8080 padrão)
+- Supabase auth middleware
+
+### 6. src/components/ProtectedRoute.tsx
+Verificar se:
+- Usa useLocation do wouter (não react-router-dom)
+- Tem retry logic para sessão
+- Mostra loading enquanto verifica auth
+
+### 7. src/App.tsx
+Verificar se:
+- Usa Router, Route, Switch do wouter
+- Import de ProtectedRoute está correto
+- Todas as rotas protegidas estão envolvidas em ProtectedRoute
+
+## FORMATO DE RESPOSTA ESPERADO
+
+Para cada arquivo, responda:
+✅ ARQUIVO: nome_do_arquivo
+STATUS: OK ou PROBLEMA
+DETALHES: [breve descrição do que foi encontrado]
+
+Se houver problemas:
+⚠️ PROBLEMA IDENTIFICADO: [descrição]
+SOLUÇÃO: [o que precisa ser corrigido]
+
+## CHECKLIST ADICIONAL
+
+Verifique também:
+- [ ] Não há imports de "react-router-dom" no projeto (deve ser wouter)
+- [ ] Não há elementos button nativos misturados com Link
+- [ ] fetchWithAuth é exportado e usado em lib/auth.ts
+- [ ] Todos os alias @ e @shared estão configurados
+- [ ] HMR está configurado para clientPort 443
+
+## CONCLUSÃO ESPERADA
+
+Após validar todos os arquivos, forneça:
+1. Número total de arquivos validados
+2. Número de arquivos OK
+3. Número de problemas encontrados
+4. Lista de ações necessárias (se houver)
+
+NÃO FAÇA ALTERAÇÕES. Apenas LEIA e REPORTE o status atual do projeto.
