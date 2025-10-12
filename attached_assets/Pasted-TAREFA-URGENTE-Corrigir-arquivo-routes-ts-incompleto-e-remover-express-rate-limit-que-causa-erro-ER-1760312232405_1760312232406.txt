@@ -1,0 +1,152 @@
+TAREFA URGENTE: Corrigir arquivo routes.ts incompleto e remover express-rate-limit que causa erro ERR_ERL_UNEXPECTED_X_FORWARDED_FOR no Replit.
+
+INSTRUÇÕES CRÍTICAS:
+- MODIFIQUE APENAS os arquivos server/routes.ts e server/dev.ts
+- NÃO modifique nenhum outro arquivo
+- Mostre o diff completo antes de aplicar
+
+PROBLEMA 1 IDENTIFICADO:
+O arquivo server/routes.ts está INCOMPLETO - falta a linha "export default app;" no final, impedindo que o servidor use as rotas.
+
+PROBLEMA 2 IDENTIFICADO:
+O server/dev.ts usa express-rate-limit que causa erro ERR_ERL_UNEXPECTED_X_FORWARDED_FOR no ambiente Replit com proxy reverso.
+
+SOLUÇÃO:
+
+1) ADICIONAR no FINAL do arquivo server/routes.ts a linha que falta:
+
+// ============ REPORTS ============
+app.get("/api/reports/summary", requireUser, async (c: Context) => {
+  return c.json({ message: "Relatórios em desenvolvimento" });
+});
+
+export default app;
+
+2) REMOVER ou COMENTAR as linhas do express-rate-limit no server/dev.ts. Procure por linhas como:
+
+import rateLimit from 'express-rate-limit';
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100
+});
+
+app.use(limiter);
+
+E SUBSTITUA por:
+
+// Rate limiter desabilitado no Replit devido a conflito com proxy
+// import rateLimit from 'express-rate-limit';
+// const limiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 100 });
+// app.use(limiter);
+
+CONTEÚDO COMPLETO CORRETO DO server/routes.ts (com export default no final):
+
+import { Hono } from "hono";
+import { requireUser } from "./supabaseAuth";
+import type { Context } from "hono";
+import { SupabaseStorage } from "./supabase";
+
+export const app = new Hono();
+const storage = new SupabaseStorage();
+
+// Health check
+app.get("/api/healthz", (c) => c.json({ ok: true }));
+
+// Auth routes
+app.get("/api/whoami", requireUser, (c: Context) => {
+  const user = c.get("user");
+  return c.json({ user });
+});
+
+app.get("/api/users/me", requireUser, (c: Context) => {
+  const user = c.get("user");
+  return c.json({ user });
+});
+
+// ============ CATEGORIES ============
+app.get("/api/categories", requireUser, async (c: Context) => {
+  const userId = c.get("userId") as string;
+  const categories = await storage.getCategories(userId);
+  return c.json(categories);
+});
+
+app.post("/api/categories", requireUser, async (c: Context) => {
+  const userId = c.get("userId") as string;
+  const body = await c.req.json();
+  const category = await storage.createCategory({ ...body, userId });
+  return c.json(category, 201);
+});
+
+app.put("/api/categories/:id", requireUser, async (c: Context) => {
+  const id = c.req.param("id");
+  const body = await c.req.json();
+  const category = await storage.updateCategory(id, body);
+  if (!category) return c.json({ error: "Categoria não encontrada" }, 404);
+  return c.json(category);
+});
+
+app.delete("/api/categories/:id", requireUser, async (c: Context) => {
+  const id = c.req.param("id");
+  const deleted = await storage.deleteCategory(id);
+  if (!deleted) return c.json({ error: "Categoria não encontrada" }, 404);
+  return c.json({ message: "Categoria removida" });
+});
+
+// ============ BILLS ============
+app.get("/api/bills", requireUser, async (c: Context) => {
+  const userId = c.get("userId") as string;
+  const bills = await storage.getBills(userId);
+  return c.json(bills);
+});
+
+app.get("/api/bills/upcoming", requireUser, async (c: Context) => {
+  const userId = c.get("userId") as string;
+  const allBills = await storage.getBills(userId);
+  const today = new Date();
+  const upcoming = allBills.filter(b => !b.isPaid && new Date(b.dueDate) >= today).sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()).slice(0, 10);
+  return c.json(upcoming);
+});
+
+app.get("/api/bills/:id", requireUser, async (c: Context) => {
+  const id = c.req.param("id");
+  const bill = await storage.getBill(id);
+  if (!bill) return c.json({ error: "Conta não encontrada" }, 404);
+  return c.json(bill);
+});
+
+app.post("/api/bills", requireUser, async (c: Context) => {
+  const userId = c.get("userId") as string;
+  const body = await c.req.json();
+  const bill = await storage.createBill({ ...body, userId });
+  return c.json(bill, 201);
+});
+
+app.put("/api/bills/:id", requireUser, async (c: Context) => {
+  const id = c.req.param("id");
+  const body = await c.req.json();
+  const bill = await storage.updateBill(id, body);
+  if (!bill) return c.json({ error: "Conta não encontrada" }, 404);
+  return c.json(bill);
+});
+
+app.delete("/api/bills/:id", requireUser, async (c: Context) => {
+  const id = c.req.param("id");
+  const deleted = await storage.deleteBill(id);
+  if (!deleted) return c.json({ error: "Conta não encontrada" }, 404);
+  return c.json({ message: "Conta removida" });
+});
+
+// ============ REPORTS ============
+app.get("/api/reports/summary", requireUser, async (c: Context) => {
+  return c.json({ message: "Relatórios em desenvolvimento" });
+});
+
+export default app;
+
+VALIDAÇÃO APÓS APLICAR:
+1. Verificar que routes.ts termina com "export default app;"
+2. Verificar que express-rate-limit foi removido ou comentado do dev.ts
+3. Parar o servidor (Stop) e rodar novamente (Run)
+4. Verificar no Shell que NÃO aparece mais o erro ERR_ERL_UNEXPECTED_X_FORWARDED_FOR
+5. Recarregar o Dashboard e confirmar que as rotas funcionam
