@@ -23,7 +23,7 @@ import { useToast } from "@/hooks/use-toast";
 
 const Bills = () => {
   const [location, setLocation] = useLocation();
-  const { user, authenticated } = useAuth();
+  const { user, authenticated, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [activeFilter, setActiveFilter] = useState("todas");
