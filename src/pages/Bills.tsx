@@ -4,10 +4,10 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  Search, 
-  Plus, 
-  Filter, 
+import {
+  Search,
+  Plus,
+  Filter,
   Home,
   CreditCard,
   TrendingUp,
@@ -41,24 +41,28 @@ const Bills = () => {
         setLoading(true);
         const response = await fetchWithAuth(`/api/bills?userId=${user?.id}`);
         const data = await response.json();
-        
+
         // Adicionar prioridade baseada na proximidade do vencimento
         const billsWithPriority = data.map(bill => {
-          const dueDate = new Date(bill.dueDate);
+          const dueDate = new Date(bill.due_date);
           const today = new Date();
           const daysLeft = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
-          
+
           let priority = "low";
           if (daysLeft <= 3) priority = "high";
           else if (daysLeft <= 7) priority = "medium";
-          
+
           return {
-            ...bill,
+            id: bill.id,
+            description: bill.name || bill.description || 'Conta',
+            amount: bill.amount,
+            category: bill.category_id || 'Sem categoria',
+            status: bill.is_paid ? "paid" : "pending",
+            dueDate: dueDate.toLocaleDateString('pt-BR'),
             priority,
-            dueDate: dueDate.toLocaleDateString('pt-BR')
           };
         });
-        
+
         setBills(billsWithPriority);
       } catch (error) {
         console.error('Erro ao carregar contas:', error);
@@ -130,7 +134,7 @@ const Bills = () => {
               <h1 className="text-2xl font-bold text-primary-foreground">Contas</h1>
               <p className="text-primary-foreground/80">Gerencie suas contas a pagar</p>
             </div>
-            <Button 
+            <Button
               onClick={() => setLocation("/new-bill")}
               className="btn-secondary-financial"
             >
@@ -172,8 +176,8 @@ const Bills = () => {
         {/* Bills List */}
         <div className="space-y-4">
           {filteredBills.map((bill) => (
-            <Card 
-              key={bill.id} 
+            <Card
+              key={bill.id}
               className={`fin-card cursor-pointer border-l-4 ${getPriorityColor(bill.priority)} hover:shadow-lg transition-all duration-300`}
               onClick={() => setLocation(`/bills/${bill.id}`)}
             >
@@ -187,7 +191,7 @@ const Bills = () => {
                         <Clock className="w-6 h-6 text-warning" />
                       )}
                     </div>
-                    
+
                     <div>
                       <h3 className="font-semibold text-lg">{bill.description}</h3>
                       <p className="text-muted-foreground">{bill.category}</p>
@@ -220,7 +224,7 @@ const Bills = () => {
               <p className="text-muted-foreground mb-4">
                 {searchTerm ? "Tente ajustar os filtros de busca" : "Comece adicionando uma nova conta"}
               </p>
-              <Button 
+              <Button
                 onClick={() => setLocation("/new-bill")}
                 className="btn-financial"
               >
@@ -235,7 +239,7 @@ const Bills = () => {
         <div className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-sm border-t border-border">
           <div className="container mx-auto px-4">
             <div className="grid grid-cols-4 gap-1">
-              <button 
+              <button
                 onClick={() => setLocation("/dashboard")}
                 className="nav-item"
               >
@@ -246,14 +250,14 @@ const Bills = () => {
                 <CreditCard className="w-5 h-5" />
                 <span className="text-sm">Contas</span>
               </button>
-              <button 
+              <button
                 onClick={() => setLocation("/reports")}
                 className="nav-item"
               >
                 <TrendingUp className="w-5 h-5" />
                 <span className="text-sm">Relatórios</span>
               </button>
-              <button 
+              <button
                 onClick={() => setLocation("/profile")}
                 className="nav-item"
               >
