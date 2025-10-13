@@ -98,6 +98,17 @@ app.get('/api/whoami', authenticateUser, (req: any, res) => {
   })
 })
 
+app.get('/api/users/me', authenticateUser, (req: any, res) => {
+  res.json({ 
+    user: {
+      id: req.user.id,
+      email: req.user.email,
+      name: req.user.user_metadata?.name || req.user.email?.split('@')[0] || 'Usuário',
+      created_at: req.user.created_at
+    }
+  })
+})
+
 // --- BILLS ---
 app.get('/api/bills', authenticateUser, async (req: any, res) => {
   try {
