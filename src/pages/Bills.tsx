@@ -31,7 +31,11 @@ const Bills = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!authenticated) {
+    if (authLoading) {
+      return;
+    }
+
+    if (authenticated === false) {
       setLocation("/login");
       return;
     }
