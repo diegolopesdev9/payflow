@@ -39,7 +39,7 @@ const Bills = () => {
     const fetchBills = async () => {
       try {
         setLoading(true);
-        const response = await fetchWithAuth(`/api/bills?userId=${user?.id}`);
+        const response = await fetchWithAuth('/api/bills');
         const data = await response.json();
 
         // Adicionar prioridade baseada na proximidade do vencimento
