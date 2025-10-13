@@ -1,0 +1,74 @@
+TAREFA URGENTE: Corrigir componente Bills.tsx para funcionar corretamente com a API do backend e evitar logout ao acessar a página de Contas.
+
+INSTRUÇÕES CRÍTICAS:
+- MODIFIQUE APENAS o arquivo src/pages/Bills.tsx
+- CORRIJA a URL da requisição para /api/bills (sem query params)
+- AJUSTE o mapeamento dos dados do backend (snake_case) para o frontend (camelCase)
+- CORRIJA o campo de status (backend retorna is_paid, não status)
+- NÃO modifique nenhum outro arquivo
+- Mostre o diff completo antes de aplicar
+
+PROBLEMA IDENTIFICADO:
+1. Bills.tsx está passando userId como query parameter na URL (/api/bills?userId=...) mas o backend pega o userId do token JWT automaticamente
+2. O backend retorna campos em snake_case (due_date, is_paid, user_id, category_id) mas o frontend espera camelCase (dueDate, status, userId, categoryId)
+3. O backend não retorna campo "status", mas sim "is_paid" (boolean)
+
+SOLUÇÃO:
+No arquivo src/pages/Bills.tsx, fazer as seguintes alterações:
+
+LINHA 34 - SUBSTITUIR:
+const response = await fetchWithAuth(`/api/bills?userId=${user?.id}`);
+
+POR:
+const response = await fetchWithAuth('/api/bills');
+
+LINHAS 39-51 - SUBSTITUIR o mapeamento de billsWithPriority por:
+const billsWithPriority = data.map(bill => {
+  const dueDate = new Date(bill.due_date);
+  const today = new Date();
+  const daysLeft = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
+  
+  let priority = "low";
+  if (daysLeft <= 3) priority = "high";
+  else if (daysLeft <= 7) priority = "medium";
+  
+  return {
+    id: bill.id,
+    description: bill.name || bill.description || 'Conta',
+    amount: bill.amount,
+    category: bill.category_id || 'Sem categoria',
+    status: bill.is_paid ? "paid" : "pending",
+    dueDate: dueDate.toLocaleDateString('pt-BR'),
+    priority,
+  };
+});
+
+LINHAS 67-74 - SUBSTITUIR as funções de filtro:
+const filterBills = (status: string) => {
+  switch (status) {
+    case "vencer":
+      return bills.filter(bill => bill.status === "pending");
+    case "pagos":
+      return bills.filter(bill => bill.status === "paid");
+    default:
+      return bills;
+  }
+};
+
+const filteredBills = filterBills(activeFilter).filter(bill =>
+  bill.description.toLowerCase().includes(searchTerm.toLowerCase())
+);
+
+VALIDAÇÃO:
+Esses ajustes garantem que:
+1. A requisição não passa userId desnecessariamente (backend pega do token)
+2. Os dados retornados do backend (snake_case) são convertidos para camelCase
+3. O campo is_paid (boolean) é convertido para status ("paid" ou "pending")
+4. O campo name do backend é mapeado para description no frontend
+
+Após aplicar:
+1. Parar o servidor (Stop)
+2. Rodar novamente (Run)
+3. Fazer login
+4. Clicar em "Contas" - deve carregar sem redirecionar para login
+5. Verificar que as contas são exibidas corretamente
