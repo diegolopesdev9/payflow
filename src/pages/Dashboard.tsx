@@ -96,8 +96,8 @@ const Dashboard = () => {
 
     return bills
       .filter(bill => {
-        const dueDate = new Date(bill.dueDate);
-        return dueDate >= today && dueDate <= nextWeek && !bill.isPaid;
+        const dueDate = new Date(bill.due_date);
+        return dueDate >= today && dueDate <= nextWeek && !bill.is_paid;
       })
       .reduce((sum, bill) => sum + (bill.amount / 100), 0); // Convert from cents
   };
@@ -112,8 +112,8 @@ const Dashboard = () => {
       targetDate.setDate(today.getDate() + index);
 
       const dayBills = bills.filter(bill => {
-        const billDate = new Date(bill.dueDate);
-        return billDate.toDateString() === targetDate.toDateString() && !bill.isPaid;
+        const billDate = new Date(bill.due_date);
+        return billDate.toDateString() === targetDate.toDateString() && !bill.is_paid;
       });
 
       const amount = dayBills.reduce((sum, bill) => sum + (bill.amount / 100), 0); // Convert from cents
@@ -128,8 +128,8 @@ const Dashboard = () => {
   };
 
   // Calculate statistics from all bills
-  const pending = allBills.filter(bill => !bill.isPaid);
-  const paid = allBills.filter(bill => bill.isPaid);
+  const pending = allBills.filter(bill => !bill.is_paid);
+  const paid = allBills.filter(bill => bill.is_paid);
 
   const totalToPay = pending.reduce((sum, bill) => sum + (bill.amount / 100), 0); // Convert from cents
   const totalPaid = paid.reduce((sum, bill) => sum + (bill.amount / 100), 0); // Convert from cents
@@ -139,13 +139,13 @@ const Dashboard = () => {
 
   // Process upcoming bills with icons and days left
   const upcomingBills = upcomingData.slice(0, 5).map(bill => {
-    const category = categoryMap.get(bill.categoryId);
+    const category = categoryMap.get(bill.category_id);
     const categoryName = category?.name ?? 'Sem categoria';
     return {
       ...bill,
       name: bill.name || bill.description, // Use name field from schema
       categoryName,
-      daysLeft: Math.ceil((new Date(bill.dueDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)),
+      daysLeft: Math.ceil((new Date(bill.due_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)),
       icon: getIconForCategory(categoryName)
     };
   });
