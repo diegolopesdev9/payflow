@@ -139,7 +139,7 @@ app.get('/api/reports/summary', authenticateUser, async (req: any, res) => {
 
 app.use(express.static(path.join(__dirname, '../dist')))
 
-app.get('*', (_req, res) => {
+app.use((req, res) => {
   res.sendFile(path.join(__dirname, '../dist', 'index.html'))
 })
 
