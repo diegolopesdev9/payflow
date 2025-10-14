@@ -6,7 +6,9 @@
   "scripts": {
     "dev:web": "vite",
     "dev:api": "tsx watch server/dev.ts",
-    "dev": "npm-run-all -p dev:api dev:web"
+    "dev": "npm-run-all -p dev:api dev:web",
+    "build": "vite build",
+    "start": "tsx server/prod.ts"
   },
   "dependencies": {
     "@hono/node-server": "^1.19.4",
