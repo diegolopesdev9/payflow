@@ -1,55 +1,150 @@
 
-import { serve } from "@hono/node-server";
-import { serveStatic } from "@hono/node-server/serve-static";
-import routes from "./routes";
-import { readFileSync } from "fs";
-import { join } from "path";
+import express from 'express'
+import cors from 'cors'
+import { createClient } from '@supabase/supabase-js'
+import path from 'path'
+import { fileURLToPath } from 'url'
 
-// Cria o app de produção
-const app = routes;
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 
-// Serve arquivos estáticos do dist para todas as rotas não-API
-app.use("*", async (c, next) => {
-  // Se a rota começa com /api, deixa as rotas da API tratarem
-  if (c.req.path.startsWith('/api')) {
-    return next();
+const app = express()
+
+const PORT = Number(process.env.PORT) || 8080
+const SUPABASE_URL = process.env.SUPABASE_URL
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
+  console.error('❌ ERRO: Variáveis SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY são obrigatórias!')
+  process.exit(1)
+}
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+
+app.use(cors({ origin: true, credentials: true }))
+app.use(express.json())
+
+const authenticateUser = async (req: any, res: any, next: any) => {
+  const authHeader = req.headers.authorization
+  if (!authHeader?.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Token de autenticação não fornecido' })
   }
-  
-  // Para outras rotas, tenta servir arquivos estáticos
-  const staticHandler = serveStatic({
-    root: "./dist",
-    index: "index.html"
-  });
-  
-  const response = await staticHandler(c, next);
-  
-  // Se o arquivo não foi encontrado, serve o index.html para SPA routing
-  if (response.status === 404) {
-    try {
-      const indexPath = join(process.cwd(), "dist", "index.html");
-      const indexHtml = readFileSync(indexPath, "utf-8");
-      return c.html(indexHtml);
-    } catch (error) {
-      console.error("Error serving index.html:", error);
-      return c.text("Application not found. Please build the project first.", 404);
+  const token = authHeader.substring(7)
+  try {
+    const { data: { user }, error } = await supabase.auth.getUser(token)
+    if (error || !user) {
+      return res.status(401).json({ error: 'Token inválido ou expirado' })
     }
+    req.user = user
+    next()
+  } catch (error) {
+    console.error('Erro na autenticação:', error)
+    return res.status(500).json({ error: 'Erro ao validar token' })
   }
-  
-  return response;
-});
+}
 
-const PORT = Number(process.env.PORT) || 8080;
+app.get('/api/healthz', (_req, res) => {
+  res.json({ ok: true, timestamp: new Date().toISOString(), service: 'PayFlow API', version: '1.0.0' })
+})
 
-console.log("🚀 Starting production server...");
-console.log(`📦 Serving static files from ./dist`);
-console.log(`🔌 API available at /api`);
+app.get('/api/whoami', authenticateUser, (req: any, res) => {
+  res.json({ user: { id: req.user.id, email: req.user.email, created_at: req.user.created_at } })
+})
 
-serve({
-  fetch: app.fetch,
-  port: PORT,
-  hostname: "0.0.0.0"
-}, () => {
-  console.log(`✅ Production server running on port ${PORT}`);
-  console.log(`🌐 App: http://0.0.0.0:${PORT}`);
-  console.log(`🔌 API: http://0.0.0.0:${PORT}/api`);
-});
+app.get('/api/users/me', authenticateUser, (req: any, res) => {
+  res.json({ user: { id: req.user.id, email: req.user.email, name: req.user.user_metadata?.name || req.user.email?.split('@')[0] || 'Usuário', created_at: req.user.created_at } })
+})
+
+app.get('/api/bills', authenticateUser, async (req: any, res) => {
+  try {
+    const { data, error } = await supabase.from('bills').select('*').eq('user_id', req.user.id).order('due_date', { ascending: false })
+    if (error) throw error
+    res.json(data)
+  } catch (error: any) {
+    res.status(500).json({ error: error.message })
+  }
+})
+
+app.get('/api/bills/upcoming', authenticateUser, async (req: any, res) => {
+  try {
+    const today = new Date().toISOString()
+    const { data, error } = await supabase.from('bills').select('*').eq('user_id', req.user.id).eq('is_paid', false).gte('due_date', today).order('due_date', { ascending: true }).limit(10)
+    if (error) throw error
+    res.json(data)
+  } catch (error: any) {
+    res.status(500).json({ error: error.message })
+  }
+})
+
+app.get('/api/bills/:id', authenticateUser, async (req: any, res) => {
+  try {
+    const { data, error } = await supabase.from('bills').select('*').eq('id', req.params.id).eq('user_id', req.user.id).single()
+    if (error) throw error
+    if (!data) return res.status(404).json({ error: 'Conta não encontrada' })
+    res.json(data)
+  } catch (error: any) {
+    res.status(500).json({ error: error.message })
+  }
+})
+
+app.post('/api/bills', authenticateUser, async (req: any, res) => {
+  try {
+    const billData = { ...req.body, user_id: req.user.id }
+    const { data, error } = await supabase.from('bills').insert([billData]).select().single()
+    if (error) throw error
+    res.status(201).json(data)
+  } catch (error: any) {
+    res.status(400).json({ error: error.message })
+  }
+})
+
+app.put('/api/bills/:id', authenticateUser, async (req: any, res) => {
+  try {
+    const { data, error } = await supabase.from('bills').update(req.body).eq('id', req.params.id).eq('user_id', req.user.id).select().single()
+    if (error) throw error
+    if (!data) return res.status(404).json({ error: 'Conta não encontrada' })
+    res.json(data)
+  } catch (error: any) {
+    res.status(500).json({ error: error.message })
+  }
+})
+
+app.delete('/api/bills/:id', authenticateUser, async (req: any, res) => {
+  try {
+    const { error } = await supabase.from('bills').delete().eq('id', req.params.id).eq('user_id', req.user.id)
+    if (error) throw error
+    res.status(204).send()
+  } catch (error: any) {
+    res.status(500).json({ error: error.message })
+  }
+})
+
+app.get('/api/categories', authenticateUser, async (req: any, res) => {
+  try {
+    const { data, error } = await supabase.from('categories').select('*').eq('user_id', req.user.id)
+    if (error) throw error
+    res.json(data)
+  } catch (error: any) {
+    res.status(500).json({ error: error.message })
+  }
+})
+
+app.get('/api/reports/summary', authenticateUser, async (req: any, res) => {
+  try {
+    res.json({ message: 'Relatórios em desenvolvimento' })
+  } catch (error: any) {
+    res.status(500).json({ error: error.message })
+  }
+})
+
+app.use(express.static(path.join(__dirname, '../dist')))
+
+app.get('*', (_req, res) => {
+  res.sendFile(path.join(__dirname, '../dist', 'index.html'))
+})
+
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 Production server running on port ${PORT}`)
+  console.log(`📦 Serving static files from dist/`)
+  console.log(`🔌 API available at /api`)
+})
