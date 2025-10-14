@@ -1,35 +1,42 @@
-import { useEffect, useState } from "react";
-import { fetchWithAuth } from "@/lib/auth";
 
-type Me = {
+import { useEffect, useState } from "react";
+import { useLocation } from "wouter";
+import { fetchWithAuth, useAuth } from "@/lib/auth";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Home, CreditCard, TrendingUp, User as UserIcon, Mail, Calendar, Edit, LogOut } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+
+type UserProfile = {
   id: string;
   email: string;
   name?: string | null;
-  avatar_url?: string | null;
-  metadata?: Record<string, any>;
+  created_at?: string;
 };
 
 export default function Profile() {
-  const [user, setUser] = useState<Me | null>(null);
+  const [location, setLocation] = useLocation();
+  const { logout } = useAuth();
+  const { toast } = useToast();
+  const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [err, setErr] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let alive = true;
     (async () => {
       try {
         setLoading(true);
-        setErr(null);
+        setError(null);
         const res = await fetchWithAuth("/api/users/me");
         if (!res.ok) {
-          const txt = await res.text().catch(() => "");
-          throw new Error(`Falha ao carregar perfil (${res.status}): ${txt}`);
+          throw new Error(`Erro ao carregar perfil (${res.status})`);
         }
         const data = await res.json();
-        const u: Me = data?.user ?? data ?? null;
-        if (alive) setUser(u);
+        const userData: UserProfile = data?.user ?? data ?? null;
+        if (alive) setUser(userData);
       } catch (e: any) {
-        if (alive) setErr(e?.message || "Erro ao carregar perfil");
+        if (alive) setError(e?.message || "Erro ao carregar perfil");
       } finally {
         if (alive) setLoading(false);
       }
@@ -37,32 +44,170 @@ export default function Profile() {
     return () => { alive = false; };
   }, []);
 
-  if (loading) return <div className="p-6">Carregando perfil…</div>;
-  if (err) {
+  const handleLogout = async () => {
+    try {
+      await logout();
+      toast({
+        title: "Logout realizado",
+        description: "Até logo!",
+      });
+      setLocation("/login");
+    } catch (error) {
+      toast({
+        title: "Erro ao fazer logout",
+        description: "Tente novamente.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  if (loading) {
     return (
-      <div className="p-6 text-center">
-        <p className="mb-4">Erro ao carregar perfil</p>
-        <a href="/dashboard" className="underline">Voltar ao Dashboard</a>
-        <pre className="mt-4 text-xs opacity-60">{err}</pre>
-      </div>
-    );
-  }
-  if (!user) {
-    return (
-      <div className="p-6 text-center">
-        <p className="mb-4">Perfil não encontrado</p>
-        <a href="/dashboard" className="underline">Voltar ao Dashboard</a>
+      <div className="min-h-screen bg-gradient-to-br from-primary via-primary/95 to-secondary flex items-center justify-center">
+        <div className="text-primary-foreground text-lg">Carregando perfil...</div>
       </div>
     );
   }
 
+  if (error || !user) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary via-primary/95 to-secondary flex items-center justify-center">
+        <Card className="stat-card max-w-md">
+          <CardContent className="p-6 text-center">
+            <p className="text-lg mb-4">Erro ao carregar perfil</p>
+            <Button onClick={() => setLocation("/dashboard")} className="btn-financial">
+              Voltar ao Dashboard
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return "N/A";
+    return new Date(dateString).toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric'
+    });
+  };
+
   return (
-    <div className="p-6 space-y-4">
-      <h1 className="text-xl font-semibold">Seu perfil</h1>
-      <div className="space-y-1">
-        <div><b>ID:</b> {user.id}</div>
-        <div><b>Email:</b> {user.email}</div>
-        {user.name ? <div><b>Nome:</b> {user.name}</div> : null}
+    <div className="min-h-screen bg-gradient-to-br from-primary via-primary/95 to-secondary">
+      {/* Header */}
+      <div className="bg-primary/80 backdrop-blur-sm border-b border-primary-foreground/10">
+        <div className="container mx-auto px-4 py-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-primary-foreground">Perfil</h1>
+              <p className="text-primary-foreground/80">Gerencie suas informações</p>
+            </div>
+            <Button
+              onClick={handleLogout}
+              variant="outline"
+              className="text-primary-foreground border-primary-foreground/20 hover:bg-primary-foreground/10"
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Sair
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      <div className="container mx-auto px-4 py-6 space-y-6 pb-24">
+        {/* Profile Card */}
+        <Card className="stat-card">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <UserIcon className="w-5 h-5" />
+              Informações Pessoais
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-3">
+              <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
+                <UserIcon className="w-5 h-5 text-muted-foreground mt-0.5" />
+                <div>
+                  <div className="text-sm text-muted-foreground">Nome</div>
+                  <div className="font-medium">{user.name || "Não informado"}</div>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
+                <Mail className="w-5 h-5 text-muted-foreground mt-0.5" />
+                <div>
+                  <div className="text-sm text-muted-foreground">E-mail</div>
+                  <div className="font-medium">{user.email}</div>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
+                <Calendar className="w-5 h-5 text-muted-foreground mt-0.5" />
+                <div>
+                  <div className="text-sm text-muted-foreground">Membro desde</div>
+                  <div className="font-medium">{formatDate(user.created_at)}</div>
+                </div>
+              </div>
+            </div>
+
+            <Button
+              onClick={() => setLocation("/edit-profile")}
+              className="w-full btn-financial mt-4"
+            >
+              <Edit className="w-4 h-4 mr-2" />
+              Editar Perfil
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Account Info Card */}
+        <Card className="stat-card">
+          <CardHeader>
+            <CardTitle>Informações da Conta</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">ID da Conta:</span>
+                <span className="font-mono text-xs">{user.id.substring(0, 8)}...</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Bottom Navigation */}
+      <div className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-sm border-t border-border">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-4 gap-1">
+            <button
+              onClick={() => setLocation("/dashboard")}
+              className="nav-item"
+            >
+              <Home className="w-5 h-5" />
+              <span className="text-sm">Home</span>
+            </button>
+            <button
+              onClick={() => setLocation("/bills")}
+              className="nav-item"
+            >
+              <CreditCard className="w-5 h-5" />
+              <span className="text-sm">Contas</span>
+            </button>
+            <button
+              onClick={() => setLocation("/reports")}
+              className="nav-item"
+            >
+              <TrendingUp className="w-5 h-5" />
+              <span className="text-sm">Relatórios</span>
+            </button>
+            <button className="nav-item active">
+              <UserIcon className="w-5 h-5" />
+              <span className="text-sm">Perfil</span>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
