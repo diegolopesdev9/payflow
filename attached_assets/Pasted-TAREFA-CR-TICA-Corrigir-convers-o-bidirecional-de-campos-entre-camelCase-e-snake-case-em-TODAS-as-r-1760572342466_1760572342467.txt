@@ -1,0 +1,141 @@
+TAREFA CRÍTICA: Corrigir conversão bidirecional de campos entre camelCase e snake_case em TODAS as rotas de Bills.
+
+ARQUIVO: server/routes.ts
+
+PROBLEMA IDENTIFICADO:
+1. POST /api/bills converte camelCase → snake_case ✅ (já feito)
+2. GET /api/bills retorna snake_case do banco, mas código usa camelCase ❌
+3. GET /api/bills/upcoming usa b.isPaid e b.dueDate mas banco retorna is_paid e due_date ❌
+
+SOLUÇÃO COMPLETA:
+
+PASSO 1 - CRIAR FUNÇÃO DE CONVERSÃO no topo do arquivo (após os imports):
+
+// Função auxiliar para converter Bill de snake_case (banco) para camelCase (frontend)
+function convertBillToFrontend(bill: any) {
+  return {
+    id: bill.id,
+    name: bill.name,
+    amount: bill.amount,
+    dueDate: bill.due_date,  // snake_case → camelCase
+    isPaid: bill.is_paid,    // snake_case → camelCase
+    userId: bill.user_id,    // snake_case → camelCase
+    categoryId: bill.category_id,  // snake_case → camelCase
+    description: bill.description,
+    createdAt: bill.created_at,  // snake_case → camelCase
+  };
+}
+
+PASSO 2 - MODIFICAR GET /api/bills (linha ~54):
+
+LOCALIZAR:
+app.get("/api/bills", requireUser, async (c: Context) => {
+  const userId = c.get("userId") as string;
+  const bills = await storage.getBills(userId);
+  return c.json(bills);
+});
+
+SUBSTITUIR POR:
+app.get("/api/bills", requireUser, async (c: Context) => {
+  const userId = c.get("userId") as string;
+  const bills = await storage.getBills(userId);
+  // Converter de snake_case (banco) para camelCase (frontend)
+  const convertedBills = bills.map(convertBillToFrontend);
+  return c.json(convertedBills);
+});
+
+PASSO 3 - MODIFICAR GET /api/bills/upcoming (linha ~60):
+
+LOCALIZAR:
+app.get("/api/bills/upcoming", requireUser, async (c: Context) => {
+  const userId = c.get("userId") as string;
+  const allBills = await storage.getBills(userId);
+  const today = new Date();
+  const upcoming = allBills.filter(b => !b.isPaid && new Date(b.dueDate) >= today).sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()).slice(0, 10);
+  return c.json(upcoming);
+});
+
+SUBSTITUIR POR:
+app.get("/api/bills/upcoming", requireUser, async (c: Context) => {
+  const userId = c.get("userId") as string;
+  const allBills = await storage.getBills(userId);
+  const today = new Date();
+  // Usar snake_case porque os dados vêm direto do banco
+  const upcoming = allBills
+    .filter(b => !b.is_paid && new Date(b.due_date) >= today)
+    .sort((a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime())
+    .slice(0, 10)
+    .map(convertBillToFrontend);  // Converter para camelCase antes de retornar
+  return c.json(upcoming);
+});
+
+PASSO 4 - MODIFICAR GET /api/bills/:id (linha ~70):
+
+LOCALIZAR:
+app.get("/api/bills/:id", requireUser, async (c: Context) => {
+  const id = c.req.param("id");
+  const bill = await storage.getBill(id);
+  if (!bill) return c.json({ error: "Conta não encontrada" }, 404);
+  return c.json(bill);
+});
+
+SUBSTITUIR POR:
+app.get("/api/bills/:id", requireUser, async (c: Context) => {
+  const id = c.req.param("id");
+  const bill = await storage.getBill(id);
+  if (!bill) return c.json({ error: "Conta não encontrada" }, 404);
+  // Converter para camelCase antes de retornar
+  return c.json(convertBillToFrontend(bill));
+});
+
+PASSO 5 - MODIFICAR POST /api/bills (já está correto, mas vamos garantir que retorna convertido):
+
+LOCALIZAR:
+app.post("/api/bills", requireUser, async (c: Context) => {
+  const userId = c.get("userId") as string;
+  const body = await c.req.json();
+  
+  // Converter campos de camelCase (frontend) para snake_case (banco)
+  const billData = {
+    name: body.name,
+    amount: body.amount,
+    due_date: body.dueDate,
+    is_paid: body.isPaid ?? false,
+    user_id: userId,
+    category_id: body.categoryId || null,
+    description: body.description || null,
+  };
+  
+  const bill = await storage.createBill(billData);
+  return c.json(bill, 201);
+});
+
+SUBSTITUIR POR:
+app.post("/api/bills", requireUser, async (c: Context) => {
+  const userId = c.get("userId") as string;
+  const body = await c.req.json();
+  
+  // Converter campos de camelCase (frontend) para snake_case (banco)
+  const billData = {
+    name: body.name,
+    amount: body.amount,
+    due_date: body.dueDate,
+    is_paid: body.isPaid ?? false,
+    user_id: userId,
+    category_id: body.categoryId || null,
+    description: body.description || null,
+  };
+  
+  const bill = await storage.createBill(billData);
+  // Converter resposta do banco para camelCase
+  return c.json(convertBillToFrontend(bill), 201);
+});
+
+EXPLICAÇÃO:
+- Banco Supabase usa snake_case (due_date, is_paid, user_id)
+- Frontend React usa camelCase (dueDate, isPaid, userId)
+- Backend precisa converter em AMBAS as direções:
+  * Entrada (POST): camelCase → snake_case
+  * Saída (GET): snake_case → camelCase
+
+NÃO MODIFIQUE MAIS NADA. Mostre o diff completo e aguarde confirmação.
