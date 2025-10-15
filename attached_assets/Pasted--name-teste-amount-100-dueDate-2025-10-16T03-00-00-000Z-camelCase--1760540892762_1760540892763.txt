@@ -1,0 +1,101 @@
+{
+  "name": "teste",
+  "amount": 100,
+  "dueDate": "2025-10-16T03:00:00.000Z",  // ❌ camelCase
+  "isPaid": false,
+  "userId": "fa6b50a8-26d0-4a44-82f1-3a0ccff92df3"
+}
+```
+
+---
+
+## 🔍 **CAUSA RAIZ:**
+
+**Frontend envia:** `dueDate` (camelCase)  
+**Banco de dados espera:** `due_date` (snake_case)
+
+O Prisma/Supabase está configurado com nomes de colunas em **snake_case**, mas o código está enviando em **camelCase**.
+
+---
+
+## ✅ **SOLUÇÃO DEFINITIVA:**
+
+Precisamos verificar e corrigir o **schema do Prisma** e a **camada de conversão no backend**.
+
+---
+
+## 📝 **PROMPT PARA O REPLIT ASSISTANT:**
+```
+TAREFA CRÍTICA: Corrigir erro de mapeamento de campos no backend - converter camelCase do frontend para snake_case do banco de dados.
+
+ERRO IDENTIFICADO:
+Backend retorna: {"error":"Could not find the 'dueDate' column of 'bills' in the schema cache"}
+
+CAUSA: 
+Frontend envia campos em camelCase (dueDate, isPaid, userId, categoryId) mas o banco Supabase usa snake_case (due_date, is_paid, user_id, category_id).
+
+ARQUIVOS A MODIFICAR:
+1. server/routes.ts - Adicionar conversão de campos no endpoint POST /api/bills
+2. Verificar prisma/schema.prisma se o @map está correto
+
+SOLUÇÃO PARTE 1 - MODIFICAR server/routes.ts:
+
+LOCALIZAR o endpoint POST /api/bills (aproximadamente linha 50-60):
+
+app.post("/api/bills", requireUser, async (c: Context) => {
+  const userId = c.get("userId") as string;
+  const body = await c.req.json();
+  const bill = await storage.createBill({ ...body, userId });
+  return c.json(bill, 201);
+});
+
+SUBSTITUIR POR:
+
+app.post("/api/bills", requireUser, async (c: Context) => {
+  const userId = c.get("userId") as string;
+  const body = await c.req.json();
+  
+  // Converter campos de camelCase (frontend) para snake_case (banco)
+  const billData = {
+    name: body.name,
+    amount: body.amount,
+    due_date: body.dueDate,  // camelCase → snake_case
+    is_paid: body.isPaid ?? false,  // camelCase → snake_case
+    user_id: userId,  // camelCase → snake_case
+    category_id: body.categoryId || null,  // camelCase → snake_case (opcional)
+    description: body.description || null,  // opcional
+  };
+  
+  const bill = await storage.createBill(billData);
+  return c.json(bill, 201);
+});
+
+SOLUÇÃO PARTE 2 - VERIFICAR prisma/schema.prisma:
+
+Garantir que o modelo Bill tem o @map correto:
+
+model Bill {
+  id          String   @id @default(uuid())
+  name        String
+  amount      Int
+  due_date    DateTime @map("due_date")  // ✅ IMPORTANTE
+  is_paid     Boolean  @default(false) @map("is_paid")  // ✅ IMPORTANTE
+  user_id     String   @map("user_id")  // ✅ IMPORTANTE
+  category_id String?  @map("category_id")  // ✅ IMPORTANTE (opcional)
+  description String?
+  created_at  DateTime @default(now()) @map("created_at")
+  
+  @@map("bills")
+}
+
+Se o @map NÃO estiver presente, ADICIONAR conforme exemplo acima.
+
+VALIDAÇÃO:
+Após aplicar:
+1. Parar servidor (Stop)
+2. Executar: npx prisma generate
+3. Rodar servidor (Run)
+4. Tentar criar nova conta
+5. Deve funcionar sem erro 400
+
+NÃO MODIFIQUE MAIS NADA. Mostre o diff de server/routes.ts primeiro e aguarde confirmação.
