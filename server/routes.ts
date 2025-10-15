@@ -75,7 +75,19 @@ app.get("/api/bills/:id", requireUser, async (c: Context) => {
 app.post("/api/bills", requireUser, async (c: Context) => {
   const userId = c.get("userId") as string;
   const body = await c.req.json();
-  const bill = await storage.createBill({ ...body, userId });
+  
+  // Converter campos de camelCase (frontend) para snake_case (banco)
+  const billData = {
+    name: body.name,
+    amount: body.amount,
+    due_date: body.dueDate,  // camelCase → snake_case
+    is_paid: body.isPaid ?? false,  // camelCase → snake_case
+    user_id: userId,  // camelCase → snake_case
+    category_id: body.categoryId || null,  // camelCase → snake_case (opcional)
+    description: body.description || null,  // opcional
+  };
+  
+  const bill = await storage.createBill(billData);
   return c.json(bill, 201);
 });
 
