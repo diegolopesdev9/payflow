@@ -128,12 +128,62 @@ const Dashboard = () => {
     return weeklyData;
   };
 
+  // Calcula variação percentual entre dois valores
+  const calculatePercentageChange = (current: number, previous: number): number | null => {
+    if (previous === 0) return null;
+    return ((current - previous) / previous) * 100;
+  };
+
+  // Calcula total da semana passada (7-14 dias atrás)
+  const calculatePreviousWeekTotal = (bills: Bill[]): number => {
+    const today = new Date();
+    const sevenDaysAgo = new Date(today.getTime() - (7 * 24 * 60 * 60 * 1000));
+    const fourteenDaysAgo = new Date(today.getTime() - (14 * 24 * 60 * 60 * 1000));
+    
+    return bills
+      .filter(bill => {
+        const dueDate = new Date(bill.due_date);
+        return dueDate >= fourteenDaysAgo && dueDate < sevenDaysAgo && !bill.is_paid;
+      })
+      .reduce((sum, bill) => sum + (bill.amount / 100), 0);
+  };
+
+  // Calcula totais do mês anterior
+  const calculatePreviousMonthTotals = (bills: Bill[]): { pending: number; paid: number } => {
+    const today = new Date();
+    const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+    const lastMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0);
+    
+    const lastMonthBills = bills.filter(bill => {
+      const dueDate = new Date(bill.due_date);
+      return dueDate >= lastMonth && dueDate <= lastMonthEnd;
+    });
+    
+    const pending = lastMonthBills
+      .filter(bill => !bill.is_paid)
+      .reduce((sum, bill) => sum + (bill.amount / 100), 0);
+    
+    const paid = lastMonthBills
+      .filter(bill => bill.is_paid)
+      .reduce((sum, bill) => sum + (bill.amount / 100), 0);
+    
+    return { pending, paid };
+  };
+
   // Calculate statistics from all bills
   const pending = allBills.filter(bill => !bill.is_paid);
   const paid = allBills.filter(bill => bill.is_paid);
 
   const totalToPay = pending.reduce((sum, bill) => sum + (bill.amount / 100), 0); // Convert from cents
   const totalPaid = paid.reduce((sum, bill) => sum + (bill.amount / 100), 0); // Convert from cents
+
+  // Calcular variações percentuais
+  const previousWeekTotal = calculatePreviousWeekTotal(allBills);
+  const weeklyChange = calculatePercentageChange(weeklyTotalCalculated, previousWeekTotal);
+
+  const previousMonthTotals = calculatePreviousMonthTotals(allBills);
+  const totalToPayChange = calculatePercentageChange(totalToPay, previousMonthTotals.pending);
+  const totalPaidChange = calculatePercentageChange(totalPaid, previousMonthTotals.paid);
 
   // Calculate real weekly total from actual bills
   const weeklyTotalCalculated = calculateRealWeeklyTotal(allBills);
@@ -222,9 +272,21 @@ const Dashboard = () => {
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg">Despesas Semanais</CardTitle>
-              <Badge variant="outline" className="bg-success/10 text-success border-success/20">
-                +15% <TrendingUp className="w-3 h-3 ml-1" />
-              </Badge>
+              {weeklyChange !== null && (
+                <Badge 
+                  variant="outline" 
+                  className={weeklyChange >= 0 
+                    ? "bg-destructive/10 text-destructive border-destructive/20" 
+                    : "bg-success/10 text-success border-success/20"
+                  }
+                >
+                  {weeklyChange >= 0 ? '+' : ''}{weeklyChange.toFixed(1)}%
+                  {weeklyChange >= 0 
+                    ? <TrendingUp className="w-3 h-3 ml-1" /> 
+                    : <TrendingDown className="w-3 h-3 ml-1" />
+                  }
+                </Badge>
+              )}
             </div>
           </CardHeader>
           <CardContent>
@@ -287,10 +349,15 @@ const Dashboard = () => {
                   <div className="text-2xl font-bold value-negative">
                     R$ {totalToPay.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </div>
-                  <div className="flex items-center gap-1 text-sm text-destructive">
-                    <TrendingDown className="w-3 h-3" />
-                    <span>-5%</span>
-                  </div>
+                  {totalToPayChange !== null && (
+                    <div className={`flex items-center gap-1 text-sm ${totalToPayChange >= 0 ? 'text-destructive' : 'text-success'}`}>
+                      {totalToPayChange >= 0 
+                        ? <TrendingUp className="w-3 h-3" /> 
+                        : <TrendingDown className="w-3 h-3" />
+                      }
+                      <span>{totalToPayChange >= 0 ? '+' : ''}{totalToPayChange.toFixed(1)}%</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </CardContent>
@@ -307,10 +374,15 @@ const Dashboard = () => {
                   <div className="text-2xl font-bold value-positive">
                     R$ {totalPaid.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </div>
-                  <div className="flex items-center gap-1 text-sm text-success">
-                    <TrendingUp className="w-3 h-3" />
-                    <span>+10%</span>
-                  </div>
+                  {totalPaidChange !== null && (
+                    <div className={`flex items-center gap-1 text-sm ${totalPaidChange >= 0 ? 'text-success' : 'text-destructive'}`}>
+                      {totalPaidChange >= 0 
+                        ? <TrendingUp className="w-3 h-3" /> 
+                        : <TrendingDown className="w-3 h-3" />
+                      }
+                      <span>{totalPaidChange >= 0 ? '+' : ''}{totalPaidChange.toFixed(1)}%</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </CardContent>
