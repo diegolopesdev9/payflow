@@ -25,6 +25,12 @@ const NewBill = () => {
   const { createBill } = useBills();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date>();
+  const [formData, setFormData] = useState({
+    name: "",
+    amount: "",
+    categoryId: "",
+    description: ""
+  });
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -52,13 +58,6 @@ const NewBill = () => {
   if (authenticated === false) {
     return null;
   }
-
-  const [formData, setFormData] = useState({
-    name: "",
-    amount: "",
-    categoryId: "",
-    description: ""
-  });
 
   // Categories are now fetched from API via React Query
 
