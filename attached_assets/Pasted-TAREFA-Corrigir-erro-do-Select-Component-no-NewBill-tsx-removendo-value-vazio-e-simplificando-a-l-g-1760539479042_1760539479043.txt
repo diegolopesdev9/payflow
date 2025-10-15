@@ -1,0 +1,85 @@
+TAREFA: Corrigir erro do Select Component no NewBill.tsx removendo value vazio e simplificando a lógica de categorias.
+
+ARQUIVO: src/pages/NewBill.tsx
+
+PROBLEMA IDENTIFICADO:
+O componente Select do shadcn/ui não aceita SelectItem com value="" (string vazia), causando erro: "A <Select.Item /> must have a value prop that is not an empty string."
+
+SOLUÇÃO:
+LOCALIZAR o bloco do Select de categorias (linhas ~208-240):
+
+<Select
+  value={formData.categoryId}
+  onValueChange={(value) => updateField("categoryId", value)}
+>
+  <SelectTrigger className="input-financial" data-testid="select-category">
+    <SelectValue placeholder="Selecione uma categoria (opcional)" />
+  </SelectTrigger>
+  <SelectContent>
+    <SelectItem value="" data-testid="category-none">
+      Sem categoria
+    </SelectItem>
+    {categoriesLoading ? (
+      <SelectItem value="loading" disabled data-testid="loading-categories">
+        Carregando categorias...
+      </SelectItem>
+    ) : categoriesError ? (
+      <SelectItem value="error" disabled data-testid="error-categories">
+        Erro ao carregar categorias
+      </SelectItem>
+    ) : categories.length === 0 ? (
+      <SelectItem value="empty" disabled data-testid="empty-categories">
+        Nenhuma categoria encontrada
+      </SelectItem>
+    ) : (
+      categories.map((category) => (
+        <SelectItem key={category.id} value={category.id} data-testid={`category-${category.id}`}>
+          {category.name}
+        </SelectItem>
+      ))
+    )}
+  </SelectContent>
+</Select>
+
+SUBSTITUIR POR:
+
+<Select
+  value={formData.categoryId}
+  onValueChange={(value) => updateField("categoryId", value)}
+>
+  <SelectTrigger className="input-financial" data-testid="select-category">
+    <SelectValue placeholder="Selecione uma categoria (opcional)" />
+  </SelectTrigger>
+  <SelectContent>
+    {categoriesLoading ? (
+      <div className="py-2 px-3 text-sm text-muted-foreground">
+        Carregando categorias...
+      </div>
+    ) : categoriesError ? (
+      <div className="py-2 px-3 text-sm text-destructive">
+        Erro ao carregar categorias
+      </div>
+    ) : categories.length === 0 ? (
+      <div className="py-2 px-3 text-sm text-muted-foreground">
+        Nenhuma categoria cadastrada
+      </div>
+    ) : (
+      categories.map((category) => (
+        <SelectItem key={category.id} value={category.id} data-testid={`category-${category.id}`}>
+          {category.name}
+        </SelectItem>
+      ))
+    )}
+  </SelectContent>
+</Select>
+
+EXPLICAÇÃO:
+1. REMOVIDO SelectItem com value="" (causava erro)
+2. REMOVIDO SelectItems com valores placeholder (loading, error, empty)
+3. SUBSTITUÍDO por <div> simples para mensagens de estado
+4. Categoria agora é opcional via placeholder - se não selecionar, fica undefined
+5. Mantido placeholder "Selecione uma categoria (opcional)"
+
+IMPORTANTE: O campo categoryId no formData já inicia como "" (string vazia) e isso é OK. O problema era apenas ter um SelectItem com value vazio.
+
+NÃO MODIFIQUE MAIS NADA. Mostre o diff e aguarde confirmação.
