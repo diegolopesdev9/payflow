@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Home, CreditCard, TrendingUp, User as UserIcon, Mail, Calendar, Edit, LogOut } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { BottomNavigation } from "@/components/BottomNavigation";
 
 type UserProfile = {
   id: string;
@@ -177,38 +178,7 @@ export default function Profile() {
         </Card>
       </div>
 
-      {/* Bottom Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-sm border-t border-border">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-4 gap-1">
-            <button
-              onClick={() => setLocation("/dashboard")}
-              className="nav-item"
-            >
-              <Home className="w-5 h-5" />
-              <span className="text-sm">Home</span>
-            </button>
-            <button
-              onClick={() => setLocation("/bills")}
-              className="nav-item"
-            >
-              <CreditCard className="w-5 h-5" />
-              <span className="text-sm">Contas</span>
-            </button>
-            <button
-              onClick={() => setLocation("/reports")}
-              className="nav-item"
-            >
-              <TrendingUp className="w-5 h-5" />
-              <span className="text-sm">Relatórios</span>
-            </button>
-            <button className="nav-item active">
-              <UserIcon className="w-5 h-5" />
-              <span className="text-sm">Perfil</span>
-            </button>
-          </div>
-        </div>
-      </div>
+      <BottomNavigation />
     </div>
   );
 }

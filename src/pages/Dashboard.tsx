@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { BottomNavigation } from "@/components/BottomNavigation";
 import {
   TrendingUp,
   TrendingDown,
@@ -371,37 +372,7 @@ const Dashboard = () => {
           </CardContent>
         </Card>
 
-        {/* Bottom Navigation */}
-        <div className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-sm border-t border-border">
-          <div className="container mx-auto px-4">
-            <div className="grid grid-cols-4 gap-1">
-              <Link href="/dashboard">
-                <div className="nav-item active flex flex-col items-center gap-1 py-3 cursor-pointer">
-                  <Home className="w-5 h-5" />
-                  <span className="text-sm">Home</span>
-                </div>
-              </Link>
-              <Link href="/bills">
-                <div className="nav-item flex flex-col items-center gap-1 py-3 cursor-pointer">
-                  <CreditCard className="w-5 h-5" />
-                  <span className="text-sm">Contas</span>
-                </div>
-              </Link>
-              <Link href="/reports">
-                <div className="nav-item flex flex-col items-center gap-1 py-3 cursor-pointer">
-                  <TrendingUp className="w-5 h-5" />
-                  <span className="text-sm">Relatórios</span>
-                </div>
-              </Link>
-              <Link href="/profile">
-                <div className="nav-item flex flex-col items-center gap-1 py-3 cursor-pointer">
-                  <Wallet className="w-5 h-5" />
-                  <span className="text-sm">Perfil</span>
-                </div>
-              </Link>
-            </div>
-          </div>
-        </div>
+        <BottomNavigation />
       </div>
     </div>
   );

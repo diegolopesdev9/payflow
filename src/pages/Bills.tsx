@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { BottomNavigation } from "@/components/BottomNavigation";
 import {
   Search,
   Plus,
@@ -239,38 +240,7 @@ const Bills = () => {
           </Card>
         )}
 
-        {/* Bottom Navigation */}
-        <div className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-sm border-t border-border">
-          <div className="container mx-auto px-4">
-            <div className="grid grid-cols-4 gap-1">
-              <button
-                onClick={() => setLocation("/dashboard")}
-                className="nav-item"
-              >
-                <Home className="w-5 h-5" />
-                <span className="text-sm">Home</span>
-              </button>
-              <button className="nav-item active">
-                <CreditCard className="w-5 h-5" />
-                <span className="text-sm">Contas</span>
-              </button>
-              <button
-                onClick={() => setLocation("/reports")}
-                className="nav-item"
-              >
-                <TrendingUp className="w-5 h-5" />
-                <span className="text-sm">Relatórios</span>
-              </button>
-              <button
-                onClick={() => setLocation("/profile")}
-                className="nav-item"
-              >
-                <User className="w-5 h-5" />
-                <span className="text-sm">Perfil</span>
-              </button>
-            </div>
-          </div>
-        </div>
+        <BottomNavigation />
       </div>
     </div>
   );
