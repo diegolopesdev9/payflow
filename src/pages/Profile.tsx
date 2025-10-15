@@ -64,8 +64,52 @@ export default function Profile() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-primary via-primary/95 to-secondary flex items-center justify-center">
-        <div className="text-primary-foreground text-lg">Carregando perfil...</div>
+      <div className="min-h-screen bg-gradient-to-br from-primary via-primary/95 to-secondary">
+        {/* Header Skeleton */}
+        <div className="bg-primary/80 backdrop-blur-sm border-b border-primary-foreground/10">
+          <div className="container mx-auto px-4 py-6">
+            <div className="flex items-center justify-between">
+              <div className="space-y-2">
+                <div className="h-8 w-24 bg-primary-foreground/20 rounded animate-pulse" />
+                <div className="h-4 w-48 bg-primary-foreground/20 rounded animate-pulse" />
+              </div>
+              <div className="h-10 w-20 bg-primary-foreground/20 rounded animate-pulse" />
+            </div>
+          </div>
+        </div>
+
+        <div className="container mx-auto px-4 py-6 space-y-6 pb-24">
+          {/* Profile Card Skeleton */}
+          <Card className="stat-card">
+            <CardHeader>
+              <div className="h-6 w-48 bg-muted/50 rounded animate-pulse" />
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-3">
+                {[1, 2, 3].map(i => (
+                  <div key={i} className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
+                    <div className="w-5 h-5 bg-muted rounded animate-pulse mt-0.5" />
+                    <div className="flex-1 space-y-2">
+                      <div className="h-4 w-16 bg-muted rounded animate-pulse" />
+                      <div className="h-5 w-48 bg-muted rounded animate-pulse" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="h-10 w-full bg-muted/50 rounded animate-pulse mt-4" />
+            </CardContent>
+          </Card>
+
+          {/* Account Info Card Skeleton */}
+          <Card className="stat-card">
+            <CardHeader>
+              <div className="h-6 w-40 bg-muted/50 rounded animate-pulse" />
+            </CardHeader>
+            <CardContent>
+              <div className="h-4 bg-muted/50 rounded animate-pulse" />
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
