@@ -190,8 +190,8 @@ const Bills = () => {
               <p className="text-primary-foreground/80">Gerencie suas contas a pagar</p>
             </div>
             <Button
-              onClick={() => setLocation("/new-bill")}
-              className="btn-secondary-financial"
+              onClick={() => setLocation("/bills/new")}
+              className="btn-financial"
             >
               <Plus className="w-4 h-4 mr-2" />
               Nova Conta
@@ -280,7 +280,7 @@ const Bills = () => {
                 {searchTerm ? "Tente ajustar os filtros de busca" : "Comece adicionando uma nova conta"}
               </p>
               <Button
-                onClick={() => setLocation("/new-bill")}
+                onClick={() => setLocation("/bills/new")}
                 className="btn-financial"
               >
                 <Plus className="w-4 h-4 mr-2" />
