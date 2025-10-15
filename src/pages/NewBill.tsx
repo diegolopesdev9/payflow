@@ -214,21 +214,18 @@ const NewBill = () => {
                     <SelectValue placeholder="Selecione uma categoria (opcional)" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="" data-testid="category-none">
-                      Sem categoria
-                    </SelectItem>
                     {categoriesLoading ? (
-                      <SelectItem value="loading" disabled data-testid="loading-categories">
+                      <div className="py-2 px-3 text-sm text-muted-foreground">
                         Carregando categorias...
-                      </SelectItem>
+                      </div>
                     ) : categoriesError ? (
-                      <SelectItem value="error" disabled data-testid="error-categories">
+                      <div className="py-2 px-3 text-sm text-destructive">
                         Erro ao carregar categorias
-                      </SelectItem>
+                      </div>
                     ) : categories.length === 0 ? (
-                      <SelectItem value="empty" disabled data-testid="empty-categories">
-                        Nenhuma categoria encontrada
-                      </SelectItem>
+                      <div className="py-2 px-3 text-sm text-muted-foreground">
+                        Nenhuma categoria cadastrada
+                      </div>
                     ) : (
                       categories.map((category) => (
                         <SelectItem key={category.id} value={category.id} data-testid={`category-${category.id}`}>
