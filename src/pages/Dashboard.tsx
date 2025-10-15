@@ -256,7 +256,7 @@ const Dashboard = () => {
               <p className="text-primary-foreground/80">Seus gastos desta semana</p>
             </div>
             <Button
-              onClick={() => setLocation("/new-bill")}
+              onClick={() => setLocation("/bills/new")}
               className="btn-secondary-financial"
             >
               <Plus className="w-4 h-4 mr-2" />
