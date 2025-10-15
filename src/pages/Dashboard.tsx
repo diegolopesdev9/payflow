@@ -177,6 +177,9 @@ const Dashboard = () => {
   const totalToPay = pending.reduce((sum, bill) => sum + (bill.amount / 100), 0); // Convert from cents
   const totalPaid = paid.reduce((sum, bill) => sum + (bill.amount / 100), 0); // Convert from cents
 
+  // Calculate real weekly total from actual bills - MOVIDO PARA ANTES
+  const weeklyTotalCalculated = calculateRealWeeklyTotal(allBills);
+
   // Calcular variações percentuais
   const previousWeekTotal = calculatePreviousWeekTotal(allBills);
   const weeklyChange = calculatePercentageChange(weeklyTotalCalculated, previousWeekTotal);
@@ -184,9 +187,6 @@ const Dashboard = () => {
   const previousMonthTotals = calculatePreviousMonthTotals(allBills);
   const totalToPayChange = calculatePercentageChange(totalToPay, previousMonthTotals.pending);
   const totalPaidChange = calculatePercentageChange(totalPaid, previousMonthTotals.paid);
-
-  // Calculate real weekly total from actual bills
-  const weeklyTotalCalculated = calculateRealWeeklyTotal(allBills);
 
   // Process upcoming bills with icons and days left
   const upcomingBills = upcomingData.slice(0, 5).map(bill => {
