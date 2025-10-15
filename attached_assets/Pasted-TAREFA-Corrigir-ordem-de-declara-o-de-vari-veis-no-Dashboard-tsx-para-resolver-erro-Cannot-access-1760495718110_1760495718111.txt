@@ -1,0 +1,47 @@
+TAREFA: Corrigir ordem de declaração de variáveis no Dashboard.tsx para resolver erro "Cannot access before initialization".
+
+ARQUIVO: src/pages/Dashboard.tsx
+
+PROBLEMA: A variável weeklyTotalCalculated está sendo usada antes de ser declarada.
+
+LOCALIZAR as linhas 185-199 (bloco de cálculos):
+// Calculate statistics from all bills
+const pending = allBills.filter(bill => !bill.is_paid);
+const paid = allBills.filter(bill => bill.is_paid);
+
+const totalToPay = pending.reduce((sum, bill) => sum + (bill.amount / 100), 0);
+const totalPaid = paid.reduce((sum, bill) => sum + (bill.amount / 100), 0);
+
+// Calcular variações percentuais
+const previousWeekTotal = calculatePreviousWeekTotal(allBills);
+const weeklyChange = calculatePercentageChange(weeklyTotalCalculated, previousWeekTotal);
+
+const previousMonthTotals = calculatePreviousMonthTotals(allBills);
+const totalToPayChange = calculatePercentageChange(totalToPay, previousMonthTotals.pending);
+const totalPaidChange = calculatePercentageChange(totalPaid, previousMonthTotals.paid);
+
+// Calculate real weekly total from actual bills
+const weeklyTotalCalculated = calculateRealWeeklyTotal(allBills);
+
+SUBSTITUIR POR (corrigindo a ordem):
+// Calculate statistics from all bills
+const pending = allBills.filter(bill => !bill.is_paid);
+const paid = allBills.filter(bill => bill.is_paid);
+
+const totalToPay = pending.reduce((sum, bill) => sum + (bill.amount / 100), 0);
+const totalPaid = paid.reduce((sum, bill) => sum + (bill.amount / 100), 0);
+
+// Calculate real weekly total from actual bills - MOVIDO PARA ANTES
+const weeklyTotalCalculated = calculateRealWeeklyTotal(allBills);
+
+// Calcular variações percentuais
+const previousWeekTotal = calculatePreviousWeekTotal(allBills);
+const weeklyChange = calculatePercentageChange(weeklyTotalCalculated, previousWeekTotal);
+
+const previousMonthTotals = calculatePreviousMonthTotals(allBills);
+const totalToPayChange = calculatePercentageChange(totalToPay, previousMonthTotals.pending);
+const totalPaidChange = calculatePercentageChange(totalPaid, previousMonthTotals.paid);
+
+EXPLICAÇÃO: Moveu a declaração de weeklyTotalCalculated para ANTES de seu uso em weeklyChange.
+
+NÃO MODIFIQUE MAIS NADA. Mostre o diff e aguarde confirmação.
