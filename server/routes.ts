@@ -128,7 +128,7 @@ app.delete("/api/bills/:id", requireUser, async (c: Context) => {
   const deleted = await storage.deleteBill(id);
   if (!deleted) return c.json({ error: "Conta não encontrada" }, 404);
   return c.json({ message: "Conta removida" });
-
+});
 
 // ============ REPORTS ============
 app.get("/api/reports/summary", requireUser, async (c: Context) => {
@@ -136,5 +136,3 @@ app.get("/api/reports/summary", requireUser, async (c: Context) => {
 });
 
 export default app;
-
-});
