@@ -99,19 +99,19 @@ app.post("/api/bills", requireUser, async (c: Context) => {
   const userId = c.get("userId") as string;
   const body = await c.req.json();
   
-  // Supabase Client pode estar fazendo a conversão automaticamente
-  // Vamos enviar EXATAMENTE como o frontend envia
+  // Converter de camelCase (frontend) para snake_case (banco Supabase)
   const billData = {
-    ...body,
-    userId: userId  // Adicionar userId mas manter resto como veio
+    name: body.name,
+    amount: body.amount,
+    due_date: body.dueDate,
+    is_paid: body.isPaid ?? false,
+    user_id: userId,
+    category_id: body.categoryId || null,
+    description: body.description || null,
   };
   
-  console.log("Dados enviados para Supabase:", JSON.stringify(billData));
-  
   const bill = await storage.createBill(billData);
-  console.log("Resposta do Supabase:", JSON.stringify(bill));
-  
-  return c.json(bill, 201);
+  return c.json(convertBillToFrontend(bill), 201);
 });
 
 app.put("/api/bills/:id", requireUser, async (c: Context) => {
