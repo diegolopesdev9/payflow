@@ -1,0 +1,72 @@
+TAREFA CRÍTICA: Remover conversão de campos no routes.ts e usar os nomes EXATOS das colunas do Supabase.
+
+PROBLEMA IDENTIFICADO:
+Backend retorna erro: {"error":"Could not find the 'dueDate' column of 'bills' in the schema cache"}
+
+CAUSA RAIZ:
+O Supabase Client espera que enviemos os campos com os MESMOS NOMES das colunas do banco. Se o banco tem "due_date", devemos enviar "due_date", NÃO converter para "dueDate".
+
+SOLUÇÃO EM 2 PASSOS:
+
+PASSO 1 - Verificar os nomes das colunas no Supabase:
+Execute no Shell do Replit:
+```
+curl -X POST http://localhost:8080/api/bills \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer SEU_TOKEN" \
+  -d '{"name":"teste","amount":1200,"due_date":"2025-10-16T03:00:00.000Z","is_paid":false,"user_id":"fa6b50a8-26d0-4a44-82f1-3a0ccff92df3"}'
+```
+
+PASSO 2 - REMOVER a conversão que fizemos no routes.ts:
+
+ARQUIVO: server/routes.ts
+
+LOCALIZAR o endpoint POST /api/bills (linha ~100):
+
+app.post("/api/bills", requireUser, async (c: Context) => {
+  const userId = c.get("userId") as string;
+  const body = await c.req.json();
+  
+  // Converter campos de camelCase (frontend) para snake_case (banco)
+  const billData = {
+    name: body.name,
+    amount: body.amount,
+    due_date: body.dueDate,  // camelCase → snake_case
+    is_paid: body.isPaid ?? false,  // camelCase → snake_case
+    user_id: userId,  // camelCase → snake_case
+    category_id: body.categoryId || null,  // camelCase → snake_case (opcional)
+    description: body.description || null,  // opcional
+  };
+  
+  const bill = await storage.createBill(billData);
+  // Converter resposta do banco para camelCase
+  return c.json(convertBillToFrontend(bill), 201);
+});
+
+SUBSTITUIR POR (TESTE 1 - Enviar como está):
+
+app.post("/api/bills", requireUser, async (c: Context) => {
+  const userId = c.get("userId") as string;
+  const body = await c.req.json();
+  
+  // Supabase Client pode estar fazendo a conversão automaticamente
+  // Vamos enviar EXATAMENTE como o frontend envia
+  const billData = {
+    ...body,
+    userId: userId  // Adicionar userId mas manter resto como veio
+  };
+  
+  console.log("Dados enviados para Supabase:", JSON.stringify(billData));
+  
+  const bill = await storage.createBill(billData);
+  console.log("Resposta do Supabase:", JSON.stringify(bill));
+  
+  return c.json(bill, 201);
+});
+
+EXPLICAÇÃO:
+Vamos testar enviando os dados EXATAMENTE como o frontend envia, para ver se o Supabase faz a conversão automaticamente. Os console.log vão nos mostrar o que está sendo enviado e recebido.
+
+Após aplicar, tente criar uma conta e me mostre o que aparece no Shell (os console.log).
+
+NÃO MODIFIQUE MAIS NADA. Mostre o diff e aguarde confirmação.
