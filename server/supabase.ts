@@ -119,14 +119,17 @@ export class SupabaseStorage implements IStorage {
     return data;
   }
 
-  async createBill(billData: NewBill): Promise<Bill> {
+  async createBill(billData: any): Promise<any> {
     const { data, error } = await supabase
       .from('bills')
       .insert(billData)
       .select()
       .single();
     
-    if (error) throw error;
+    if (error) {
+      console.error('Erro ao criar bill no Supabase:', error);
+      throw error;
+    }
     return data;
   }
 
