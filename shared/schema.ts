@@ -23,15 +23,15 @@ export interface Bill {
   id: string;
   name: string;
   amount: number;
-  due_date: Date | string;      // snake_case
-  is_paid: boolean;             // snake_case
-  user_id: string;              // snake_case
-  category_id?: string | null;  // snake_case
+  dueDate: Date | string;       // camelCase
+  isPaid: boolean;              // camelCase
+  userId: string;               // camelCase
+  categoryId?: string | null;   // camelCase
   description?: string | null;
-  created_at?: Date | string;   // snake_case
+  createdAt?: Date | string;    // camelCase
 }
 
-export type NewBill = Omit<Bill, 'id' | 'created_at'>;
+export type NewBill = Omit<Bill, 'id' | 'createdAt'>;
 
 export interface CreateBillDTO {
   name: string;
