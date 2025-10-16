@@ -22,19 +22,16 @@ export interface Category {
 export interface Bill {
   id: string;
   name: string;
-  description?: string;
   amount: number;
-  dueDate: string;
-  isPaid: boolean;
-  paidAt?: string;
-  recurring: boolean;
-  recurrence?: string;
-  userId: string;
-  categoryId: string;
-  createdAt: string;
-  updatedAt: string;
-  category?: Category;
+  due_date: Date | string;      // snake_case
+  is_paid: boolean;             // snake_case
+  user_id: string;              // snake_case
+  category_id?: string | null;  // snake_case
+  description?: string | null;
+  created_at?: Date | string;   // snake_case
 }
+
+export type NewBill = Omit<Bill, 'id' | 'created_at'>;
 
 export interface CreateBillDTO {
   name: string;
