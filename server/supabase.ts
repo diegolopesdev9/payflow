@@ -6,7 +6,8 @@ import type { User, Category, Bill, NewUser, NewCategory, NewBill } from '../sha
 const supabaseUrl = process.env.SUPABASE_URL || '';
 const supabaseKey = process.env.SUPABASE_ANON_KEY || '';
 
-const supabase = createClient(supabaseUrl, supabaseKey, {
+// Criar client SEM validação de types automática
+const supabase = createClient<any>(supabaseUrl, supabaseKey, {
   db: { schema: 'public' },
   auth: { persistSession: false, autoRefreshToken: false },
   global: {
