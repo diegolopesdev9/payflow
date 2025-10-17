@@ -129,23 +129,32 @@ export class SupabaseStorage implements IStorage {
     console.log('=== CRIANDO BILL ===');
     console.log('Dados recebidos:', JSON.stringify(billData, null, 2));
     
-    // Usar insert sem validação de schema
-    const { data, error } = await (supabase as any)
-      .from('bills')
-      .insert(billData, { 
-        returning: 'representation',
-        count: null 
-      })
-      .select()
-      .single();
+    // Fazer insert RAW sem qualquer validação de types
+    const response = await fetch(
+      `${process.env.SUPABASE_URL}/rest/v1/bills`,
+      {
+        method: 'POST',
+        headers: {
+          'apikey': process.env.SUPABASE_ANON_KEY || '',
+          'Authorization': `Bearer ${process.env.SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=representation'
+        },
+        body: JSON.stringify(billData)
+      }
+    );
     
-    console.log('Resposta Supabase:', { data, error });
-    
-    if (error) {
-      console.error('Erro detalhado:', JSON.stringify(error, null, 2));
-      throw error;
+    if (!response.ok) {
+      const error = await response.json();
+      console.error('Erro Supabase:', error);
+      throw new Error(JSON.stringify(error));
     }
-    return data;
+    
+    const data = await response.json();
+    console.log('✅ Bill criado:', data);
+    
+    // Retornar o primeiro item do array
+    return Array.isArray(data) ? data[0] : data;
   }
 
   async updateBill(id: string, updates: Partial<NewBill>): Promise<Bill | null> {
