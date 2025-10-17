@@ -96,8 +96,13 @@ app.get("/api/bills/:id", requireUser, async (c: Context) => {
 });
 
 app.post("/api/bills", requireUser, async (c: Context) => {
+  console.log('\n🔵 POST /api/bills - INÍCIO');
+  
   const userId = c.get("userId") as string;
+  console.log('👤 userId:', userId);
+  
   const body = await c.req.json();
+  console.log('📦 body recebido:', JSON.stringify(body, null, 2));
   
   // Converter de camelCase (frontend) para snake_case (banco Supabase)
   const billData = {
@@ -110,8 +115,17 @@ app.post("/api/bills", requireUser, async (c: Context) => {
     description: body.description || null,
   };
   
-  const bill = await storage.createBill(billData);
-  return c.json(convertBillToFrontend(bill), 201);
+  console.log('🔄 billData convertido:', JSON.stringify(billData, null, 2));
+  console.log('📞 Chamando storage.createBill...');
+  
+  try {
+    const bill = await storage.createBill(billData);
+    console.log('✅ Bill criado com sucesso:', bill);
+    return c.json(convertBillToFrontend(bill), 201);
+  } catch (error) {
+    console.error('❌ ERRO ao criar bill:', error);
+    throw error;
+  }
 });
 
 app.put("/api/bills/:id", requireUser, async (c: Context) => {
