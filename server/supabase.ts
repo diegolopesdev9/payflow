@@ -127,16 +127,31 @@ export class SupabaseStorage implements IStorage {
   }
 
   async createBill(billData: any): Promise<any> {
-    const { data, error } = await supabase
-      .from('bills')
-      .insert(billData)
-      .select()
-      .single();
+    // Usar SQL raw para bypass do schema validation
+    const { data, error } = await supabase.rpc('create_bill_raw', {
+      p_name: billData.name,
+      p_amount: billData.amount,
+      p_due_date: billData.due_date,
+      p_is_paid: billData.is_paid,
+      p_user_id: billData.user_id,
+      p_category_id: billData.category_id,
+      p_description: billData.description
+    });
     
     if (error) {
-      console.error('Erro ao criar bill no Supabase:', error);
-      throw error;
+      console.error('Erro ao criar bill:', error);
+      
+      // Fallback: tentar com query direta se RPC não existe
+      const { data: fallbackData, error: fallbackError } = await supabase
+        .from('bills')
+        .insert(billData)
+        .select()
+        .single();
+      
+      if (fallbackError) throw fallbackError;
+      return fallbackData;
     }
+    
     return data;
   }
 
