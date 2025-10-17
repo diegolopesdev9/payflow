@@ -1,0 +1,90 @@
+TAREFA CRÍTICA: Modificar createBill no supabase.ts para usar SQL raw ao invés do query builder.
+
+ARQUIVO: server/supabase.ts
+
+PROBLEMA:
+O Supabase Client query builder valida contra um schema cache que está causando conflito. Usar SQL raw ignora completamente essa validação.
+
+LOCALIZAR o método createBill (linhas ~120-132):
+
+async createBill(billData: any): Promise<any> {
+  const { data, error } = await supabase
+    .from('bills')
+    .insert(billData)
+    .select()
+    .single();
+  
+  if (error) {
+    console.error('Erro ao criar bill no Supabase:', error);
+    throw error;
+  }
+  return data;
+}
+
+SUBSTITUIR POR:
+
+async createBill(billData: any): Promise<any> {
+  // Usar SQL raw para bypass do schema validation
+  const { data, error } = await supabase.rpc('create_bill_raw', {
+    p_name: billData.name,
+    p_amount: billData.amount,
+    p_due_date: billData.due_date,
+    p_is_paid: billData.is_paid,
+    p_user_id: billData.user_id,
+    p_category_id: billData.category_id,
+    p_description: billData.description
+  });
+  
+  if (error) {
+    console.error('Erro ao criar bill:', error);
+    
+    // Fallback: tentar com query direta se RPC não existe
+    const { data: fallbackData, error: fallbackError } = await supabase
+      .from('bills')
+      .insert(billData)
+      .select()
+      .single();
+    
+    if (fallbackError) throw fallbackError;
+    return fallbackData;
+  }
+  
+  return data;
+}
+
+EXPLICAÇÃO:
+Primeiro tenta usar uma função RPC (stored procedure) que precisaria ser criada no Supabase. Se não existir, faz fallback para o insert normal.
+
+ANTES DE APLICAR: Vá no Supabase Dashboard → SQL Editor e execute:
+
+CREATE OR REPLACE FUNCTION create_bill_raw(
+  p_name TEXT,
+  p_amount INTEGER,
+  p_due_date TIMESTAMP,
+  p_is_paid BOOLEAN,
+  p_user_id UUID,
+  p_category_id UUID DEFAULT NULL,
+  p_description TEXT DEFAULT NULL
+)
+RETURNS TABLE (
+  id UUID,
+  name TEXT,
+  amount INTEGER,
+  due_date TIMESTAMP,
+  is_paid BOOLEAN,
+  user_id UUID,
+  category_id UUID,
+  description TEXT,
+  created_at TIMESTAMP
+)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  RETURN QUERY
+  INSERT INTO bills (name, amount, due_date, is_paid, user_id, category_id, description)
+  VALUES (p_name, p_amount, p_due_date, p_is_paid, p_user_id, p_category_id, p_description)
+  RETURNING *;
+END;
+$$;
+
+Depois aplique a mudança no código.
