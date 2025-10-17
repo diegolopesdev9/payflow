@@ -1,38 +1,18 @@
 
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js';
 import { IStorage } from './storage';
 import type { User, Category, Bill, NewUser, NewCategory, NewBill } from '../shared/schema';
 
 const supabaseUrl = process.env.SUPABASE_URL || '';
 const supabaseKey = process.env.SUPABASE_ANON_KEY || '';
 
-// Criar client sem types automáticos
-const supabase: SupabaseClient<any> = createClient(supabaseUrl, supabaseKey, {
-  db: { 
-    schema: 'public'
-  },
+// Client Supabase SIMPLES - configuração mínima
+const supabase = createClient(supabaseUrl, supabaseKey, {
   auth: { 
     persistSession: false, 
-    autoRefreshToken: false,
-    detectSessionInUrl: false,
-    flowType: 'implicit'
-  },
-  global: {
-    headers: { 
-      'x-application-name': 'payflow',
-      'Prefer': 'return=representation'
-    }
-  },
-  // CRÍTICO: Desabilitar schema introspection
-  realtime: {
-    params: {
-      eventsPerSecond: 10
-    }
+    autoRefreshToken: false 
   }
 });
-
-// Desabilitar schema cache via monkey patch
-(supabase as any).rest.shouldThrowOnError = false;
 
 export class SupabaseStorage implements IStorage {
   // User operations
