@@ -49,9 +49,9 @@ const Bills = () => {
 
         // Adicionar prioridade baseada na proximidade do vencimento
         const billsWithPriority = data.map(bill => {
-          const dueDate = new Date(bill.due_date);
+          const dueDate = bill.due_date ? new Date(bill.due_date) : null;
           const today = new Date();
-          const daysLeft = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
+          const daysLeft = dueDate ? Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)) : 999;
 
           let priority = "low";
           if (daysLeft <= 3) priority = "high";
@@ -63,7 +63,7 @@ const Bills = () => {
             amount: bill.amount,
             category: bill.category_id || 'Sem categoria',
             status: bill.is_paid ? "paid" : "pending",
-            dueDate: dueDate.toLocaleDateString('pt-BR'),
+            dueDate: dueDate ? dueDate.toLocaleDateString('pt-BR') : 'Data não definida',
             priority,
           };
         });
