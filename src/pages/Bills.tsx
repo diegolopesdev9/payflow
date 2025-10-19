@@ -255,7 +255,7 @@ const Bills = () => {
 
                   <div className="text-right">
                     <div className="text-xl font-bold">
-                      R$ {bill.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      R$ {(bill.amount / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </div>
                     <div className="flex items-center gap-2 mt-1">
                       <Calendar className="w-3 h-3 text-muted-foreground" />
