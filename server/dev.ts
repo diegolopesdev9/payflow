@@ -1,287 +1,44 @@
-// server/dev.ts - VERSÃO COMPLETA E SEGURA
-import express from 'express'
-import cors from 'cors'
-// Rate limiter desabilitado no Replit devido a conflito com proxy
-// import rateLimit from 'express-rate-limit';
-import { createClient } from '@supabase/supabase-js'
+// server/dev.ts - Servidor Hono para desenvolvimento
+import { serve } from "@hono/node-server";
+import routes from "./routes";
 
-const app = express()
+const PORT = Number(process.env.PORT_API) || 8080;
 
-// ===================================
-// CONFIGURAÇÃO DE AMBIENTE
-// ===================================
-const PORT = Number(process.env.PORT_API) || 8080
-const SUPABASE_URL = process.env.SUPABASE_URL
-const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
+// Verificar variáveis de ambiente essenciais
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
 
-if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
-  console.error('❌ ERRO: Variáveis SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY são obrigatórias!')
-  console.error('Configure-as no Replit Secrets (ícone de cadeado 🔒)')
-  process.exit(1)
+if (!SUPABASE_URL) {
+  console.error('❌ ERRO: Variável SUPABASE_URL é obrigatória!');
+  console.error('Configure-a no Replit Secrets (ícone de cadeado 🔒)');
+  process.exit(1);
 }
 
-// Cliente Supabase (backend)
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
-
-// ===================================
-// MIDDLEWARES
-// ===================================
-
-// CORS
-app.use(cors({ 
-  origin: process.env.CORS_ORIGIN || true, 
-  credentials: true 
-}))
-
-// Body parser
-app.use(express.json())
-
-// Rate limiting
-// Rate limiter desabilitado no Replit devido a conflito com proxy
-// const limiter = rateLimit({
-//   windowMs: 15 * 60 * 1000,
-//   max: 100
-// });
-// app.use(limiter);
-
-// ===================================
-// MIDDLEWARE DE AUTENTICAÇÃO
-// ===================================
-const authenticateUser = async (req: any, res: any, next: any) => {
-  const authHeader = req.headers.authorization
-
-  if (!authHeader?.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Token de autenticação não fornecido' })
-  }
-
-  const token = authHeader.substring(7)
-
-  try {
-    const { data: { user }, error } = await supabase.auth.getUser(token)
-
-    if (error || !user) {
-      return res.status(401).json({ error: 'Token inválido ou expirado' })
-    }
-
-    req.user = user
-    next()
-  } catch (error) {
-    console.error('Erro na autenticação:', error)
-    return res.status(500).json({ error: 'Erro ao validar token' })
-  }
+if (!SUPABASE_KEY) {
+  console.error('❌ ERRO: Configure SUPABASE_SERVICE_ROLE_KEY ou SUPABASE_ANON_KEY!');
+  console.error('Configure no Replit Secrets (ícone de cadeado 🔒)');
+  process.exit(1);
 }
 
-// ===================================
-// ROTAS PÚBLICAS
-// ===================================
+console.log('\n🚀 Iniciando PayFlow API (Hono)...');
+console.log('📊 Ambiente:', process.env.NODE_ENV || 'development');
+console.log('🔗 Supabase URL:', SUPABASE_URL);
+console.log('🔑 Supabase Key:', process.env.SUPABASE_SERVICE_ROLE_KEY ? 'SERVICE_ROLE_KEY ✅' : 'ANON_KEY ✅');
+console.log('⚙️  Porta configurada:', PORT);
 
-app.get('/api/healthz', (_req, res) => {
-  res.json({ 
-    ok: true, 
-    timestamp: new Date().toISOString(),
-    service: 'PayFlow API',
-    version: '1.0.0'
-  })
-})
-
-// ===================================
-// ROTAS AUTENTICADAS
-// ===================================
-
-app.get('/api/whoami', authenticateUser, (req: any, res) => {
-  res.json({ 
-    user: {
-      id: req.user.id,
-      email: req.user.email,
-      created_at: req.user.created_at
-    }
-  })
-})
-
-app.get('/api/users/me', authenticateUser, (req: any, res) => {
-  res.json({ 
-    user: {
-      id: req.user.id,
-      email: req.user.email,
-      name: req.user.user_metadata?.name || req.user.email?.split('@')[0] || 'Usuário',
-      created_at: req.user.created_at
-    }
-  })
-})
-
-// --- BILLS ---
-app.get('/api/bills', authenticateUser, async (req: any, res) => {
-  try {
-    const { data, error } = await supabase
-      .from('bills')
-      .select('*')
-      .eq('user_id', req.user.id)
-      .order('due_date', { ascending: false })
-
-    if (error) throw error
-    res.json(data)
-  } catch (error: any) {
-    res.status(500).json({ error: error.message })
-  }
-})
-
-app.get('/api/bills/upcoming', authenticateUser, async (req: any, res) => {
-  try {
-    const today = new Date().toISOString()
-    const { data, error } = await supabase
-      .from('bills')
-      .select('*')
-      .eq('user_id', req.user.id)
-      .eq('is_paid', false)
-      .gte('due_date', today)
-      .order('due_date', { ascending: true })
-      .limit(10)
-
-    if (error) throw error
-    res.json(data)
-  } catch (error: any) {
-    res.status(500).json({ error: error.message })
-  }
-})
-
-app.get('/api/bills/:id', authenticateUser, async (req: any, res) => {
-  try {
-    const { data, error } = await supabase
-      .from('bills')
-      .select('*')
-      .eq('id', req.params.id)
-      .eq('user_id', req.user.id)
-      .single()
-
-    if (error) throw error
-    if (!data) return res.status(404).json({ error: 'Conta não encontrada' })
-
-    res.json(data)
-  } catch (error: any) {
-    res.status(500).json({ error: error.message })
-  }
-})
-
-app.post('/api/bills', authenticateUser, async (req: any, res) => {
-  try {
-    const billData = {
-      ...req.body,
-      user_id: req.user.id
-    }
-
-    const { data, error } = await supabase
-      .from('bills')
-      .insert([billData])
-      .select()
-      .single()
-
-    if (error) throw error
-    res.status(201).json(data)
-  } catch (error: any) {
-    res.status(400).json({ error: error.message })
-  }
-})
-
-app.put('/api/bills/:id', authenticateUser, async (req: any, res) => {
-  try {
-    const { data, error } = await supabase
-      .from('bills')
-      .update(req.body)
-      .eq('id', req.params.id)
-      .eq('user_id', req.user.id)
-      .select()
-      .single()
-
-    if (error) throw error
-    if (!data) return res.status(404).json({ error: 'Conta não encontrada' })
-
-    res.json(data)
-  } catch (error: any) {
-    res.status(500).json({ error: error.message })
-  }
-})
-
-app.delete('/api/bills/:id', authenticateUser, async (req: any, res) => {
-  try {
-    const { error } = await supabase
-      .from('bills')
-      .delete()
-      .eq('id', req.params.id)
-      .eq('user_id', req.user.id)
-
-    if (error) throw error
-    res.status(204).send()
-  } catch (error: any) {
-    res.status(500).json({ error: error.message })
-  }
-})
-
-// --- CATEGORIES ---
-app.get('/api/categories', authenticateUser, async (req: any, res) => {
-  try {
-    const { data, error } = await supabase
-      .from('categories')
-      .select('*')
-      .eq('user_id', req.user.id)
-
-    if (error) throw error
-    res.json(data)
-  } catch (error: any) {
-    res.status(500).json({ error: error.message })
-  }
-})
-
-// --- REPORTS ---
-app.get('/api/reports/summary', authenticateUser, async (req: any, res) => {
-  try {
-    res.json({ message: 'Relatórios em desenvolvimento' })
-  } catch (error: any) {
-    res.status(500).json({ error: error.message })
-  }
-})
-
-// ===================================
-// TRATAMENTO DE ERROS
-// ===================================
-app.use((err: any, _req: any, res: any, _next: any) => {
-  console.error('Erro não tratado:', err)
-  res.status(500).json({ 
-    error: 'Erro interno do servidor',
-    message: process.env.NODE_ENV === 'development' ? err.message : undefined
-  })
-})
-
-// ===================================
-// SEED: Categorias Padrão
-// ===================================
-async function seedDefaultCategories(userId: string) {
-  const defaultCategories = [
-    { name: 'Moradia', icon: 'Home', color: '#3b82f6' },
-    { name: 'Telecom', icon: 'Phone', color: '#8b5cf6' },
-    { name: 'Cartão', icon: 'CreditCard', color: '#ec4899' },
-    { name: 'Saúde', icon: 'Heart', color: '#10b981' },
-    { name: 'Entretenimento', icon: 'Tv', color: '#f59e0b' },
-    { name: 'Utilidades', icon: 'Zap', color: '#06b6d4' },
-    { name: 'Alimentação', icon: 'UtensilsCrossed', color: '#ef4444' },
-    { name: 'Transporte', icon: 'Car', color: '#6366f1' },
-  ]
-
-  for (const cat of defaultCategories) {
-    try {
-      await supabase
-        .from('categories')
-        .upsert({ ...cat, user_id: userId }, { onConflict: 'user_id,name' })
-    } catch (e) {
-      console.error('Erro ao criar categoria:', cat.name, e)
-    }
-  }
-}
-
-// ===================================
-// INICIALIZAÇÃO
-// ===================================
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 PayFlow API rodando na porta ${PORT}`)
-  console.log(`📊 Ambiente: ${process.env.NODE_ENV || 'development'}`)
-  console.log(`🔐 Supabase: ${SUPABASE_URL}`)
-})
+// Iniciar servidor Hono
+serve({
+  fetch: routes.fetch,
+  port: PORT,
+  hostname: '0.0.0.0'
+}, (info) => {
+  console.log('\n✅ ========================================');
+  console.log('✅  PayFlow API rodando com SUCESSO!');
+  console.log('✅ ========================================');
+  console.log(`✅  URL: http://0.0.0.0:${info.port}`);
+  console.log(`✅  Framework: Hono`);
+  console.log(`✅  Rotas: server/routes.ts`);
+  console.log(`✅  Auth: server/supabaseAuth.ts`);
+  console.log(`✅  Storage: server/supabase.ts`);
+  console.log('✅ ========================================\n');
+});
