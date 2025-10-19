@@ -126,35 +126,34 @@ export class SupabaseStorage implements IStorage {
   }
 
   async createBill(billData: any): Promise<any> {
-    console.log('=== CRIANDO BILL ===');
-    console.log('Dados recebidos:', JSON.stringify(billData, null, 2));
+    console.log('📝 [SupabaseStorage] createBill - dados recebidos:', billData);
     
-    // Fazer insert RAW sem qualquer validação de types
-    const response = await fetch(
-      `${process.env.SUPABASE_URL}/rest/v1/bills`,
-      {
-        method: 'POST',
-        headers: {
-          'apikey': process.env.SUPABASE_ANON_KEY || '',
-          'Authorization': `Bearer ${process.env.SUPABASE_ANON_KEY}`,
-          'Content-Type': 'application/json',
-          'Prefer': 'return=representation'
-        },
-        body: JSON.stringify(billData)
-      }
-    );
+    // GARANTIR conversão para snake_case (caso routes.ts não tenha convertido)
+    const billDataSnakeCase = {
+      name: billData.name,
+      amount: billData.amount,
+      due_date: billData.due_date || billData.dueDate,  // Aceita ambos
+      is_paid: billData.is_paid !== undefined ? billData.is_paid : (billData.isPaid ?? false),
+      user_id: billData.user_id || billData.userId,
+      category_id: billData.category_id || billData.categoryId || null,
+      description: billData.description || null,
+    };
     
-    if (!response.ok) {
-      const error = await response.json();
-      console.error('Erro Supabase:', error);
-      throw new Error(JSON.stringify(error));
+    console.log('🔄 [SupabaseStorage] Dados convertidos para snake_case:', billDataSnakeCase);
+    
+    const { data, error } = await supabase
+      .from('bills')
+      .insert([billDataSnakeCase])
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('❌ [SupabaseStorage] Erro ao criar bill:', error);
+      throw error;
     }
     
-    const data = await response.json();
-    console.log('✅ Bill criado:', data);
-    
-    // Retornar o primeiro item do array
-    return Array.isArray(data) ? data[0] : data;
+    console.log('✅ [SupabaseStorage] Bill criado com sucesso:', data);
+    return data;
   }
 
   async updateBill(id: string, updates: Partial<NewBill>): Promise<Bill | null> {
