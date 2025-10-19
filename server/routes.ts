@@ -13,12 +13,12 @@ function convertBillToFrontend(bill: any) {
     id: bill.id,
     name: bill.name,
     amount: bill.amount,
-    dueDate: bill.due_date,  // snake_case → camelCase
-    isPaid: bill.is_paid,    // snake_case → camelCase
-    userId: bill.user_id,    // snake_case → camelCase
-    categoryId: bill.category_id,  // snake_case → camelCase
+    dueDate: bill.due_date || bill.duedate || bill.dueDate,  // Aceita múltiplos formatos
+    isPaid: bill.is_paid ?? bill.ispaid ?? bill.isPaid ?? false,
+    userId: bill.user_id || bill.userid || bill.userId,
+    categoryId: bill.category_id || bill.categoryid || bill.categoryId,
     description: bill.description,
-    createdAt: bill.created_at,  // snake_case → camelCase
+    createdAt: bill.created_at || bill.createdat || bill.createdAt,
   };
 }
 
