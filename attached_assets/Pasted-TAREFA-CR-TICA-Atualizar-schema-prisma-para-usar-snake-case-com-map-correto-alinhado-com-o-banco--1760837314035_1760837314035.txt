@@ -1,0 +1,90 @@
+TAREFA CRÍTICA: Atualizar schema.prisma para usar snake_case com @map correto, alinhado com o banco Supabase.
+
+ARQUIVO: prisma/schema.prisma
+
+PROBLEMA:
+O schema.prisma está definindo campos em camelCase (dueDate, isPaid, userId) mas o banco Supabase usa snake_case (due_date, is_paid, user_id). Isso causa o erro "Could not find the 'dueDate' column".
+
+LOCALIZAR o model Bill:
+
+model Bill {
+  id          String   @id @default(uuid())
+  name        String
+  amount      Int
+  dueDate     DateTime
+  isPaid      Boolean  @default(false)
+  paidAt      DateTime?
+  recurring   Boolean  @default(false)
+  recurrence  String?
+  userId      String
+  categoryId  String?
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user     User      @relation(fields: [userId], references: [id])
+  category Category? @relation(fields: [categoryId], references: [id])
+
+  @@map("bills")
+}
+
+SUBSTITUIR POR:
+
+model Bill {
+  id          String   @id @default(uuid())
+  name        String
+  amount      Int
+  dueDate     DateTime @map("due_date")      // ✅ Mapear para snake_case
+  isPaid      Boolean  @default(false) @map("is_paid")  // ✅
+  paidAt      DateTime? @map("paid_at")      // ✅
+  recurring   Boolean  @default(false)
+  recurrence  String?
+  userId      String   @map("user_id")       // ✅
+  categoryId  String?  @map("category_id")   // ✅
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")   // ✅
+  updatedAt   DateTime @updatedAt @map("updated_at")        // ✅
+
+  user     User      @relation(fields: [userId], references: [id])
+  category Category? @relation(fields: [categoryId], references: [id])
+
+  @@map("bills")
+}
+
+FAZER O MESMO COM model Category:
+
+LOCALIZAR:
+
+model Category {
+  id        String   @id @default(uuid())
+  name      String
+  color     String   @default("#3b82f6")
+  icon      String   @default("Tag")
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user  User   @relation(fields: [userId], references: [id])
+  bills Bill[]
+
+  @@unique([userId, name])
+  @@map("categories")
+}
+
+SUBSTITUIR POR:
+
+model Category {
+  id        String   @id @default(uuid())
+  name      String
+  color     String   @default("#3b82f6")
+  icon      String   @default("Tag")
+  userId    String   @map("user_id")           // ✅
+  createdAt DateTime @default(now()) @map("created_at")  // ✅
+  updatedAt DateTime @updatedAt @map("updated_at")       // ✅
+
+  user  User   @relation(fields: [userId], references: [id])
+  bills Bill[]
+
+  @@unique([userId, name])
+  @@map("categories")
+}
