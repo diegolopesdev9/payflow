@@ -1,207 +1,271 @@
-import { useState, useEffect } from "react";
-import { useLocation } from "wouter";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { useAuth, fetchWithAuth } from "@/lib/auth";
-import { queryClient } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
-import type { Category } from "@shared/schema";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { 
-  ArrowLeft,
-  Tag,
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { BottomNavigation } from "@/components/BottomNavigation";
+import { useToast } from "@/hooks/use-toast";
+import { fetchWithAuth } from "@/lib/auth";
+import {
   Plus,
-  Edit,
+  Pencil,
   Trash2,
-  Home as HomeIcon,
+  Home,
+  Zap,
+  Utensils,
   Car,
-  ShoppingCart,
-  Gamepad2,
-  Heart,
-  Book,
-  Coffee,
-  Shirt,
   CreditCard,
-  TrendingUp,
-  User
+  HeartPulse,
+  GraduationCap,
+  Gamepad2,
+  Shirt,
+  Smartphone,
+  Wallet,
+  ShoppingBag,
+  Film,
+  Coffee,
+  Dumbbell,
+  Plane,
 } from "lucide-react";
+import type { Category } from "../../shared/schema";
+
+// Mapa de ícones disponíveis
+const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
+  home: Home,
+  zap: Zap,
+  utensils: Utensils,
+  car: Car,
+  "credit-card": CreditCard,
+  "heart-pulse": HeartPulse,
+  "graduation-cap": GraduationCap,
+  "gamepad-2": Gamepad2,
+  shirt: Shirt,
+  smartphone: Smartphone,
+  wallet: Wallet,
+  "shopping-bag": ShoppingBag,
+  film: Film,
+  coffee: Coffee,
+  dumbbell: Dumbbell,
+  plane: Plane,
+};
+
+// Cores disponíveis
+const COLORS = [
+  { name: "Verde", value: "#10b981" },
+  { name: "Amarelo", value: "#f59e0b" },
+  { name: "Vermelho", value: "#ef4444" },
+  { name: "Azul", value: "#3b82f6" },
+  { name: "Roxo", value: "#8b5cf6" },
+  { name: "Rosa", value: "#ec4899" },
+  { name: "Ciano", value: "#06b6d4" },
+  { name: "Laranja", value: "#f97316" },
+  { name: "Roxo Claro", value: "#a855f7" },
+  { name: "Turquesa", value: "#14b8a6" },
+];
 
 const Categories = () => {
-  const [location, setLocation] = useLocation();
-  const { user, authenticated } = useAuth();
   const { toast } = useToast();
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingCategory, setEditingCategory] = useState(null);
-  const [categoryName, setCategoryName] = useState("");
-  const [selectedIcon, setSelectedIcon] = useState("Tag");
-  const [selectedColor, setSelectedColor] = useState("#3b82f6");
+  const queryClient = useQueryClient();
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
+  const [formData, setFormData] = useState({
+    name: "",
+    color: "#10b981",
+    icon: "home",
+  });
 
-  // Redirect if not authenticated
-  useEffect(() => {
-    if (authenticated === false) {
-      setLocation("/login");
-    }
-  }, [authenticated, setLocation]);
-
-  if (authenticated === false) {
-    return null;
-  }
-
-  const iconOptions = [
-    { name: "HomeIcon", icon: HomeIcon, label: "Casa" },
-    { name: "Car", icon: Car, label: "Transporte" },
-    { name: "ShoppingCart", icon: ShoppingCart, label: "Compras" },
-    { name: "Gamepad2", icon: Gamepad2, label: "Entretenimento" },
-    { name: "Heart", icon: Heart, label: "Saúde" },
-    { name: "Book", icon: Book, label: "Educação" },
-    { name: "Coffee", icon: Coffee, label: "Alimentação" },
-    { name: "Shirt", icon: Shirt, label: "Vestuário" }
-  ];
-
-  const colorOptions = [
-    { value: "#3b82f6", label: "Azul", class: "bg-blue-500" },
-    { value: "#ef4444", label: "Vermelho", class: "bg-red-500" },
-    { value: "#22c55e", label: "Verde", class: "bg-green-500" },
-    { value: "#f59e0b", label: "Amarelo", class: "bg-yellow-500" },
-    { value: "#8b5cf6", label: "Roxo", class: "bg-purple-500" },
-    { value: "#06b6d4", label: "Ciano", class: "bg-cyan-500" },
-    { value: "#f97316", label: "Laranja", class: "bg-orange-500" },
-    { value: "#ec4899", label: "Rosa", class: "bg-pink-500" }
-  ];
-
-  // Fetch categories using React Query
+  // Buscar categorias
   const { data: categories = [], isLoading } = useQuery<Category[]>({
-    queryKey: ['/api/categories'],
-    enabled: !!user?.id,
+    queryKey: ["/api/categories"],
+    queryFn: async () => {
+      const response = await fetchWithAuth("/api/categories");
+      if (!response.ok) throw new Error("Erro ao carregar categorias");
+      return response.json();
+    },
   });
 
-  // Create category mutation
-  const createCategoryMutation = useMutation({
-    mutationFn: async (categoryData: { name: string; icon: string; color: string }) => {
-      const res = await fetchWithAuth('/api/categories', {
-        method: 'POST',
-        body: JSON.stringify(categoryData),
+  // Criar categoria
+  const createMutation = useMutation({
+    mutationFn: async (data: { name: string; color: string; icon: string }) => {
+      const response = await fetchWithAuth("/api/categories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
       });
-      return res.json();
+      if (!response.ok) throw new Error("Erro ao criar categoria");
+      return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/categories'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/categories"] });
+      setIsCreateOpen(false);
+      resetForm();
       toast({
-        title: "Categoria criada",
-        description: "A categoria foi criada com sucesso!",
+        title: "Categoria criada!",
+        description: "A categoria foi criada com sucesso.",
       });
     },
     onError: () => {
       toast({
-        title: "Erro ao criar categoria",
-        description: "Não foi possível criar a categoria. Tente novamente.",
+        title: "Erro",
+        description: "Não foi possível criar a categoria.",
         variant: "destructive",
       });
     },
   });
 
-  // Update category mutation
-  const updateCategoryMutation = useMutation({
-    mutationFn: async ({ id, ...categoryData }: { id: string; name: string; icon: string; color: string }) => {
-      const res = await fetchWithAuth(`/api/categories/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify(categoryData),
+  // Editar categoria
+  const updateMutation = useMutation({
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: { name: string; color: string; icon: string };
+    }) => {
+      const response = await fetchWithAuth(`/api/categories/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
       });
-      return res.json();
+      if (!response.ok) throw new Error("Erro ao atualizar categoria");
+      return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/categories'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/categories"] });
+      setIsEditOpen(false);
+      setSelectedCategory(null);
+      resetForm();
       toast({
-        title: "Categoria atualizada",
-        description: "A categoria foi atualizada com sucesso!",
+        title: "Categoria atualizada!",
+        description: "A categoria foi atualizada com sucesso.",
       });
     },
     onError: () => {
       toast({
-        title: "Erro ao atualizar categoria",
-        description: "Não foi possível atualizar a categoria. Tente novamente.",
+        title: "Erro",
+        description: "Não foi possível atualizar a categoria.",
         variant: "destructive",
       });
     },
   });
 
-  // Delete category mutation
-  const deleteCategoryMutation = useMutation({
+  // Deletar categoria
+  const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const res = await fetchWithAuth(`/api/categories/${id}`, {
-        method: 'DELETE',
+      const response = await fetchWithAuth(`/api/categories/${id}`, {
+        method: "DELETE",
       });
-      return res.json();
+      if (!response.ok) throw new Error("Erro ao deletar categoria");
+      return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/categories'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/categories"] });
+      setIsDeleteOpen(false);
+      setSelectedCategory(null);
       toast({
-        title: "Categoria excluída",
-        description: "A categoria foi excluída com sucesso!",
+        title: "Categoria removida!",
+        description: "A categoria foi removida com sucesso.",
       });
     },
     onError: () => {
       toast({
-        title: "Erro ao excluir categoria",
-        description: "Não foi possível excluir a categoria. Tente novamente.",
+        title: "Erro",
+        description: "Não foi possível remover a categoria.",
         variant: "destructive",
       });
     },
   });
 
-  const handleSaveCategory = () => {
-    if (!categoryName.trim()) return;
-    if (!user?.id) return;
+  const resetForm = () => {
+    setFormData({ name: "", color: "#10b981", icon: "home" });
+  };
 
-    if (editingCategory) {
-      updateCategoryMutation.mutate({
-        id: editingCategory.id,
-        name: categoryName,
-        icon: selectedIcon,
-        color: selectedColor
+  const handleCreate = () => {
+    if (!formData.name.trim()) {
+      toast({
+        title: "Nome obrigatório",
+        description: "Por favor, insira um nome para a categoria.",
+        variant: "destructive",
       });
-    } else {
-      createCategoryMutation.mutate({
-        name: categoryName,
-        icon: selectedIcon,
-        color: selectedColor
+      return;
+    }
+    createMutation.mutate(formData);
+  };
+
+  const handleEdit = () => {
+    if (!selectedCategory) return;
+    if (!formData.name.trim()) {
+      toast({
+        title: "Nome obrigatório",
+        description: "Por favor, insira um nome para a categoria.",
+        variant: "destructive",
       });
+      return;
     }
-
-    setCategoryName("");
-    setSelectedIcon("Tag");
-    setSelectedColor("#3b82f6");
-    setEditingCategory(null);
-    setIsDialogOpen(false);
+    updateMutation.mutate({ id: selectedCategory.id, data: formData });
   };
 
-  const handleEditCategory = (category) => {
-    setEditingCategory(category);
-    setCategoryName(category.name);
-    setSelectedIcon(category.icon || "Tag");
-    setSelectedColor(category.color || "#3b82f6");
-    setIsDialogOpen(true);
+  const handleDelete = () => {
+    if (!selectedCategory) return;
+    deleteMutation.mutate(selectedCategory.id);
   };
 
-  const handleDeleteCategory = (categoryId) => {
-    if (window.confirm('Tem certeza que deseja excluir esta categoria?')) {
-      deleteCategoryMutation.mutate(categoryId);
-    }
+  const openCreateDialog = () => {
+    resetForm();
+    setIsCreateOpen(true);
   };
 
-  const getIconComponent = (iconName) => {
-    const iconOption = iconOptions.find(opt => opt.name === iconName);
-    return iconOption ? iconOption.icon : Tag;
+  const openEditDialog = (category: Category) => {
+    setSelectedCategory(category);
+    setFormData({
+      name: category.name,
+      color: category.color || "#10b981",
+      icon: category.icon || "home",
+    });
+    setIsEditOpen(true);
+  };
+
+  const openDeleteDialog = (category: Category) => {
+    setSelectedCategory(category);
+    setIsDeleteOpen(true);
+  };
+
+  const getIconComponent = (iconName: string) => {
+    return ICON_MAP[iconName] || Home;
   };
 
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary via-primary/95 to-secondary flex items-center justify-center">
-        <div className="text-primary-foreground text-lg" data-testid="loading-categories">Carregando categorias...</div>
+        <div className="text-primary-foreground text-lg">Carregando...</div>
       </div>
     );
   }
@@ -211,161 +275,72 @@ const Categories = () => {
       {/* Header */}
       <div className="bg-primary/80 backdrop-blur-sm border-b border-primary-foreground/10">
         <div className="container mx-auto px-4 py-6">
-          <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setLocation("/profile")}
-              className="text-primary-foreground hover:bg-primary-foreground/10"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </Button>
-            <div className="flex-1">
-              <h1 className="text-2xl font-bold text-primary-foreground">Categorias de Gastos</h1>
-              <p className="text-primary-foreground/80">Organize suas despesas por categoria</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-primary-foreground">Categorias</h1>
+              <p className="text-primary-foreground/80">Organize suas despesas</p>
             </div>
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <DialogTrigger asChild>
-                <Button 
-                  onClick={() => {
-                    setEditingCategory(null);
-                    setCategoryName("");
-                    setSelectedIcon("Tag");
-                    setSelectedColor("#3b82f6");
-                  }}
-                  className="btn-secondary-financial"
-                  data-testid="button-new-category"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Nova
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>
-                    {editingCategory ? "Editar Categoria" : "Nova Categoria"}
-                  </DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="category-name">Nome da Categoria</Label>
-                    <Input
-                      id="category-name"
-                      value={categoryName}
-                      onChange={(e) => setCategoryName(e.target.value)}
-                      placeholder="Ex: Supermercado, Combustível..."
-                      data-testid="input-category-name"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Ícone</Label>
-                    <div className="grid grid-cols-4 gap-2">
-                      {iconOptions.map((option) => {
-                        const IconComponent = option.icon;
-                        return (
-                          <button
-                            key={option.name}
-                            onClick={() => setSelectedIcon(option.name)}
-                            className={`p-3 rounded-lg border flex flex-col items-center gap-1 transition-colors ${
-                              selectedIcon === option.name
-                                ? "border-primary bg-primary/10"
-                                : "border-border hover:bg-muted"
-                            }`}
-                            data-testid={`button-icon-${option.name.toLowerCase()}`}
-                          >
-                            <IconComponent className="w-5 h-5" />
-                            <span className="text-xs">{option.label}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Cor</Label>
-                    <div className="grid grid-cols-4 gap-2">
-                      {colorOptions.map((color) => {
-                        return (
-                          <button
-                            key={color.value}
-                            onClick={() => setSelectedColor(color.value)}
-                            className={`p-3 rounded-lg border flex flex-col items-center gap-1 transition-colors ${
-                              selectedColor === color.value
-                                ? "border-primary bg-primary/10"
-                                : "border-border hover:bg-muted"
-                            }`}
-                            data-testid={`button-color-${color.label.toLowerCase()}`}
-                          >
-                            <div className={`w-6 h-6 rounded-full ${color.class}`} />
-                            <span className="text-xs">{color.label}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  <Button 
-                    onClick={handleSaveCategory} 
-                    className="btn-primary-financial w-full"
-                    disabled={createCategoryMutation.isPending || updateCategoryMutation.isPending}
-                    data-testid="button-save-category"
-                  >
-                    {createCategoryMutation.isPending || updateCategoryMutation.isPending ? "Salvando..." : 
-                     editingCategory ? "Salvar Alterações" : "Criar Categoria"}
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
+            <Button onClick={openCreateDialog} className="btn-financial">
+              <Plus className="w-4 h-4 mr-2" />
+              Nova Categoria
+            </Button>
           </div>
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-6 space-y-6">
-        {/* Categories List */}
-        <div className="space-y-3">
+      <div className="container mx-auto px-4 py-6">
+        {/* Grid de Categorias */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-20">
           {categories.map((category) => {
-            const IconComponent = getIconComponent(category.icon);
+            const IconComponent = getIconComponent(category.icon || "home");
             return (
-              <Card key={category.id} className="fin-card" data-testid={`card-category-${category.id}`}>
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-lg flex items-center justify-center" 
-                         style={{ backgroundColor: `${category.color}20` }}>
-                      <IconComponent className="w-6 h-6" style={{ color: category.color }} />
-                    </div>
-
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-semibold" data-testid={`text-category-name-${category.id}`}>
-                          {category.name}
-                        </h3>
-                        <Badge variant="secondary" className="text-xs" data-testid={`badge-category-${category.id}`}>
-                          Ativa
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground" data-testid={`text-category-id-${category.id}`}>
-                        ID: {String(category.id).slice(0, 8)}...
-                      </p>
-                    </div>
-
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleEditCategory(category)}
-                        disabled={updateCategoryMutation.isPending}
-                        data-testid={`button-edit-category-${category.id}`}
+              <Card
+                key={category.id}
+                className="fin-card cursor-pointer hover:shadow-lg transition-all duration-300 group"
+                style={{
+                  borderLeft: `4px solid ${category.color || "#10b981"}`,
+                }}
+              >
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div
+                        className="w-12 h-12 rounded-lg flex items-center justify-center"
+                        style={{
+                          backgroundColor: `${category.color || "#10b981"}20`,
+                        }}
                       >
-                        <Edit className="w-4 h-4" />
+                        <IconComponent
+                          className="w-6 h-6"
+                          style={{ color: category.color || "#10b981" }}
+                        />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-lg">{category.name}</h3>
+                        <p className="text-sm text-muted-foreground">
+                          {category.icon || "home"}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openEditDialog(category);
+                        }}
+                      >
+                        <Pencil className="w-4 h-4" />
                       </Button>
                       <Button
-                        variant="outline"
+                        variant="ghost"
                         size="sm"
-                        onClick={() => handleDeleteCategory(category.id)}
-                        disabled={deleteCategoryMutation.isPending}
-                        className="text-destructive border-destructive hover:bg-destructive/10"
-                        data-testid={`button-delete-category-${category.id}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openDeleteDialog(category);
+                        }}
+                        className="text-destructive hover:text-destructive"
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
@@ -378,66 +353,178 @@ const Categories = () => {
         </div>
 
         {categories.length === 0 && (
-          <Card className="fin-card" data-testid="card-no-categories">
-            <CardContent className="p-12 text-center">
-              <Tag className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2" data-testid="text-no-categories-title">
-                Nenhuma categoria criada
-              </h3>
-              <p className="text-muted-foreground mb-4" data-testid="text-no-categories-desc">
-                Crie categorias para organizar melhor suas despesas
-              </p>
-              <Button 
-                onClick={() => setIsDialogOpen(true)}
-                className="btn-primary-financial"
-                data-testid="button-create-first-category"
-              >
+          <Card className="fin-card text-center">
+            <CardContent className="p-12">
+              <div className="text-muted-foreground mb-4">
+                <Wallet className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                <h3 className="text-lg font-semibold mb-2">Nenhuma categoria cadastrada</h3>
+                <p>Comece criando sua primeira categoria</p>
+              </div>
+              <Button onClick={openCreateDialog} className="btn-financial">
                 <Plus className="w-4 h-4 mr-2" />
-                Criar primeira categoria
+                Criar Categoria
               </Button>
             </CardContent>
           </Card>
         )}
 
-        {/* Bottom Navigation */}
-        <div className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-sm border-t border-border">
-          <div className="container mx-auto px-4">
-            <div className="grid grid-cols-4 gap-1">
-              <button 
-                onClick={() => setLocation("/dashboard")}
-                className="nav-item"
-              >
-                <HomeIcon className="w-5 h-5" />
-                <span className="text-sm">Home</span>
-              </button>
-              <button 
-                onClick={() => setLocation("/bills")}
-                className="nav-item"
-              >
-                <CreditCard className="w-5 h-5" />
-                <span className="text-sm">Contas</span>
-              </button>
-              <button 
-                onClick={() => setLocation("/reports")}
-                className="nav-item"
-              >
-                <TrendingUp className="w-5 h-5" />
-                <span className="text-sm">Relatórios</span>
-              </button>
-              <button 
-                onClick={() => setLocation("/profile")}
-                className="nav-item active"
-              >
-                <User className="w-5 h-5" />
-                <span className="text-sm">Perfil</span>
-              </button>
+        <BottomNavigation />
+      </div>
+
+      {/* Dialog Criar */}
+      <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Nova Categoria</DialogTitle>
+            <DialogDescription>Crie uma nova categoria para organizar suas despesas</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Nome *</Label>
+              <Input
+                id="name"
+                placeholder="Ex: Alimentação, Transporte..."
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="icon">Ícone</Label>
+              <Select value={formData.icon} onValueChange={(value) => setFormData({ ...formData, icon: value })}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.keys(ICON_MAP).map((iconKey) => {
+                    const IconComponent = ICON_MAP[iconKey];
+                    return (
+                      <SelectItem key={iconKey} value={iconKey}>
+                        <div className="flex items-center gap-2">
+                          <IconComponent className="w-4 h-4" />
+                          <span>{iconKey}</span>
+                        </div>
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Cor</Label>
+              <div className="grid grid-cols-5 gap-2">
+                {COLORS.map((color) => (
+                  <button
+                    key={color.value}
+                    type="button"
+                    className={`w-full h-10 rounded-md border-2 transition-all ${
+                      formData.color === color.value ? "border-foreground scale-110" : "border-transparent"
+                    }`}
+                    style={{ backgroundColor: color.value }}
+                    onClick={() => setFormData({ ...formData, color: color.value })}
+                    title={color.name}
+                  />
+                ))}
+              </div>
             </div>
           </div>
-        </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsCreateOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleCreate} disabled={createMutation.isPending}>
+              {createMutation.isPending ? "Criando..." : "Criar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
-        {/* Add bottom padding to prevent content being hidden by navigation */}
-        <div className="h-20" />
-      </div>
+      {/* Dialog Editar */}
+      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar Categoria</DialogTitle>
+            <DialogDescription>Atualize as informações da categoria</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-name">Nome *</Label>
+              <Input
+                id="edit-name"
+                placeholder="Ex: Alimentação, Transporte..."
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-icon">Ícone</Label>
+              <Select value={formData.icon} onValueChange={(value) => setFormData({ ...formData, icon: value })}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.keys(ICON_MAP).map((iconKey) => {
+                    const IconComponent = ICON_MAP[iconKey];
+                    return (
+                      <SelectItem key={iconKey} value={iconKey}>
+                        <div className="flex items-center gap-2">
+                          <IconComponent className="w-4 h-4" />
+                          <span>{iconKey}</span>
+                        </div>
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Cor</Label>
+              <div className="grid grid-cols-5 gap-2">
+                {COLORS.map((color) => (
+                  <button
+                    key={color.value}
+                    type="button"
+                    className={`w-full h-10 rounded-md border-2 transition-all ${
+                      formData.color === color.value ? "border-foreground scale-110" : "border-transparent"
+                    }`}
+                    style={{ backgroundColor: color.value }}
+                    onClick={() => setFormData({ ...formData, color: color.value })}
+                    title={color.name}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleEdit} disabled={updateMutation.isPending}>
+              {updateMutation.isPending ? "Salvando..." : "Salvar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog Deletar */}
+      <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir a categoria "{selectedCategory?.name}"? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteMutation.isPending ? "Excluindo..." : "Excluir"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

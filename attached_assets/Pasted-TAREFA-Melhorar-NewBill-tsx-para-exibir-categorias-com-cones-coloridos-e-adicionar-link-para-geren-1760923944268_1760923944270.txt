@@ -1,0 +1,126 @@
+TAREFA: Melhorar NewBill.tsx para exibir categorias com ícones coloridos e adicionar link para gerenciar categorias.
+
+PROBLEMA ATUAL:
+O select de categorias em NewBill.tsx mostra apenas o nome das categorias, sem ícones ou cores. Não há forma fácil de criar novas categorias durante o cadastro de uma conta.
+
+ARQUIVO: src/pages/NewBill.tsx
+
+MODIFICAÇÕES NECESSÁRIAS:
+
+1. ADICIONAR IMPORTS DE ÍCONES (após os imports existentes, antes da declaração do componente):
+
+import { 
+  CalendarIcon, 
+  ArrowLeft, 
+  Save, 
+  X, 
+  Plus,
+  Home,
+  Zap,
+  Utensils,
+  Car,
+  CreditCard,
+  HeartPulse,
+  GraduationCap,
+  Gamepad2,
+  Shirt,
+  Smartphone,
+  Wallet,
+  ShoppingBag,
+  Film,
+  Coffee,
+  Dumbbell,
+  Plane,
+} from "lucide-react";
+
+2. ADICIONAR MAPA DE ÍCONES (antes da declaração do componente NewBill):
+
+// Mapa de ícones
+const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
+  home: Home,
+  zap: Zap,
+  utensils: Utensils,
+  car: Car,
+  "credit-card": CreditCard,
+  "heart-pulse": HeartPulse,
+  "graduation-cap": GraduationCap,
+  "gamepad-2": Gamepad2,
+  shirt: Shirt,
+  smartphone: Smartphone,
+  wallet: Wallet,
+  "shopping-bag": ShoppingBag,
+  film: Film,
+  coffee: Coffee,
+  dumbbell: Dumbbell,
+  plane: Plane,
+};
+
+const getIconComponent = (iconName: string) => {
+  return ICON_MAP[iconName] || Wallet;
+};
+
+3. LOCALIZAR a seção de Category (aproximadamente linha 181):
+
+<div className="space-y-2">
+  <Label htmlFor="category">Categoria</Label>
+  <Select
+
+SUBSTITUIR POR:
+
+<div className="space-y-2">
+  <div className="flex items-center justify-between">
+    <Label htmlFor="category">Categoria</Label>
+    <Button
+      type="button"
+      variant="link"
+      size="sm"
+      onClick={() => setLocation("/categories")}
+      className="text-primary h-auto p-0"
+    >
+      <Plus className="w-3 h-3 mr-1" />
+      Gerenciar categorias
+    </Button>
+  </div>
+  <Select
+
+4. LOCALIZAR o map de categories dentro do SelectContent (aproximadamente linha 201):
+
+categories.map((category) => (
+  <SelectItem key={category.id} value={category.id} data-testid={`category-${category.id}`}>
+    {category.name}
+  </SelectItem>
+))
+
+SUBSTITUIR POR:
+
+categories.map((category) => {
+  const IconComponent = getIconComponent(category.icon || "wallet");
+  return (
+    <SelectItem key={category.id} value={category.id} data-testid={`category-${category.id}`}>
+      <div className="flex items-center gap-2">
+        <IconComponent 
+          className="w-4 h-4" 
+          style={{ color: category.color || "#10b981" }}
+        />
+        <span>{category.name}</span>
+      </div>
+    </SelectItem>
+  );
+})
+
+EXPLICAÇÃO:
+- Adiciona ícones do lucide-react para representar visualmente cada categoria
+- Cria um mapa de ícones para facilitar o acesso
+- Adiciona botão "Gerenciar categorias" que leva para /categories
+- Modifica o SelectItem para exibir ícone colorido + nome
+- Usa a cor definida na categoria para colorir o ícone
+- Mantém compatibilidade com categorias sem ícone (usa "wallet" como fallback)
+
+VALIDAÇÃO:
+Após aplicar, o select de categorias deve mostrar ícones coloridos ao lado dos nomes, e deve haver um link "Gerenciar categorias" acima do select.
+
+IMPORTANTE: 
+- NÃO modifique nenhuma outra parte do código
+- Mantenha todos os data-testid existentes
+- Não altere a lógica de submit do formulário
+- Mostre o diff completo antes de aplicar
