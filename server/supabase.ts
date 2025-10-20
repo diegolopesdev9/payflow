@@ -111,6 +111,10 @@ export class SupabaseStorage implements IStorage {
       .eq('user_id', userId);
     
     if (error) throw error;
+    
+    console.log('🔍 [getBills] RAW DATA do Supabase:', JSON.stringify(data?.[0], null, 2));
+    console.log('🔍 [getBills] Nomes das chaves:', data?.[0] ? Object.keys(data[0]) : 'nenhum dado');
+    
     return data || [];
   }
 
