@@ -88,6 +88,11 @@ const App = () => (
               <Categories />
             </ProtectedRoute>
           </Route>
+          <Route path="/categories">
+            <ProtectedRoute>
+              <Categories />
+            </ProtectedRoute>
+          </Route>
           <Route path="/profile/settings">
             <ProtectedRoute>
               <AppSettings />
