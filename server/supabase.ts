@@ -107,7 +107,7 @@ export class SupabaseStorage implements IStorage {
   async getBills(userId: string): Promise<Bill[]> {
     const { data, error } = await supabase
       .from('bills')
-      .select('*')
+      .select('id, name, amount, due_date, is_paid, user_id, category_id, description, created_at')
       .eq('user_id', userId);
     
     if (error) throw error;
@@ -117,7 +117,7 @@ export class SupabaseStorage implements IStorage {
   async getBill(id: string): Promise<Bill | null> {
     const { data, error } = await supabase
       .from('bills')
-      .select('*')
+      .select('id, name, amount, due_date, is_paid, user_id, category_id, description, created_at')
       .eq('id', id)
       .single();
     
@@ -181,7 +181,7 @@ export class SupabaseStorage implements IStorage {
     const now = new Date().toISOString();
     const { data, error } = await supabase
       .from('bills')
-      .select('*')
+      .select('id, name, amount, due_date, is_paid, user_id, category_id, description, created_at')
       .eq('user_id', userId)
       .eq('is_paid', false)
       .gt('due_date', now)
