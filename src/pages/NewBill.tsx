@@ -8,7 +8,29 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, ArrowLeft, Save, X } from "lucide-react";
+import { 
+  CalendarIcon, 
+  ArrowLeft, 
+  Save, 
+  X, 
+  Plus,
+  Home,
+  Zap,
+  Utensils,
+  Car,
+  CreditCard,
+  HeartPulse,
+  GraduationCap,
+  Gamepad2,
+  Shirt,
+  Smartphone,
+  Wallet,
+  ShoppingBag,
+  Film,
+  Coffee,
+  Dumbbell,
+  Plane,
+} from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -17,6 +39,30 @@ import { useBills } from "@/hooks/useBills";
 import { useAuth } from "@/lib/auth";
 import { useQuery } from "@tanstack/react-query";
 import type { Category } from "../../shared/schema";
+
+// Mapa de ícones
+const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
+  home: Home,
+  zap: Zap,
+  utensils: Utensils,
+  car: Car,
+  "credit-card": CreditCard,
+  "heart-pulse": HeartPulse,
+  "graduation-cap": GraduationCap,
+  "gamepad-2": Gamepad2,
+  shirt: Shirt,
+  smartphone: Smartphone,
+  wallet: Wallet,
+  "shopping-bag": ShoppingBag,
+  film: Film,
+  coffee: Coffee,
+  dumbbell: Dumbbell,
+  plane: Plane,
+};
+
+const getIconComponent = (iconName: string) => {
+  return ICON_MAP[iconName] || Wallet;
+};
 
 const NewBill = () => {
   const [location, setLocation] = useLocation();
@@ -127,6 +173,17 @@ const NewBill = () => {
               <h1 className="text-2xl font-bold text-primary-foreground">Nova Despesa</h1>
               <p className="text-primary-foreground/80">Adicione uma nova conta a pagar</p>
             </div>
+            {/* Link to manage categories */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setLocation("/categories")}
+              className="ml-auto text-primary-foreground hover:bg-primary-foreground/10"
+              data-testid="button-manage-categories"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Gerenciar Categorias
+            </Button>
           </div>
         </div>
       </div>
@@ -227,11 +284,20 @@ const NewBill = () => {
                         Nenhuma categoria cadastrada
                       </div>
                     ) : (
-                      categories.map((category) => (
-                        <SelectItem key={category.id} value={category.id} data-testid={`category-${category.id}`}>
-                          {category.name}
-                        </SelectItem>
-                      ))
+                      categories.map((category) => {
+                        const IconComponent = getIconComponent(category.icon || "wallet");
+                        return (
+                          <SelectItem key={category.id} value={category.id} data-testid={`category-${category.id}`}>
+                            <div className="flex items-center gap-2">
+                              <IconComponent 
+                                className="w-4 h-4" 
+                                style={{ color: category.color || "#10b981" }}
+                              />
+                              <span>{category.name}</span>
+                            </div>
+                          </SelectItem>
+                        );
+                      })
                     )}
                   </SelectContent>
                 </Select>
