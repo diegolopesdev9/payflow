@@ -192,11 +192,15 @@ const Dashboard = () => {
   const upcomingBills = upcomingData.slice(0, 5).map(bill => {
     const category = categoryMap.get(bill.category_id);
     const categoryName = category?.name ?? 'Sem categoria';
+    const dueDate = bill.dueDate ? new Date(bill.dueDate) : null;
+    const today = new Date();
+    const daysLeft = dueDate ? Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)) : 0;
+    
     return {
       ...bill,
       name: bill.name || bill.description, // Use name field from schema
       categoryName,
-      daysLeft: Math.ceil((new Date(bill.due_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)),
+      daysLeft,
       icon: getIconForCategory(categoryName)
     };
   });
