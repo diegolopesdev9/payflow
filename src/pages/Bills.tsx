@@ -49,7 +49,7 @@ const Bills = () => {
 
         // Adicionar prioridade baseada na proximidade do vencimento
         const billsWithPriority = data.map(bill => {
-          const dueDate = bill.due_date ? new Date(bill.due_date) : null;
+          const dueDate = bill.dueDate ? new Date(bill.dueDate) : null;
           const today = new Date();
           const daysLeft = dueDate ? Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)) : 999;
 
