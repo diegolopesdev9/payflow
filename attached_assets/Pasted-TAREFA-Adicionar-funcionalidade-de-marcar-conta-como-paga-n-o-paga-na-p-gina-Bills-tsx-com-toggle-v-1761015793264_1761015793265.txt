@@ -1,0 +1,117 @@
+TAREFA: Adicionar funcionalidade de marcar conta como paga/não paga na página Bills.tsx com toggle visual.
+
+INSTRUÇÕES CRÍTICAS:
+- MODIFIQUE APENAS o arquivo src/pages/Bills.tsx
+- NÃO modifique nenhum outro arquivo
+- Mostre o diff completo antes de aplicar
+- Aguarde confirmação
+
+PROBLEMA/OBJETIVO:
+Atualmente a página Bills.tsx apenas lista as contas. Precisamos adicionar a funcionalidade de marcar como pago/não pago com um clique, mantendo feedback visual claro do status.
+
+ARQUIVOS A MODIFICAR: src/pages/Bills.tsx
+
+MUDANÇAS NECESSÁRIAS:
+
+1. ADICIONAR IMPORTS (no topo do arquivo):
+   - Checkbox component do shadcn/ui (se não estiver)
+   - Ícones CheckCircle2 e Circle do lucide-react
+   - useMutation e queryClient do React Query
+
+2. ADICIONAR MUTATION para toggle do status (após os useQuery existentes):
+
+const togglePaidMutation = useMutation({
+  mutationFn: async ({ id, isPaid }: { id: string; isPaid: boolean }) => {
+    const response = await fetchWithAuth(`/api/bills/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ isPaid }),
+    });
+    if (!response.ok) throw new Error('Failed to update bill');
+    return response.json();
+  },
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ['/api/bills'] });
+    queryClient.invalidateQueries({ queryKey: ['/api/bills/upcoming'] });
+    toast({
+      title: "Status atualizado!",
+      description: "O status da conta foi alterado com sucesso.",
+    });
+  },
+  onError: () => {
+    toast({
+      title: "Erro ao atualizar",
+      description: "Não foi possível atualizar o status da conta.",
+      variant: "destructive",
+    });
+  },
+});
+
+3. ADICIONAR FUNÇÃO para handle do toggle (antes do return do componente):
+
+const handleTogglePaid = (billId: string, currentStatus: boolean) => {
+  togglePaidMutation.mutate({ id: billId, isPaid: !currentStatus });
+};
+
+4. MODIFICAR A RENDERIZAÇÃO DOS CARDS de contas:
+
+Na seção onde mapeia as contas (sortedBills.map), ADICIONAR:
+
+a) Dentro do Card, ADICIONAR className condicional:
+   className={`
+     bg-primary-foreground/10 border-primary-foreground/20 
+     hover:bg-primary-foreground/15 transition-all
+     ${bill.isPaid ? 'opacity-60' : ''}
+     ${bill.priority === 'high' && !bill.isPaid ? 'border-l-4 border-l-red-500' : ''}
+     ${bill.priority === 'medium' && !bill.isPaid ? 'border-l-4 border-l-yellow-500' : ''}
+   `}
+
+b) ADICIONAR botão de toggle ANTES do conteúdo do card:
+   <button
+     onClick={() => handleTogglePaid(bill.id, bill.isPaid)}
+     disabled={togglePaidMutation.isPending}
+     className="mt-1 shrink-0 hover:scale-110 transition-transform"
+   >
+     {bill.isPaid ? (
+       <CheckCircle2 className="w-6 h-6 text-green-500" />
+     ) : (
+       <Circle className="w-6 h-6 text-primary-foreground/40 hover:text-primary-foreground/60" />
+     )}
+   </button>
+
+c) ADICIONAR line-through no título e valor quando pago:
+   No h3 do título: className={`font-semibold text-primary-foreground ${bill.isPaid ? 'line-through' : ''}`}
+   No span do valor: className={`font-bold text-lg whitespace-nowrap ${bill.isPaid ? 'line-through text-primary-foreground/60' : 'text-accent'}`}
+
+d) ADICIONAR badge "Paga" após o badge de vencimento:
+   {bill.isPaid && (
+     <Badge className="bg-green-500/20 text-green-300 border-green-500/30">
+       ✓ Paga
+     </Badge>
+   )}
+
+5. MELHORAR A ORDENAÇÃO (modificar sortedBills):
+   const sortedBills = [...filteredBills].sort((a, b) => {
+     if (a.isPaid !== b.isPaid) return a.isPaid ? 1 : -1;
+     return a.daysLeft - b.daysLeft;
+   });
+
+EXPLICAÇÃO DO COMPORTAMENTO:
+- Ícone ○ (Circle) = conta NÃO paga (cinza)
+- Ícone ✓ (CheckCircle2) = conta PAGA (verde)
+- Clique no ícone alterna o status
+- Contas pagas ficam com 60% opacidade e texto tachado
+- Contas pagas aparecem no final da lista
+- Toast de feedback aparece após atualização
+
+VALIDAÇÃO APÓS APLICAR:
+1. Verificar que os imports estão corretos
+2. Verificar que togglePaidMutation foi adicionado
+3. Verificar que handleTogglePaid foi adicionado
+4. Verificar que o botão de toggle está antes do conteúdo do card
+5. Testar clicando no ícone de uma conta
+6. Confirmar que aparece o toast de sucesso
+7. Confirmar que a conta muda visualmente (opacidade, texto tachado)
+8. Confirmar que contas pagas vão para o final da lista
+
+NÃO MODIFIQUE MAIS NADA. Mostre o diff completo e aguarde confirmação antes de aplicar.
