@@ -38,9 +38,21 @@ app.get("/api/users/me", requireUser, (c: Context) => {
 
 // ============ CATEGORIES ============
 app.get("/api/categories", requireUser, async (c: Context) => {
+  console.log('\n🔍 GET /api/categories - INÍCIO');
+  
   const userId = c.get("userId") as string;
-  const categories = await storage.getCategories(userId);
-  return c.json(categories);
+  console.log('👤 userId:', userId);
+  
+  try {
+    console.log('📞 Chamando storage.getCategories...');
+    const categories = await storage.getCategories(userId);
+    console.log('✅ Categorias retornadas:', categories?.length || 0);
+    console.log('📦 Categorias:', JSON.stringify(categories, null, 2));
+    return c.json(categories);
+  } catch (error) {
+    console.error('❌ ERRO ao buscar categorias:', error);
+    throw error;
+  }
 });
 
 app.post("/api/categories", requireUser, async (c: Context) => {
