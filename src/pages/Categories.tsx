@@ -75,6 +75,27 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   plane: Plane,
 };
 
+// Traduções dos ícones para o português
+const ICON_TRANSLATIONS: Record<string, string> = {
+  home: "Início",
+  zap: "Energia",
+  utensils: "Alimentação",
+  car: "Transporte",
+  "credit-card": "Cartão de Crédito",
+  "heart-pulse": "Saúde",
+  "graduation-cap": "Educação",
+  "gamepad-2": "Jogos",
+  shirt: "Roupas",
+  smartphone: "Celular",
+  wallet: "Carteira",
+  "shopping-bag": "Compras",
+  film: "Filmes",
+  coffee: "Café",
+  dumbbell: "Academia",
+  plane: "Viagem",
+};
+
+
 // Cores disponíveis
 const COLORS = [
   { name: "Verde", value: "#10b981" },
@@ -416,7 +437,7 @@ const Categories = () => {
                       <SelectItem key={iconKey} value={iconKey}>
                         <div className="flex items-center gap-2">
                           <IconComponent className="w-4 h-4" />
-                          <span>{iconKey}</span>
+                          <span>{ICON_TRANSLATIONS[iconKey] || iconKey}</span>
                         </div>
                       </SelectItem>
                     );
@@ -483,7 +504,7 @@ const Categories = () => {
                       <SelectItem key={iconKey} value={iconKey}>
                         <div className="flex items-center gap-2">
                           <IconComponent className="w-4 h-4" />
-                          <span>{iconKey}</span>
+                          <span>{ICON_TRANSLATIONS[iconKey] || iconKey}</span>
                         </div>
                       </SelectItem>
                     );
