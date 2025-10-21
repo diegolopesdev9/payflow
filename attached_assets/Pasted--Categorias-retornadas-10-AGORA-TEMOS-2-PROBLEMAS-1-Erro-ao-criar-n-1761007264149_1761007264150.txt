@@ -1,0 +1,94 @@
+✅ Categorias retornadas: 10
+```
+
+---
+
+## ❌ **AGORA TEMOS 2 PROBLEMAS:**
+
+1. **Erro ao criar nova categoria** - "Não foi possível criar a categoria"
+2. **Nome do ícone aparecendo embaixo** - precisa remover
+
+---
+
+## 🔧 **VAMOS CORRIGIR AMBOS!**
+
+---
+
+## 📝 **PROMPT PARA O REPLIT ASSISTANT:**
+```
+TAREFA: Corrigir Categories.tsx - remover nome do ícone dos cards e traduzir nomes de ícones no select.
+
+ARQUIVO: src/pages/Categories.tsx
+
+MODIFICAÇÃO 1 - REMOVER NOME DO ÍCONE DOS CARDS:
+
+LOCALIZAR (aproximadamente linha 270):
+                      <div>
+                        <h3 className="font-semibold text-lg">{category.name}</h3>
+                        <p className="text-sm text-muted-foreground">
+                          {category.icon || "home"}
+                        </p>
+                      </div>
+
+SUBSTITUIR POR:
+                      <div>
+                        <h3 className="font-semibold text-lg">{category.name}</h3>
+                      </div>
+
+MODIFICAÇÃO 2 - ADICIONAR TRADUÇÕES DE ÍCONES:
+
+ADICIONAR LOGO APÓS os imports e ANTES do ICON_MAP (linha 60 aproximadamente):
+
+// Traduções dos ícones para português
+const ICON_TRANSLATIONS: Record<string, string> = {
+  "home": "Casa",
+  "zap": "Raio",
+  "utensils": "Talheres",
+  "car": "Carro",
+  "credit-card": "Cartão",
+  "heart-pulse": "Saúde",
+  "graduation-cap": "Educação",
+  "gamepad-2": "Jogo",
+  "shirt": "Roupa",
+  "smartphone": "Celular",
+  "wallet": "Carteira",
+  "shopping-bag": "Compras",
+  "film": "Filme",
+  "coffee": "Café",
+  "dumbbell": "Academia",
+  "plane": "Avião",
+};
+
+MODIFICAÇÃO 3 - USAR TRADUÇÕES NO SELECT (modal de criar, aproximadamente linha 380):
+
+LOCALIZAR:
+                      <SelectItem key={iconKey} value={iconKey}>
+                        <div className="flex items-center gap-2">
+                          <IconComponent className="w-4 h-4" />
+                          <span>{iconKey}</span>
+                        </div>
+                      </SelectItem>
+
+SUBSTITUIR POR:
+                      <SelectItem key={iconKey} value={iconKey}>
+                        <div className="flex items-center gap-2">
+                          <IconComponent className="w-4 h-4" />
+                          <span>{ICON_TRANSLATIONS[iconKey] || iconKey}</span>
+                        </div>
+                      </SelectItem>
+
+MODIFICAÇÃO 4 - REPETIR NO SELECT DO MODAL DE EDIÇÃO (aproximadamente linha 460):
+
+LOCALIZAR o segundo SelectContent com o map de ícones e aplicar a MESMA modificação acima.
+
+EXPLICAÇÃO:
+- Remove a linha que mostra o nome técnico do ícone (ex: "home", "zap")
+- Adiciona traduções em português para todos os ícones
+- Usa traduções no select, mostrando "Casa" ao invés de "home"
+- Aplica em ambos os modais (criar e editar)
+
+VALIDAÇÃO:
+Cards devem mostrar apenas o nome da categoria sem o nome do ícone embaixo.
+Select de ícones deve mostrar nomes em português.
+
+NÃO MODIFIQUE MAIS NADA. Mostre o diff completo e aplique.
