@@ -16,20 +16,52 @@ import {
   Calendar,
   DollarSign,
   Clock,
-  Check
+  Check,
+  CheckCircle2,
+  Circle,
+  ArrowLeft
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { useAuth, fetchWithAuth } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 const Bills = () => {
   const [location, setLocation] = useLocation();
   const { user, authenticated, loading: authLoading } = useAuth();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
   const [activeFilter, setActiveFilter] = useState("todas");
   const [bills, setBills] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const togglePaidMutation = useMutation({
+    mutationFn: async ({ id, isPaid }: { id: string; isPaid: boolean }) => {
+      const response = await fetchWithAuth(`/api/bills/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isPaid }),
+      });
+      if (!response.ok) throw new Error('Failed to update bill');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/bills'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/bills/upcoming'] });
+      toast({
+        title: "Status atualizado!",
+        description: "O status da conta foi alterado com sucesso.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Erro ao atualizar",
+        description: "Não foi possível atualizar o status da conta.",
+        variant: "destructive",
+      });
+    },
+  });
 
   useEffect(() => {
     if (authLoading) {
@@ -84,6 +116,10 @@ const Bills = () => {
     fetchBills();
   }, [authenticated, user?.id]);
 
+  const handleTogglePaid = (billId: string, currentStatus: boolean) => {
+    togglePaidMutation.mutate({ id: billId, isPaid: !currentStatus });
+  };
+
   const filterBills = (status: string) => {
     switch (status) {
       case "vencer":
@@ -98,6 +134,11 @@ const Bills = () => {
   const filteredBills = filterBills(activeFilter).filter(bill =>
     bill.description.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const sortedBills = [...filteredBills].sort((a, b) => {
+    if (a.isPaid !== b.isPaid) return a.isPaid ? 1 : -1;
+    return a.daysLeft - b.daysLeft;
+  });
 
   if (loading) {
     return (
@@ -184,18 +225,28 @@ const Bills = () => {
       {/* Header */}
       <div className="bg-primary/80 backdrop-blur-sm border-b border-primary-foreground/10">
         <div className="container mx-auto px-4 py-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-primary-foreground">Contas</h1>
-              <p className="text-primary-foreground/80">Gerencie suas contas a pagar</p>
-            </div>
+          <div className="flex items-center gap-4">
             <Button
-              onClick={() => setLocation("/bills/new")}
-              className="btn-financial"
+              variant="ghost"
+              size="sm"
+              onClick={() => setLocation("/dashboard")}
+              className="text-primary-foreground hover:bg-primary-foreground/10"
             >
-              <Plus className="w-4 h-4 mr-2" />
-              Nova Conta
+              <ArrowLeft className="w-4 h-4" />
             </Button>
+            <div className="flex-1 flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-bold text-primary-foreground">Contas</h1>
+                <p className="text-primary-foreground/80">Gerencie suas contas a pagar</p>
+              </div>
+              <Button
+                onClick={() => setLocation("/bills/new")}
+                className="btn-financial"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Nova Conta
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -230,40 +281,71 @@ const Bills = () => {
 
         {/* Bills List */}
         <div className="space-y-4">
-          {filteredBills.map((bill) => (
+          {sortedBills.map((bill) => (
             <Card
               key={bill.id}
-              className={`fin-card cursor-pointer border-l-4 ${getPriorityColor(bill.priority)} hover:shadow-lg transition-all duration-300`}
-              onClick={() => setLocation(`/bills/${bill.id}`)}
+              className={`
+                bg-primary-foreground/10 border-primary-foreground/20 
+                hover:bg-primary-foreground/15 transition-all
+                ${bill.isPaid ? 'opacity-60' : ''}
+                ${bill.priority === 'high' && !bill.isPaid ? 'border-l-4 border-l-red-500' : ''}
+                ${bill.priority === 'medium' && !bill.isPaid ? 'border-l-4 border-l-yellow-500' : ''}
+              `}
             >
               <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
-                      {bill.status === "paid" ? (
-                        <Check className="w-6 h-6 text-success" />
-                      ) : (
-                        <Clock className="w-6 h-6 text-warning" />
-                      )}
+                <div className="flex items-center gap-4">
+                  <button
+                    onClick={() => handleTogglePaid(bill.id, bill.isPaid)}
+                    disabled={togglePaidMutation.isPending}
+                    className="mt-1 shrink-0 hover:scale-110 transition-transform"
+                  >
+                    {bill.isPaid ? (
+                      <CheckCircle2 className="w-6 h-6 text-green-500" />
+                    ) : (
+                      <Circle className="w-6 h-6 text-primary-foreground/40 hover:text-primary-foreground/60" />
+                    )}
+                  </button>
+
+                  <div 
+                    className="flex-1 flex items-center justify-between cursor-pointer"
+                    onClick={() => setLocation(`/bills/${bill.id}`)}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
+                        {bill.status === "paid" ? (
+                          <Check className="w-6 h-6 text-success" />
+                        ) : (
+                          <Clock className="w-6 h-6 text-warning" />
+                        )}
+                      </div>
+
+                      <div>
+                        <h3 className={`font-semibold text-lg text-primary-foreground ${bill.isPaid ? 'line-through' : ''}`}>
+                          {bill.description}
+                        </h3>
+                        <p className="text-muted-foreground">{bill.category}</p>
+                      </div>
                     </div>
 
-                    <div>
-                      <h3 className="font-semibold text-lg">{bill.description}</h3>
-                      <p className="text-muted-foreground">{bill.category}</p>
+                    <div className="text-right">
+                      <div className={`text-xl font-bold whitespace-nowrap ${bill.isPaid ? 'line-through text-primary-foreground/60' : 'text-accent'}`}>
+                        R$ {(bill.amount / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </div>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Calendar className="w-3 h-3 text-muted-foreground" />
+                        <span className="text-sm text-muted-foreground">{bill.dueDate}</span>
+                      </div>
+                      <div className="flex gap-2 mt-2">
+                        <Badge className={`${getStatusColor(bill.status)}`}>
+                          {bill.status === "paid" ? "Pago" : "Pendente"}
+                        </Badge>
+                        {bill.isPaid && (
+                          <Badge className="bg-green-500/20 text-green-300 border-green-500/30">
+                            ✓ Paga
+                          </Badge>
+                        )}
+                      </div>
                     </div>
-                  </div>
-
-                  <div className="text-right">
-                    <div className="text-xl font-bold">
-                      R$ {(bill.amount / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </div>
-                    <div className="flex items-center gap-2 mt-1">
-                      <Calendar className="w-3 h-3 text-muted-foreground" />
-                      <span className="text-sm text-muted-foreground">{bill.dueDate}</span>
-                    </div>
-                    <Badge className={`mt-2 ${getStatusColor(bill.status)}`}>
-                      {bill.status === "paid" ? "Pago" : "Pendente"}
-                    </Badge>
                   </div>
                 </div>
               </CardContent>
@@ -271,7 +353,7 @@ const Bills = () => {
           ))}
         </div>
 
-        {filteredBills.length === 0 && (
+        {sortedBills.length === 0 && (
           <Card className="fin-card text-center">
             <CardContent className="p-12">
               <CreditCard className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
