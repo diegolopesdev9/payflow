@@ -311,15 +311,25 @@ const Categories = () => {
       {/* Header */}
       <div className="bg-primary/80 backdrop-blur-sm border-b border-primary-foreground/10">
         <div className="container mx-auto px-4 py-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-primary-foreground">Categorias</h1>
-              <p className="text-primary-foreground/80">Organize suas despesas</p>
-            </div>
-            <Button onClick={openCreateDialog} className="btn-financial">
-              <Plus className="w-4 h-4 mr-2" />
-              Nova Categoria
+          <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setLocation("/dashboard")}
+              className="text-primary-foreground hover:bg-primary-foreground/10"
+            >
+              <ArrowLeft className="w-4 h-4" />
             </Button>
+            <div className="flex-1 flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-bold text-primary-foreground">Categorias</h1>
+                <p className="text-primary-foreground/80">Organize suas despesas</p>
+              </div>
+              <Button onClick={openCreateDialog} className="btn-financial">
+                <Plus className="w-4 h-4 mr-2" />
+                Nova Categoria
+              </Button>
+            </div>
           </div>
         </div>
       </div>
