@@ -103,13 +103,28 @@ const Categories = () => {
   });
 
   // Buscar categorias
-  const { data: categories = [], isLoading } = useQuery<Category[]>({
+  const { data: categories = [], isLoading, error } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
     queryFn: async () => {
+      console.log("🔍 [Categories] Iniciando fetch de categorias...");
       const response = await fetchWithAuth("/api/categories");
-      if (!response.ok) throw new Error("Erro ao carregar categorias");
-      return response.json();
+      console.log("🔍 [Categories] Response status:", response.status);
+      if (!response.ok) {
+        console.error("❌ [Categories] Erro na resposta:", response.status);
+        throw new Error("Erro ao carregar categorias");
+      }
+      const data = await response.json();
+      console.log("✅ [Categories] Categorias recebidas:", data);
+      console.log("✅ [Categories] Quantidade:", data?.length || 0);
+      return data;
     },
+  });
+
+  console.log("📊 [Categories] Estado atual:", { 
+    isLoading, 
+    hasError: !!error, 
+    categoriesCount: categories?.length || 0,
+    categories 
   });
 
   // Criar categoria
