@@ -1,0 +1,55 @@
+TAREFA: Remover completamente a segunda linha que mostra o nome técnico do ícone nos cards de categoria.
+
+ARQUIVO: src/pages/Categories.tsx
+
+LOCALIZAR (aproximadamente linha 268):
+                    <div className="flex items-center gap-4">
+                      <div
+                        className="w-12 h-12 rounded-lg flex items-center justify-center"
+                        style={{
+                          backgroundColor: `${category.color || "#10b981"}20`,
+                        }}
+                      >
+                        <IconComponent
+                          className="w-6 h-6"
+                          style={{ color: category.color || "#10b981" }}
+                        />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-lg">{category.name}</h3>
+                        <p className="text-sm text-muted-foreground">
+                          {category.icon || "home"}
+                        </p>
+                      </div>
+                    </div>
+
+SUBSTITUIR POR:
+                    <div className="flex items-center gap-4">
+                      <div
+                        className="w-12 h-12 rounded-lg flex items-center justify-center"
+                        style={{
+                          backgroundColor: `${category.color || "#10b981"}20`,
+                        }}
+                      >
+                        <IconComponent
+                          className="w-6 h-6"
+                          style={{ color: category.color || "#10b981" }}
+                        />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-lg">{category.name}</h3>
+                      </div>
+                    </div>
+
+EXPLICAÇÃO:
+- Remove completamente o parágrafo <p> que mostra o nome técnico do ícone
+- Mantém apenas o título com o nome da categoria
+- Cards ficarão mais limpos e profissionais
+
+VALIDAÇÃO:
+Após aplicar, os cards devem mostrar apenas: ícone colorido + nome da categoria.
+Não deve aparecer "home", "zap", "utensils", etc.
+
+IMPORTANTE: Remova TODO o elemento <p> incluindo as tags de abertura e fechamento.
+
+NÃO MODIFIQUE MAIS NADA. Mostre o diff completo e aplique.
