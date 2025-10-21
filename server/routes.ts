@@ -56,10 +56,33 @@ app.get("/api/categories", requireUser, async (c: Context) => {
 });
 
 app.post("/api/categories", requireUser, async (c: Context) => {
+  console.log('\n🔵 POST /api/categories - INÍCIO');
+  
   const userId = c.get("userId") as string;
+  console.log('👤 userId:', userId);
+  
   const body = await c.req.json();
-  const category = await storage.createCategory({ ...body, userId });
-  return c.json(category, 201);
+  console.log('📦 body recebido:', JSON.stringify(body, null, 2));
+  
+  // Converter para snake_case para o Supabase
+  const categoryData = {
+    name: body.name,
+    color: body.color || null,
+    icon: body.icon || null,
+    user_id: userId,
+  };
+  
+  console.log('📄 categoryData convertido:', JSON.stringify(categoryData, null, 2));
+  console.log('📞 Chamando storage.createCategory...');
+  
+  try {
+    const category = await storage.createCategory(categoryData);
+    console.log('✅ Categoria criada com sucesso:', category);
+    return c.json(category, 201);
+  } catch (error) {
+    console.error('❌ ERRO ao criar categoria:', error);
+    throw error;
+  }
 });
 
 app.put("/api/categories/:id", requireUser, async (c: Context) => {
