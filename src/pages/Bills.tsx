@@ -38,26 +38,37 @@ const Bills = () => {
 
   const togglePaidMutation = useMutation({
     mutationFn: async ({ id, isPaid }: { id: string; isPaid: boolean }) => {
+      console.log('🔄 Enviando PUT:', { id, isPaid });
       const response = await fetchWithAuth(`/api/bills/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ isPaid }),
       });
-      if (!response.ok) throw new Error('Failed to update bill');
-      return response.json();
+      console.log('📡 Response status:', response.status);
+      if (!response.ok) {
+        const error = await response.json();
+        console.error('❌ Erro do servidor:', error);
+        throw new Error(error.error || 'Failed to update bill');
+      }
+      const data = await response.json();
+      console.log('✅ Resposta:', data);
+      return data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/bills'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/bills/upcoming'] });
+    onSuccess: (data) => {
+      console.log('✅ Mutation success, invalidando queries...');
+      // Força refetch imediato
+      queryClient.refetchQueries({ queryKey: ['/api/bills'] });
+      queryClient.refetchQueries({ queryKey: ['/api/bills/upcoming'] });
       toast({
         title: "Status atualizado!",
-        description: "O status da conta foi alterado com sucesso.",
+        description: `Conta marcada como ${data.isPaid ? 'paga' : 'pendente'}.`,
       });
     },
-    onError: () => {
+    onError: (error: any) => {
+      console.error('❌ Mutation error:', error);
       toast({
         title: "Erro ao atualizar",
-        description: "Não foi possível atualizar o status da conta.",
+        description: error.message || "Não foi possível atualizar o status da conta.",
         variant: "destructive",
       });
     },
@@ -287,7 +298,7 @@ const Bills = () => {
               className={`
                 bg-primary-foreground/10 border-primary-foreground/20 
                 hover:bg-primary-foreground/15 transition-all
-                ${bill.isPaid ? 'opacity-60' : ''}
+                ${bill.isPaid ? 'border-l-4 border-l-green-500' : ''}
                 ${bill.priority === 'high' && !bill.isPaid ? 'border-l-4 border-l-red-500' : ''}
                 ${bill.priority === 'medium' && !bill.isPaid ? 'border-l-4 border-l-yellow-500' : ''}
               `}
@@ -320,7 +331,7 @@ const Bills = () => {
                       </div>
 
                       <div>
-                        <h3 className={`font-semibold text-lg text-primary-foreground ${bill.isPaid ? 'line-through' : ''}`}>
+                        <h3 className="font-semibold text-lg text-primary-foreground">
                           {bill.description}
                         </h3>
                         <p className="text-muted-foreground">{bill.category}</p>
@@ -328,7 +339,7 @@ const Bills = () => {
                     </div>
 
                     <div className="text-right">
-                      <div className={`text-xl font-bold whitespace-nowrap ${bill.isPaid ? 'line-through text-primary-foreground/60' : 'text-accent'}`}>
+                      <div className={`text-xl font-bold whitespace-nowrap ${bill.isPaid ? 'line-through text-primary-foreground/80' : 'text-accent'}`}>
                         R$ {(bill.amount / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </div>
                       <div className="flex items-center gap-2 mt-1">
