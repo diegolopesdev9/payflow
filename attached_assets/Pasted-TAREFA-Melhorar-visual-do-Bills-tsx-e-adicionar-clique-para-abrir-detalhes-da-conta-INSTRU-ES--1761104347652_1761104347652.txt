@@ -1,0 +1,114 @@
+TAREFA: Melhorar visual do Bills.tsx e adicionar clique para abrir detalhes da conta.
+
+INSTRUÇÕES CRÍTICAS:
+- MODIFIQUE APENAS src/pages/Bills.tsx
+- Mostre o diff antes de aplicar
+- Aguarde confirmação
+
+OBJETIVO:
+1. Melhorar visual dos cards (mais limpo e organizado)
+2. Adicionar clique na área do card para abrir detalhes (/bills/:id)
+3. Manter toggle do checkbox funcionando
+
+ARQUIVO: src/pages/Bills.tsx
+
+MUDANÇAS NO CARD (localizar onde faz sortedBills.map, aproximadamente linha 190-260):
+
+LOCALIZAR o Card completo e FAZER AS SEGUINTES MUDANÇAS:
+
+MUDANÇA 1 - Adicionar onClick no Card para abrir detalhes:
+
+TROCAR:
+<Card
+  key={bill.id}
+  className={`...`}
+>
+
+POR:
+<Card
+  key={bill.id}
+  onClick={() => setLocation(`/bills/${bill.id}`)}
+  className={`cursor-pointer ...`}
+>
+
+MUDANÇA 2 - Reorganizar conteúdo do card para visual mais limpo:
+
+DENTRO do CardContent, SUBSTITUIR todo o conteúdo por:
+
+<CardContent className="p-4">
+  <div className="flex items-center gap-4">
+    {/* Checkbox - impede propagação do clique */}
+    <div onClick={(e) => e.stopPropagation()}>
+      <button
+        onClick={() => handleTogglePaid(bill.id, bill.isPaid)}
+        disabled={togglePaidMutation.isPending}
+        className="shrink-0 hover:scale-110 transition-transform"
+      >
+        {bill.isPaid ? (
+          <CheckCircle2 className="w-6 h-6 text-green-500" />
+        ) : (
+          <Circle className="w-6 h-6 text-primary-foreground/40 hover:text-primary-foreground/60" />
+        )}
+      </button>
+    </div>
+
+    {/* Conteúdo principal */}
+    <div className="flex-1 min-w-0">
+      <div className="flex items-center justify-between mb-2">
+        <h3 className="font-semibold text-lg text-primary-foreground">
+          {bill.name}
+        </h3>
+        <span className={`font-bold text-xl ${bill.isPaid ? 'line-through text-primary-foreground/70' : 'text-accent'}`}>
+          {bill.formattedAmount}
+        </span>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-3 text-sm">
+        <div className="flex items-center gap-1 text-primary-foreground/70">
+          <Calendar className="w-4 h-4" />
+          <span>{bill.formattedDueDate}</span>
+        </div>
+
+        <div className="flex items-center gap-1 text-primary-foreground/70">
+          <Tag className="w-4 h-4" />
+          <span>{bill.categoryName}</span>
+        </div>
+
+        {!bill.isPaid && bill.daysLeft <= 7 && (
+          <Badge
+            variant={bill.priority === 'high' ? 'destructive' : 'default'}
+            className="text-xs"
+          >
+            {bill.daysLeft === 0 ? '🔥 Vence hoje' :
+             bill.daysLeft === 1 ? '⚠️ Vence amanhã' :
+             bill.daysLeft < 0 ? `❌ Atrasada ${Math.abs(bill.daysLeft)}d` :
+             `📅 ${bill.daysLeft} dias`}
+          </Badge>
+        )}
+
+        {bill.isPaid && (
+          <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-xs">
+            ✓ Paga
+          </Badge>
+        )}
+      </div>
+    </div>
+  </div>
+</CardContent>
+
+EXPLICAÇÃO DAS MUDANÇAS:
+1. Card agora tem onClick que navega para /bills/:id (detalhes)
+2. Checkbox tem stopPropagation para não ativar o onClick do card
+3. Visual mais limpo: título + valor na mesma linha
+4. Data e categoria em linha separada
+5. Badges apenas quando necessário (urgentes ou pagas)
+6. Emojis nos badges para facilitar visualização rápida
+7. Mantém borda colorida (verde=paga, vermelha=urgente, amarela=próximo)
+
+VALIDAÇÃO:
+Após aplicar:
+1. Clicar no CARD (fora do checkbox) → deve abrir /bills/:id
+2. Clicar no CHECKBOX → deve marcar/desmarcar (não abre detalhes)
+3. Visual deve estar mais limpo e organizado
+
+NÃO MODIFIQUE MAIS NADA. Mostre o diff e aguarde confirmação.
