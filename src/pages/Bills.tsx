@@ -265,13 +265,13 @@ const Bills = () => {
                         </span>
                       </div>
 
-                      <div className="flex flex-wrap items-center gap-3 text-sm">
-                        <div className="flex items-center gap-1 text-primary-foreground/70">
+                      <div className="flex flex-wrap items-center gap-3 text-sm text-primary-foreground/70">
+                        <div className="flex items-center gap-1">
                           <Calendar className="w-4 h-4" />
                           <span>{bill.formattedDueDate}</span>
                         </div>
 
-                        <div className="flex items-center gap-1 text-primary-foreground/70">
+                        <div className="flex items-center gap-1">
                           <Tag className="w-4 h-4" />
                           <span>{bill.categoryName}</span>
                         </div>
@@ -281,16 +281,16 @@ const Bills = () => {
                             variant={bill.priority === 'high' ? 'destructive' : 'default'}
                             className="text-xs"
                           >
-                            {bill.daysLeft === 0 ? '🔥 Vence hoje' :
-                             bill.daysLeft === 1 ? '⚠️ Vence amanhã' :
-                             bill.daysLeft < 0 ? `❌ Atrasada ${Math.abs(bill.daysLeft)}d` :
-                             `📅 ${bill.daysLeft} dias`}
+                            {bill.daysLeft === 0 ? 'Vence hoje' :
+                             bill.daysLeft === 1 ? 'Vence amanhã' :
+                             bill.daysLeft < 0 ? `Atrasada ${Math.abs(bill.daysLeft)}d` :
+                             `${bill.daysLeft} dias`}
                           </Badge>
                         )}
 
                         {bill.isPaid && (
-                          <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-xs">
-                            ✓ Paga
+                          <Badge className="bg-green-500/20 text-green-300 border-green-500/30 text-xs">
+                            Paga
                           </Badge>
                         )}
                       </div>
