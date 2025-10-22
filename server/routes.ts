@@ -164,11 +164,43 @@ app.post("/api/bills", requireUser, async (c: Context) => {
 });
 
 app.put("/api/bills/:id", requireUser, async (c: Context) => {
+  console.log('\n🔵 PUT /api/bills/:id - INÍCIO');
+  
   const id = c.req.param("id");
   const body = await c.req.json();
-  const bill = await storage.updateBill(id, body);
-  if (!bill) return c.json({ error: "Conta não encontrada" }, 404);
-  return c.json(bill);
+  
+  console.log('📦 body recebido:', JSON.stringify(body, null, 2));
+  
+  // Converter de camelCase (frontend) para snake_case (banco)
+  const updateData: any = {};
+  
+  if (body.name !== undefined) updateData.name = body.name;
+  if (body.amount !== undefined) updateData.amount = body.amount;
+  if (body.dueDate !== undefined) updateData.due_date = body.dueDate;
+  if (body.isPaid !== undefined) updateData.is_paid = body.isPaid;
+  if (body.paidAt !== undefined) updateData.paid_at = body.paidAt;
+  if (body.categoryId !== undefined) updateData.category_id = body.categoryId;
+  if (body.description !== undefined) updateData.description = body.description;
+  
+  console.log('📄 updateData convertido:', JSON.stringify(updateData, null, 2));
+  console.log('📞 Chamando storage.updateBill...');
+  
+  try {
+    const bill = await storage.updateBill(id, updateData);
+    
+    if (!bill) {
+      console.log('❌ Bill não encontrado');
+      return c.json({ error: "Conta não encontrada" }, 404);
+    }
+    
+    console.log('✅ Bill atualizado:', bill);
+    
+    // Converter resposta para camelCase usando função existente
+    return c.json(convertBillToFrontend(bill));
+  } catch (error) {
+    console.error('❌ ERRO ao atualizar bill:', error);
+    throw error;
+  }
 });
 
 app.delete("/api/bills/:id", requireUser, async (c: Context) => {
