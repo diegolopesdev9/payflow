@@ -227,7 +227,9 @@ const Bills = () => {
             {sortedBills.map((bill: any) => (
               <Card
                 key={bill.id}
+                onClick={() => setLocation(`/bills/${bill.id}`)}
                 className={`
+                  cursor-pointer
                   bg-primary-foreground/10 border-primary-foreground/20
                   hover:bg-primary-foreground/15 transition-all
                   ${bill.isPaid ? 'border-l-4 border-l-green-500' : ''}
@@ -236,60 +238,61 @@ const Bills = () => {
                 `}
               >
                 <CardContent className="p-4">
-                  <div className="flex items-start gap-3">
-                    <button
-                      onClick={() => handleTogglePaid(bill.id, bill.isPaid)}
-                      disabled={togglePaidMutation.isPending}
-                      className="mt-1 shrink-0 hover:scale-110 transition-transform"
-                    >
-                      {bill.isPaid ? (
-                        <CheckCircle2 className="w-6 h-6 text-green-500" />
-                      ) : (
-                        <Circle className="w-6 h-6 text-primary-foreground/40 hover:text-primary-foreground/60" />
-                      )}
-                    </button>
+                  <div className="flex items-center gap-4">
+                    {/* Checkbox - impede propagação do clique */}
+                    <div onClick={(e) => e.stopPropagation()}>
+                      <button
+                        onClick={() => handleTogglePaid(bill.id, bill.isPaid)}
+                        disabled={togglePaidMutation.isPending}
+                        className="shrink-0 hover:scale-110 transition-transform"
+                      >
+                        {bill.isPaid ? (
+                          <CheckCircle2 className="w-6 h-6 text-green-500" />
+                        ) : (
+                          <Circle className="w-6 h-6 text-primary-foreground/40 hover:text-primary-foreground/60" />
+                        )}
+                      </button>
+                    </div>
 
+                    {/* Conteúdo principal */}
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-2 mb-2">
-                        <h3 className="font-semibold text-primary-foreground">
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="font-semibold text-lg text-primary-foreground">
                           {bill.name}
                         </h3>
-                        <span className={`font-bold text-lg whitespace-nowrap ${bill.isPaid ? 'line-through text-primary-foreground/80' : 'text-accent'}`}>
+                        <span className={`font-bold text-xl ${bill.isPaid ? 'line-through text-primary-foreground/70' : 'text-accent'}`}>
                           {bill.formattedAmount}
                         </span>
                       </div>
 
-                      <div className="flex flex-wrap items-center gap-2 text-sm text-primary-foreground/70">
-                        <div className="flex items-center gap-1">
+                      <div className="flex flex-wrap items-center gap-3 text-sm">
+                        <div className="flex items-center gap-1 text-primary-foreground/70">
                           <Calendar className="w-4 h-4" />
                           <span>{bill.formattedDueDate}</span>
                         </div>
 
-                        {!bill.isPaid && (
+                        <div className="flex items-center gap-1 text-primary-foreground/70">
+                          <Tag className="w-4 h-4" />
+                          <span>{bill.categoryName}</span>
+                        </div>
+
+                        {!bill.isPaid && bill.daysLeft <= 7 && (
                           <Badge
-                            variant={
-                              bill.priority === 'high' ? 'destructive' :
-                              bill.priority === 'medium' ? 'default' : 'secondary'
-                            }
+                            variant={bill.priority === 'high' ? 'destructive' : 'default'}
                             className="text-xs"
                           >
-                            {bill.daysLeft === 0 ? 'Vence hoje' :
-                             bill.daysLeft === 1 ? 'Vence amanhã' :
-                             bill.daysLeft < 0 ? `Vencida há ${Math.abs(bill.daysLeft)} dias` :
-                             `${bill.daysLeft} dias`}
+                            {bill.daysLeft === 0 ? '🔥 Vence hoje' :
+                             bill.daysLeft === 1 ? '⚠️ Vence amanhã' :
+                             bill.daysLeft < 0 ? `❌ Atrasada ${Math.abs(bill.daysLeft)}d` :
+                             `📅 ${bill.daysLeft} dias`}
                           </Badge>
                         )}
 
                         {bill.isPaid && (
-                          <Badge className="bg-green-500/20 text-green-300 border-green-500/30 text-xs">
+                          <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-xs">
                             ✓ Paga
                           </Badge>
                         )}
-
-                        <div className="flex items-center gap-1">
-                          <Tag className="w-4 h-4" />
-                          <span>{bill.categoryName}</span>
-                        </div>
                       </div>
                     </div>
                   </div>
