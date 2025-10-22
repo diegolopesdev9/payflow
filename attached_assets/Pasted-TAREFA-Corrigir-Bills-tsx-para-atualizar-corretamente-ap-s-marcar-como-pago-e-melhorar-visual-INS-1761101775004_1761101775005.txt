@@ -1,0 +1,125 @@
+TAREFA: Corrigir Bills.tsx para atualizar corretamente após marcar como pago e melhorar visual.
+
+INSTRUÇÕES CRÍTICAS:
+- MODIFIQUE APENAS src/pages/Bills.tsx
+- NÃO modifique nenhum outro arquivo
+- Mostre o diff antes de aplicar
+- Aguarde confirmação
+
+PROBLEMA IDENTIFICADO:
+O backend está salvando corretamente (logs mostram "✅ Bill atualizado: is_paid: true"), mas o frontend não atualiza a lista. Precisamos forçar o refetch correto.
+
+ARQUIVO A MODIFICAR: src/pages/Bills.tsx
+
+MUDANÇAS NECESSÁRIAS:
+
+MUDANÇA 1 - Corrigir a mutation do togglePaid:
+
+LOCALIZAR a mutation togglePaidMutation (aproximadamente linha 55-75):
+
+const togglePaidMutation = useMutation({
+  mutationFn: async ({ id, isPaid }: { id: string; isPaid: boolean }) => {
+    const response = await fetchWithAuth(`/api/bills/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ isPaid }),
+    });
+    if (!response.ok) throw new Error('Failed to update bill');
+    return response.json();
+  },
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ['/api/bills'] });
+    queryClient.invalidateQueries({ queryKey: ['/api/bills/upcoming'] });
+    toast({
+      title: "Status atualizado!",
+      description: "O status da conta foi alterado com sucesso.",
+    });
+  },
+  onError: () => {
+    toast({
+      title: "Erro ao atualizar",
+      description: "Não foi possível atualizar o status da conta.",
+      variant: "destructive",
+    });
+  },
+});
+
+SUBSTITUIR POR:
+
+const togglePaidMutation = useMutation({
+  mutationFn: async ({ id, isPaid }: { id: string; isPaid: boolean }) => {
+    console.log('🔄 Enviando PUT:', { id, isPaid });
+    const response = await fetchWithAuth(`/api/bills/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ isPaid }),
+    });
+    console.log('📡 Response status:', response.status);
+    if (!response.ok) {
+      const error = await response.json();
+      console.error('❌ Erro do servidor:', error);
+      throw new Error(error.error || 'Failed to update bill');
+    }
+    const data = await response.json();
+    console.log('✅ Resposta:', data);
+    return data;
+  },
+  onSuccess: (data) => {
+    console.log('✅ Mutation success, invalidando queries...');
+    // Força refetch imediato
+    queryClient.refetchQueries({ queryKey: ['/api/bills'] });
+    queryClient.refetchQueries({ queryKey: ['/api/bills/upcoming'] });
+    toast({
+      title: "Status atualizado!",
+      description: `Conta marcada como ${data.isPaid ? 'paga' : 'pendente'}.`,
+    });
+  },
+  onError: (error: any) => {
+    console.error('❌ Mutation error:', error);
+    toast({
+      title: "Erro ao atualizar",
+      description: error.message || "Não foi possível atualizar o status da conta.",
+      variant: "destructive",
+    });
+  },
+});
+
+MUDANÇA 2 - Ajustar visual (remover opacity, adicionar borda verde):
+
+LOCALIZAR o Card className (aproximadamente linha 200):
+${bill.isPaid ? 'opacity-60' : ''}
+
+SUBSTITUIR POR:
+${bill.isPaid ? 'border-l-4 border-l-green-500' : ''}
+
+MUDANÇA 3 - Remover line-through do título:
+
+LOCALIZAR o h3:
+className={`font-semibold text-primary-foreground ${bill.isPaid ? 'line-through' : ''}`}
+
+SUBSTITUIR POR:
+className="font-semibold text-primary-foreground"
+
+MUDANÇA 4 - Ajustar cor do valor tachado:
+
+LOCALIZAR o span do valor:
+${bill.isPaid ? 'line-through text-primary-foreground/60' : 'text-accent'}
+
+SUBSTITUIR POR:
+${bill.isPaid ? 'line-through text-primary-foreground/80' : 'text-accent'}
+
+EXPLICAÇÃO:
+- Troca invalidateQueries por refetchQueries (força atualização imediata)
+- Adiciona logs para debugging
+- Melhora feedback do toast mostrando o status atual
+- Remove opacidade (mantém legibilidade)
+- Borda verde indica paga
+- Apenas valor fica tachado
+
+VALIDAÇÃO:
+Após aplicar, clicar no círculo ○ e verificar que:
+1. Toast aparece "Status atualizado!"
+2. Conta atualiza visualmente (borda verde + valor tachado)
+3. Conta vai para o final da lista
+
+NÃO MODIFIQUE MAIS NADA. Mostre o diff e aguarde confirmação.
