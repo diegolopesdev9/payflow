@@ -1,0 +1,119 @@
+TAREFA: Atualizar esquema de cores do Bills.tsx para usar fundo branco nos cards (igual ao Dashboard) - melhor legibilidade.
+
+INSTRUÇÕES CRÍTICAS:
+- MODIFIQUE APENAS src/pages/Bills.tsx
+- Mostre o diff antes de aplicar
+- Aguarde confirmação
+
+OBJETIVO:
+Mudar de cards escuros/transparentes para cards brancos com texto escuro, igual ao Dashboard.
+
+ARQUIVO: src/pages/Bills.tsx
+
+MUDANÇAS NECESSÁRIAS:
+
+MUDANÇA 1 - CORES DO CARD:
+
+LOCALIZAR (aproximadamente linha 220):
+className={`
+  cursor-pointer
+  bg-primary-foreground/10 border-primary-foreground/20
+  hover:bg-primary-foreground/15 transition-all
+  ${bill.isPaid ? 'border-l-4 border-l-green-500' : ''}
+  ${bill.priority === 'high' && !bill.isPaid ? 'border-l-4 border-l-red-500' : ''}
+  ${bill.priority === 'medium' && !bill.isPaid ? 'border-l-4 border-l-yellow-500' : ''}
+`}
+
+SUBSTITUIR POR:
+className={`
+  cursor-pointer
+  bg-white border-gray-200
+  hover:bg-gray-50 transition-all
+  shadow-sm
+  ${bill.isPaid ? 'border-l-4 border-l-green-500' : ''}
+  ${bill.priority === 'high' && !bill.isPaid ? 'border-l-4 border-l-red-500' : ''}
+  ${bill.priority === 'medium' && !bill.isPaid ? 'border-l-4 border-l-yellow-500' : ''}
+`}
+
+MUDANÇA 2 - CORES DO CHECKBOX:
+
+LOCALIZAR (aproximadamente linha 235):
+{bill.isPaid ? (
+  <CheckCircle2 className="w-5 h-5 text-green-500" />
+) : (
+  <Circle className="w-5 h-5 text-primary-foreground/40 hover:text-primary-foreground/60" />
+)}
+
+SUBSTITUIR POR:
+{bill.isPaid ? (
+  <CheckCircle2 className="w-5 h-5 text-green-500" />
+) : (
+  <Circle className="w-5 h-5 text-gray-400 hover:text-gray-600" />
+)}
+
+MUDANÇA 3 - CORES DO TÍTULO:
+
+LOCALIZAR (aproximadamente linha 244):
+<h3 className="font-medium text-primary-foreground truncate mb-0.5">
+
+SUBSTITUIR POR:
+<h3 className="font-medium text-gray-900 truncate mb-0.5">
+
+MUDANÇA 4 - CORES DO TEXTO SECUNDÁRIO:
+
+LOCALIZAR (aproximadamente linha 247):
+<div className="flex items-center gap-2 text-xs text-primary-foreground/60">
+
+SUBSTITUIR POR:
+<div className="flex items-center gap-2 text-xs text-gray-600">
+
+MUDANÇA 5 - CORES DO VALOR:
+
+LOCALIZAR (aproximadamente linha 268):
+<span className={`font-semibold text-lg ${bill.isPaid ? 'line-through text-primary-foreground/60' : 'text-accent'}`}>
+
+SUBSTITUIR POR:
+<span className={`font-semibold text-lg ${bill.isPaid ? 'line-through text-gray-500' : 'text-green-600'}`}>
+
+MUDANÇA 6 - CARD DE ESTADO VAZIO:
+
+LOCALIZAR (aproximadamente linha 188):
+<Card className="bg-primary-foreground/10 border-primary-foreground/20">
+  <CardContent className="flex flex-col items-center justify-center py-12">
+    <DollarSign className="w-16 h-16 text-primary-foreground/40 mb-4" />
+    <p className="text-primary-foreground/60 text-center mb-4">
+
+SUBSTITUIR POR:
+<Card className="bg-white border-gray-200 shadow-sm">
+  <CardContent className="flex flex-col items-center justify-center py-12">
+    <DollarSign className="w-16 h-16 text-gray-400 mb-4" />
+    <p className="text-gray-600 text-center mb-4">
+
+MUDANÇA 7 - LOADING STATE:
+
+LOCALIZAR (aproximadamente linha 182):
+<div className="text-center text-primary-foreground py-8">
+
+SUBSTITUIR POR:
+<div className="text-center text-gray-700 py-8">
+
+EXPLICAÇÃO DAS MUDANÇAS:
+1. ✅ Cards com fundo BRANCO (bg-white)
+2. ✅ Texto principal ESCURO (text-gray-900)
+3. ✅ Texto secundário CINZA MÉDIO (text-gray-600)
+4. ✅ Valor em VERDE (text-green-600)
+5. ✅ Sombra sutil nos cards (shadow-sm)
+6. ✅ Hover cinza claro (hover:bg-gray-50)
+7. ✅ Mantém bordas coloridas (verde/vermelho/amarelo)
+
+RESULTADO ESPERADO:
+Visual limpo com cards brancos e boa legibilidade, igual ao Dashboard.
+
+VALIDAÇÃO:
+Após aplicar, verificar que:
+1. Cards têm fundo branco
+2. Texto é legível (escuro)
+3. Valores em verde
+4. Mantém bordas coloridas
+
+NÃO MODIFIQUE MAIS NADA. Mostre o diff e aguarde confirmação.
