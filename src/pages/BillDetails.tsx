@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { useRoute, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useAuth } from "@/lib/auth";
-import { queryClient, apiRequest } from "@/lib/queryClient";
+import { useAuth, fetchWithAuth } from "@/lib/auth";
+import { queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -84,10 +84,13 @@ const BillDetails = () => {
   // Mark as paid mutation
   const markAsPaidMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest(`/api/bills/${billId}`, {
+      const response = await fetchWithAuth(`/api/bills/${billId}`, {
         method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ isPaid: true }),
       });
+      if (!response.ok) throw new Error('Failed to mark as paid');
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/bills/${billId}`] });
@@ -109,9 +112,11 @@ const BillDetails = () => {
   // Delete bill mutation
   const deleteBillMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest(`/api/bills/${billId}`, {
+      const response = await fetchWithAuth(`/api/bills/${billId}`, {
         method: 'DELETE',
       });
+      if (!response.ok) throw new Error('Failed to delete bill');
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/bills'] });
