@@ -1,0 +1,77 @@
+TAREFA: Corrigir BillDetails.tsx para usar fetchWithAuth ao invés de apiRequest - resolver erro 401 Unauthorized.
+
+INSTRUÇÕES CRÍTICAS:
+- MODIFIQUE APENAS src/pages/BillDetails.tsx
+- Mostre o diff antes de aplicar
+- Aguarde confirmação
+
+PROBLEMA IDENTIFICADO:
+BillDetails.tsx usa apiRequest() que não envia o token de autenticação, causando erro 401. Precisa usar fetchWithAuth() como Bills.tsx.
+
+ARQUIVO: src/pages/BillDetails.tsx
+
+MUDANÇA 1 - IMPORT:
+
+LOCALIZAR (linha ~4):
+import { useAuth } from "@/lib/auth";
+import { queryClient, apiRequest } from "@/lib/queryClient";
+
+SUBSTITUIR POR:
+import { useAuth, fetchWithAuth } from "@/lib/auth";
+import { queryClient } from "@/lib/queryClient";
+
+MUDANÇA 2 - MUTATION MARK AS PAID:
+
+LOCALIZAR (aproximadamente linha 77):
+const markAsPaidMutation = useMutation({
+  mutationFn: async () => {
+    return apiRequest(`/api/bills/${billId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ isPaid: true }),
+    });
+  },
+
+SUBSTITUIR POR:
+const markAsPaidMutation = useMutation({
+  mutationFn: async () => {
+    const response = await fetchWithAuth(`/api/bills/${billId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ isPaid: true }),
+    });
+    if (!response.ok) throw new Error('Failed to mark as paid');
+    return response.json();
+  },
+
+MUDANÇA 3 - MUTATION DELETE:
+
+LOCALIZAR (aproximadamente linha 99):
+const deleteBillMutation = useMutation({
+  mutationFn: async () => {
+    return apiRequest(`/api/bills/${billId}`, {
+      method: 'DELETE',
+    });
+  },
+
+SUBSTITUIR POR:
+const deleteBillMutation = useMutation({
+  mutationFn: async () => {
+    const response = await fetchWithAuth(`/api/bills/${billId}`, {
+      method: 'DELETE',
+    });
+    if (!response.ok) throw new Error('Failed to delete bill');
+    return response.json();
+  },
+
+EXPLICAÇÃO:
+- fetchWithAuth() adiciona automaticamente o token Bearer no header
+- apiRequest() não adiciona token, por isso dava 401
+- Mesmo padrão usado em Bills.tsx que está funcionando
+
+VALIDAÇÃO:
+Após aplicar:
+1. Clicar em uma conta
+2. Deve abrir a página de detalhes SEM erro 401
+3. Botões "Marcar como Pago" e "Excluir" devem funcionar
+
+NÃO MODIFIQUE MAIS NADA. Mostre o diff e aguarde confirmação.
