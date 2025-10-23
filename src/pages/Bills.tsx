@@ -203,14 +203,14 @@ const Bills = () => {
       {/* Bills List */}
       <div className="container mx-auto px-4 py-6">
         {isLoading ? (
-          <div className="text-center text-primary-foreground py-8">
+          <div className="text-center text-gray-700 py-8">
             Carregando contas...
           </div>
         ) : sortedBills.length === 0 ? (
-          <Card className="bg-primary-foreground/10 border-primary-foreground/20">
+          <Card className="bg-white border-gray-200 shadow-sm">
             <CardContent className="flex flex-col items-center justify-center py-12">
-              <DollarSign className="w-16 h-16 text-primary-foreground/40 mb-4" />
-              <p className="text-primary-foreground/60 text-center mb-4">
+              <DollarSign className="w-16 h-16 text-gray-400 mb-4" />
+              <p className="text-gray-600 text-center mb-4">
                 Nenhuma conta encontrada
               </p>
               <Button
@@ -230,8 +230,9 @@ const Bills = () => {
                 onClick={() => setLocation(`/bills/${bill.id}`)}
                 className={`
                   cursor-pointer
-                  bg-primary-foreground/10 border-primary-foreground/20
-                  hover:bg-primary-foreground/15 transition-all
+                  bg-white border-gray-200
+                  hover:bg-gray-50 transition-all
+                  shadow-sm
                   ${bill.isPaid ? 'border-l-4 border-l-green-500' : ''}
                   ${bill.priority === 'high' && !bill.isPaid ? 'border-l-4 border-l-red-500' : ''}
                   ${bill.priority === 'medium' && !bill.isPaid ? 'border-l-4 border-l-yellow-500' : ''}
@@ -249,7 +250,7 @@ const Bills = () => {
                         {bill.isPaid ? (
                           <CheckCircle2 className="w-5 h-5 text-green-500" />
                         ) : (
-                          <Circle className="w-5 h-5 text-primary-foreground/40 hover:text-primary-foreground/60" />
+                          <Circle className="w-5 h-5 text-gray-400 hover:text-gray-600" />
                         )}
                       </button>
                     </div>
@@ -258,10 +259,10 @@ const Bills = () => {
                     <div className="flex-1 min-w-0 flex items-center justify-between">
                       {/* Título e data na mesma linha */}
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-medium text-primary-foreground truncate mb-0.5">
+                        <h3 className="font-medium text-gray-900 truncate mb-0.5">
                           {bill.name}
                         </h3>
-                        <div className="flex items-center gap-2 text-xs text-primary-foreground/60">
+                        <div className="flex items-center gap-2 text-xs text-gray-600">
                           <span>{bill.formattedDueDate}</span>
                           <span>•</span>
                           <span className="truncate">{bill.categoryName}</span>
@@ -269,7 +270,7 @@ const Bills = () => {
                       </div>
 
                       {/* Valor à direita */}
-                      <span className={`font-semibold text-base ml-3 shrink-0 ${bill.isPaid ? 'line-through text-primary-foreground/60' : 'text-accent'}`}>
+                      <span className={`font-semibold text-base ml-3 shrink-0 ${bill.isPaid ? 'line-through text-gray-500' : 'text-green-600'}`}>
                         {bill.formattedAmount}
                       </span>
                     </div>
