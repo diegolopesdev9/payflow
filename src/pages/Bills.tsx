@@ -237,9 +237,9 @@ const Bills = () => {
                   ${bill.priority === 'medium' && !bill.isPaid ? 'border-l-4 border-l-yellow-500' : ''}
                 `}
               >
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-4">
-                    {/* Checkbox - impede propagação do clique */}
+                <CardContent className="p-3">
+                  <div className="flex items-center gap-3">
+                    {/* Checkbox compacto */}
                     <div onClick={(e) => e.stopPropagation()}>
                       <button
                         onClick={() => handleTogglePaid(bill.id, bill.isPaid)}
@@ -247,53 +247,31 @@ const Bills = () => {
                         className="shrink-0 hover:scale-110 transition-transform"
                       >
                         {bill.isPaid ? (
-                          <CheckCircle2 className="w-6 h-6 text-green-500" />
+                          <CheckCircle2 className="w-5 h-5 text-green-500" />
                         ) : (
-                          <Circle className="w-6 h-6 text-primary-foreground/40 hover:text-primary-foreground/60" />
+                          <Circle className="w-5 h-5 text-primary-foreground/40 hover:text-primary-foreground/60" />
                         )}
                       </button>
                     </div>
 
-                    {/* Conteúdo principal */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-2">
-                        <h3 className="font-semibold text-lg text-primary-foreground">
+                    {/* Conteúdo - linha única */}
+                    <div className="flex-1 min-w-0 flex items-center justify-between">
+                      {/* Título e data na mesma linha */}
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-medium text-primary-foreground truncate mb-0.5">
                           {bill.name}
                         </h3>
-                        <span className={`font-bold text-xl ${bill.isPaid ? 'line-through text-primary-foreground/70' : 'text-accent'}`}>
-                          {bill.formattedAmount}
-                        </span>
-                      </div>
-
-                      <div className="flex flex-wrap items-center gap-3 text-sm text-primary-foreground/70">
-                        <div className="flex items-center gap-1">
-                          <Calendar className="w-4 h-4" />
+                        <div className="flex items-center gap-2 text-xs text-primary-foreground/60">
                           <span>{bill.formattedDueDate}</span>
+                          <span>•</span>
+                          <span className="truncate">{bill.categoryName}</span>
                         </div>
-
-                        <div className="flex items-center gap-1">
-                          <Tag className="w-4 h-4" />
-                          <span>{bill.categoryName}</span>
-                        </div>
-
-                        {!bill.isPaid && bill.daysLeft <= 7 && (
-                          <Badge
-                            variant={bill.priority === 'high' ? 'destructive' : 'default'}
-                            className="text-xs"
-                          >
-                            {bill.daysLeft === 0 ? 'Vence hoje' :
-                             bill.daysLeft === 1 ? 'Vence amanhã' :
-                             bill.daysLeft < 0 ? `Atrasada ${Math.abs(bill.daysLeft)}d` :
-                             `${bill.daysLeft} dias`}
-                          </Badge>
-                        )}
-
-                        {bill.isPaid && (
-                          <Badge className="bg-green-500/20 text-green-300 border-green-500/30 text-xs">
-                            Paga
-                          </Badge>
-                        )}
                       </div>
+
+                      {/* Valor à direita */}
+                      <span className={`font-semibold text-base ml-3 shrink-0 ${bill.isPaid ? 'line-through text-primary-foreground/60' : 'text-accent'}`}>
+                        {bill.formattedAmount}
+                      </span>
                     </div>
                   </div>
                 </CardContent>
