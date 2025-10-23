@@ -1,0 +1,53 @@
+TAREFA: Refazer completamente o visual dos cards no Bills.tsx para ficar IDÊNTICO ao padrão do Dashboard - compacto, limpo, sem badges excessivos.
+
+INSTRUÇÕES CRÍTICAS:
+- MODIFIQUE APENAS src/pages/Bills.tsx
+- Mostre o diff antes de aplicar
+- Aguarde confirmação
+
+PROBLEMA IDENTIFICADO:
+O visual atual está com cards grandes, badges excessivos e layout diferente do Dashboard. Precisa ficar compacto e minimalista como o Dashboard.
+
+ARQUIVO: src/pages/Bills.tsx
+
+LOCALIZAR todo o Card (dentro de sortedBills.map) e SUBSTITUIR COMPLETAMENTE:
+
+SUBSTITUIR O CARD INTEIRO POR:
+
+<Card
+  key={bill.id}
+  onClick={() => setLocation(`/bills/${bill.id}`)}
+  className={`
+    cursor-pointer
+    bg-primary-foreground/10 border-primary-foreground/20
+    hover:bg-primary-foreground/15 transition-all
+    ${bill.isPaid ? 'border-l-4 border-l-green-500' : ''}
+    ${bill.priority === 'high' && !bill.isPaid ? 'border-l-4 border-l-red-500' : ''}
+    ${bill.priority === 'medium' && !bill.isPaid ? 'border-l-4 border-l-yellow-500' : ''}
+  `}
+>
+  <CardContent className="p-3">
+    <div className="flex items-center gap-3">
+      {/* Checkbox compacto */}
+      <div onClick={(e) => e.stopPropagation()}>
+        <button
+          onClick={() => handleTogglePaid(bill.id, bill.isPaid)}
+          disabled={togglePaidMutation.isPending}
+          className="shrink-0 hover:scale-110 transition-transform"
+        >
+          {bill.isPaid ? (
+            <CheckCircle2 className="w-5 h-5 text-green-500" />
+          ) : (
+            <Circle className="w-5 h-5 text-primary-foreground/40 hover:text-primary-foreground/60" />
+          )}
+        </button>
+      </div>
+
+      {/* Conteúdo - linha única */}
+      <div className="flex-1 min-w-0 flex items-center justify-between">
+        {/* Título e data na mesma linha */}
+        <div className="flex-1 min-w-0">
+          <h3 className="font-medium text-primary-foreground truncate mb-0.5">
+            {bill.name}
+          </h3>
+          <div className="flex items-center gap-2 text-xs t
