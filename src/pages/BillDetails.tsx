@@ -45,6 +45,13 @@ const BillDetails = () => {
   // Fetch bill details using React Query
   const { data: bill, isLoading, isError } = useQuery<Bill>({
     queryKey: [`/api/bills/${billId}`],
+    queryFn: async () => {
+      const response = await fetchWithAuth(`/api/bills/${billId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch bill');
+      }
+      return response.json();
+    },
     enabled: !!billId && !!user?.id,
   });
 
