@@ -1,0 +1,105 @@
+TAREFA: Corrigir BillDetails.tsx para garantir que bill existe antes de renderizar o JSX principal, SEM mover os hooks.
+
+INSTRUÇÕES CRÍTICAS:
+- MODIFIQUE APENAS src/pages/BillDetails.tsx
+- Mostre o diff antes de aplicar
+- Aguarde confirmação
+
+PROBLEMA IDENTIFICADO:
+O componente tenta renderizar JSX usando bill.name, bill.amount ANTES de verificar se bill existe, causando erro React.
+
+SOLUÇÃO:
+Manter hooks no topo (regra do React), mas adicionar verificação extra antes do JSX principal.
+
+ARQUIVO: src/pages/BillDetails.tsx
+
+MUDANÇA 1 - SIMPLIFICAR VERIFICAÇÕES INICIAIS:
+
+LOCALIZAR (linha ~50):
+if (authenticated === false || !billId) {
+  return null;
+}
+
+// Show loading while auth is resolving or bill data is loading
+if (authenticated === null || (authenticated && !user) || isLoading) {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-primary via-primary/95 to-secondary flex items-center justify-center">
+      <div className="text-primary-foreground text-lg" data-testid="loading-bill-details">Carregando detalhes...</div>
+    </div>
+  );
+}
+
+// Show error if bill not found or unauthorized
+if (authenticated && user && (isError || !bill)) {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-primary via-primary/95 to-secondary flex items-center justify-center">
+      <div className="text-center">
+        <div className="text-primary-foreground text-lg mb-4" data-testid="error-bill-details">
+          Conta não encontrada ou acesso negado
+        </div>
+        <button 
+          onClick={() => setLocation("/bills")}
+          className="text-primary-foreground underline"
+          data-testid="button-back-bills"
+        >
+          Voltar para Contas
+        </button>
+      </div>
+    </div>
+  );
+}
+
+SUBSTITUIR POR:
+
+// Early returns para casos inválidos
+if (authenticated === false || !billId) {
+  return null;
+}
+
+// Loading state
+if (authenticated === null || !user || isLoading) {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-primary via-primary/95 to-secondary flex items-center justify-center">
+      <div className="text-primary-foreground text-lg" data-testid="loading-bill-details">Carregando detalhes...</div>
+    </div>
+  );
+}
+
+// Error state - bill não encontrada
+if (isError || !bill) {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-primary via-primary/95 to-secondary flex items-center justify-center">
+      <div className="text-center">
+        <div className="text-primary-foreground text-lg mb-4" data-testid="error-bill-details">
+          Conta não encontrada ou acesso negado
+        </div>
+        <button 
+          onClick={() => setLocation("/bills")}
+          className="text-primary-foreground underline"
+          data-testid="button-back-bills"
+        >
+          Voltar para Contas
+        </button>
+      </div>
+    </div>
+  );
+}
+
+EXPLICAÇÃO:
+1. ✅ Mantém hooks (useMutation) no mesmo lugar (após useQuery)
+2. ✅ Simplifica verificações - remove redundância
+3. ✅ Garante que quando chegar no JSX principal, bill existe
+4. ✅ Segue as regras do React Hooks
+
+IMPORTANTE:
+- Os hooks (markAsPaidMutation, deleteBillMutation) ficam ONDE ESTÃO
+- Apenas simplificamos as condições dos early returns
+- Quando o código chegar em "return (<div...>)" final, bill já foi verificado
+
+VALIDAÇÃO:
+Após aplicar:
+1. Verificar que não há erros no console
+2. Clicar em uma conta deve mostrar detalhes
+3. Botões devem funcionar
+
+NÃO MODIFIQUE MAIS NADA. Mostre o diff e aguarde confirmação.
