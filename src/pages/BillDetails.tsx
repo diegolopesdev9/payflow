@@ -55,12 +55,13 @@ const BillDetails = () => {
     enabled: !!billId && !!user?.id,
   });
 
+  // Early returns para casos inválidos
   if (authenticated === false || !billId) {
     return null;
   }
 
-  // Show loading while auth is resolving or bill data is loading
-  if (authenticated === null || (authenticated && !user) || isLoading) {
+  // Loading state
+  if (authenticated === null || !user || isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary via-primary/95 to-secondary flex items-center justify-center">
         <div className="text-primary-foreground text-lg" data-testid="loading-bill-details">Carregando detalhes...</div>
@@ -68,23 +69,23 @@ const BillDetails = () => {
     );
   }
 
-  // Show error if bill not found or unauthorized
-  if (authenticated && user && (isError || !bill)) {
+  // Error state - bill não encontrada
+  if (isError || !bill) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary via-primary/95 to-secondary flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-primary-foreground text-lg mb-4" data-testid="error-bill-details">
-            Conta não encontrada ou acesso negado
-          </div>
-          <button 
-            onClick={() => setLocation("/bills")}
-            className="text-primary-foreground underline"
-            data-testid="button-back-bills"
-          >
-            Voltar para Contas
-          </button>
+      <div className="text-center">
+        <div className="text-primary-foreground text-lg mb-4" data-testid="error-bill-details">
+          Conta não encontrada ou acesso negado
         </div>
+        <button 
+          onClick={() => setLocation("/bills")}
+          className="text-primary-foreground underline"
+          data-testid="button-back-bills"
+        >
+          Voltar para Contas
+        </button>
       </div>
+    </div>
     );
   }
 
