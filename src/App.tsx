@@ -14,6 +14,7 @@ import Dashboard from "@/pages/Dashboard";
 import Bills from "@/pages/Bills";
 import BillDetails from "@/pages/BillDetails";
 import NewBill from "@/pages/NewBill";
+import EditBill from "@/pages/EditBill";
 import Reports from "@/pages/Reports";
 import Profile from "@/pages/Profile";
 import EditProfile from "@/pages/EditProfile";
@@ -51,6 +52,11 @@ const App = () => (
           <Route path="/bills/new">
             <ProtectedRoute>
               <NewBill />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/bills/:id/edit">
+            <ProtectedRoute>
+              <EditBill />
             </ProtectedRoute>
           </Route>
           <Route path="/bills/:id">
