@@ -1,0 +1,65 @@
+TAREFA: Adicionar logs detalhados no backend para identificar falha na conversão de dados.
+
+INSTRUÇÕES CRÍTICAS:
+- MODIFIQUE APENAS server/routes.ts
+- Adicione console.log ANTES e DEPOIS da conversão
+- Mostre o diff antes de aplicar
+
+ARQUIVO: server/routes.ts
+
+---
+
+PROBLEMA IDENTIFICADO:
+Os dados existem no banco (log mostra "🔍 [getBills] RAW DATA") mas chegam vazios no frontend (console mostra "Keys da primeira bill: Array(0)").
+
+CORREÇÃO:
+
+LOCALIZAR a rota GET /api/bills (linhas ~105-111):
+```typescript
+app.get("/api/bills", requireUser, async (c: Context) => {
+  const userId = c.get("userId") as string;
+  const bills = await storage.getBills(userId);
+  // Converter de snake_case (banco) para camelCase (frontend)
+  const convertedBills = bills.map(convertBillToFrontend);
+  return c.json(convertedBills);
+});
+```
+
+SUBSTITUIR POR:
+```typescript
+app.get("/api/bills", requireUser, async (c: Context) => {
+  const userId = c.get("userId") as string;
+  
+  console.log('\n📊 GET /api/bills - INÍCIO');
+  console.log('👤 userId:', userId);
+  
+  const bills = await storage.getBills(userId);
+  
+  console.log('📦 Bills do storage (ANTES conversão):', bills.length);
+  console.log('📦 Primeira bill (ANTES):', JSON.stringify(bills[0], null, 2));
+  
+  // Converter de snake_case (banco) para camelCase (frontend)
+  const convertedBills = bills.map(convertBillToFrontend);
+  
+  console.log('✅ Bills convertidas (DEPOIS conversão):', convertedBills.length);
+  console.log('✅ Primeira bill (DEPOIS):', JSON.stringify(convertedBills[0], null, 2));
+  console.log('✅ Keys da primeira bill:', convertedBills[0] ? Object.keys(convertedBills[0]) : 'nenhuma');
+  
+  return c.json(convertedBills);
+});
+```
+
+---
+
+RESULTADO ESPERADO:
+Após rebuild, os logs mostrarão:
+1. Dados ANTES da conversão (snake_case)
+2. Dados DEPOIS da conversão (camelCase)
+3. Se a conversão está funcionando ou não
+
+Com isso, identificaremos se:
+- A conversão está falhando
+- Os dados estão sendo perdidos
+- Há algum problema no retorno
+
+Mostre o diff e aplique. Após aplicar, faça rebuild e me envie novo screenshot do TERMINAL (não do console do navegador).
