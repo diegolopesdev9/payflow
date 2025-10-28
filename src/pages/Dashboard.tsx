@@ -19,12 +19,26 @@ import { Link } from "wouter";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth, fetchWithAuth } from "@/lib/auth";
 import type { Bill, Category } from "../../shared/schema";
+import { useToast } from "@/components/ui/use-toast";
 
 const Dashboard = () => {
   const [location, setLocation] = useLocation();
   const { user, authenticated, loading } = useAuth();
   const [weeklyTotal, setWeeklyTotal] = useState(0);
   const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  // State for quick bill form
+  const [showQuickBillForm, setShowQuickBillForm] = useState(false);
+  const [quickBillData, setQuickBillData] = useState({
+    name: "",
+    amount: "",
+    dueDate: "",
+    categoryId: "",
+    description: "",
+  });
+  const [isQuickBillSubmitting, setIsQuickBillSubmitting] = useState(false);
+
 
   // Auth is now handled by ProtectedRoute wrapper
 
@@ -139,7 +153,7 @@ const Dashboard = () => {
     const today = new Date();
     const sevenDaysAgo = new Date(today.getTime() - (7 * 24 * 60 * 60 * 1000));
     const fourteenDaysAgo = new Date(today.getTime() - (14 * 24 * 60 * 60 * 1000));
-    
+
     return bills
       .filter(bill => {
         const dueDate = new Date(bill.due_date);
@@ -153,20 +167,20 @@ const Dashboard = () => {
     const today = new Date();
     const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
     const lastMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0);
-    
+
     const lastMonthBills = bills.filter(bill => {
       const dueDate = new Date(bill.due_date);
       return dueDate >= lastMonth && dueDate <= lastMonthEnd;
     });
-    
+
     const pending = lastMonthBills
       .filter(bill => !bill.is_paid)
       .reduce((sum, bill) => sum + (bill.amount / 100), 0);
-    
+
     const paid = lastMonthBills
       .filter(bill => bill.is_paid)
       .reduce((sum, bill) => sum + (bill.amount / 100), 0);
-    
+
     return { pending, paid };
   };
 
@@ -195,7 +209,7 @@ const Dashboard = () => {
     const dueDate = bill.dueDate ? new Date(bill.dueDate) : null;
     const today = new Date();
     const daysLeft = dueDate ? Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)) : 0;
-    
+
     return {
       ...bill,
       name: bill.name || bill.description, // Use name field from schema
@@ -249,6 +263,82 @@ const Dashboard = () => {
     );
   }
 
+  // Handle quick bill form submission
+  const handleQuickBillSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // Validações
+    if (!quickBillData.name.trim()) {
+      toast({
+        title: "Nome obrigatório",
+        description: "Por favor, informe o nome da conta.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!quickBillData.amount || parseFloat(quickBillData.amount) <= 0) {
+      toast({
+        title: "Valor inválido",
+        description: "Por favor, informe um valor maior que zero.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!quickBillData.dueDate) {
+      toast({
+        title: "Data obrigatória",
+        description: "Por favor, informe a data de vencimento.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsQuickBillSubmitting(true);
+
+    try {
+      const billData = {
+        name: quickBillData.name,
+        amount: Math.round(parseFloat(quickBillData.amount) * 100),
+        dueDate: quickBillData.dueDate,
+        categoryId: quickBillData.categoryId || null,
+        description: quickBillData.description || null,
+        isPaid: false,
+      };
+
+      const response = await fetchWithAuth("/api/bills", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(billData),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to create bill");
+      }
+
+      toast({
+        title: "Conta adicionada!",
+        description: "Nova despesa registrada com sucesso.",
+      });
+
+      setShowQuickBillForm(false);
+      setQuickBillData({ name: "", amount: "", dueDate: "", categoryId: "", description: "" });
+      queryClient.invalidateQueries({ queryKey: ["/api/bills"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/bills/upcoming"] });
+    } catch (error: any) {
+      toast({
+        title: "Erro ao criar conta",
+        description: error.message || "Não foi possível adicionar a despesa.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsQuickBillSubmitting(false);
+    }
+  };
+
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary via-primary/95 to-secondary">
       {/* Header */}
@@ -260,7 +350,7 @@ const Dashboard = () => {
               <p className="text-primary-foreground/80">Seus gastos desta semana</p>
             </div>
             <Button
-              onClick={() => setLocation("/bills/new")}
+              onClick={() => setShowQuickBillForm(true)} // Changed to open quick bill form
               className="btn-secondary-financial"
             >
               <Plus className="w-4 h-4 mr-2" />
@@ -270,6 +360,86 @@ const Dashboard = () => {
         </div>
       </div>
 
+      {showQuickBillForm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
+          <Card className="w-full max-w-md mx-auto">
+            <CardHeader>
+              <CardTitle>Adicionar Nova Conta</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleQuickBillSubmit} className="space-y-4">
+                <div>
+                  <label htmlFor="quick-bill-name" className="block text-sm font-medium text-foreground">Nome da Conta</label>
+                  <input
+                    id="quick-bill-name"
+                    type="text"
+                    value={quickBillData.name}
+                    onChange={(e) => setQuickBillData({ ...quickBillData, name: e.target.value })}
+                    className="mt-1 block w-full rounded-md border-border px-3 py-2 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
+                    required
+                  />
+                </div>
+                <div>
+                  <label htmlFor="quick-bill-amount" className="block text-sm font-medium text-foreground">Valor (R$)</label>
+                  <input
+                    id="quick-bill-amount"
+                    type="number"
+                    step="0.01"
+                    value={quickBillData.amount}
+                    onChange={(e) => setQuickBillData({ ...quickBillData, amount: e.target.value })}
+                    className="mt-1 block w-full rounded-md border-border px-3 py-2 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
+                    required
+                  />
+                </div>
+                <div>
+                  <label htmlFor="quick-bill-due-date" className="block text-sm font-medium text-foreground">Data de Vencimento</label>
+                  <input
+                    id="quick-bill-due-date"
+                    type="date"
+                    value={quickBillData.dueDate}
+                    onChange={(e) => setQuickBillData({ ...quickBillData, dueDate: e.target.value })}
+                    className="mt-1 block w-full rounded-md border-border px-3 py-2 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
+                    required
+                  />
+                </div>
+                <div>
+                  <label htmlFor="quick-bill-category" className="block text-sm font-medium text-foreground">Categoria</label>
+                  <select
+                    id="quick-bill-category"
+                    value={quickBillData.categoryId}
+                    onChange={(e) => setQuickBillData({ ...quickBillData, categoryId: e.target.value })}
+                    className="mt-1 block w-full rounded-md border-border px-3 py-2 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
+                  >
+                    <option value="">Selecione uma categoria</option>
+                    {categories.map(cat => (
+                      <option key={cat.id} value={cat.id}>{cat.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label htmlFor="quick-bill-description" className="block text-sm font-medium text-foreground">Descrição</label>
+                  <textarea
+                    id="quick-bill-description"
+                    value={quickBillData.description}
+                    onChange={(e) => setQuickBillData({ ...quickBillData, description: e.target.value })}
+                    className="mt-1 block w-full rounded-md border-border px-3 py-2 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
+                    rows={3}
+                  />
+                </div>
+                <div className="flex justify-end gap-2">
+                  <Button type="button" variant="outline" onClick={() => setShowQuickBillForm(false)} disabled={isQuickBillSubmitting}>
+                    Cancelar
+                  </Button>
+                  <Button type="submit" disabled={isQuickBillSubmitting}>
+                    {isQuickBillSubmitting ? "Salvando..." : "Salvar Conta"}
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       <div className="container mx-auto px-4 py-6 space-y-6">
         {/* Weekly Expenses Card */}
         <Card className="stat-card">
@@ -277,16 +447,16 @@ const Dashboard = () => {
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg">Despesas Semanais</CardTitle>
               {weeklyChange !== null && (
-                <Badge 
-                  variant="outline" 
-                  className={weeklyChange >= 0 
-                    ? "bg-destructive/10 text-destructive border-destructive/20" 
+                <Badge
+                  variant="outline"
+                  className={weeklyChange >= 0
+                    ? "bg-destructive/10 text-destructive border-destructive/20"
                     : "bg-success/10 text-success border-success/20"
                   }
                 >
                   {weeklyChange >= 0 ? '+' : ''}{weeklyChange.toFixed(1)}%
-                  {weeklyChange >= 0 
-                    ? <TrendingUp className="w-3 h-3 ml-1" /> 
+                  {weeklyChange >= 0
+                    ? <TrendingUp className="w-3 h-3 ml-1" />
                     : <TrendingDown className="w-3 h-3 ml-1" />
                   }
                 </Badge>
@@ -355,8 +525,8 @@ const Dashboard = () => {
                   </div>
                   {totalToPayChange !== null && (
                     <div className={`flex items-center gap-1 text-sm ${totalToPayChange >= 0 ? 'text-destructive' : 'text-success'}`}>
-                      {totalToPayChange >= 0 
-                        ? <TrendingUp className="w-3 h-3" /> 
+                      {totalToPayChange >= 0
+                        ? <TrendingUp className="w-3 h-3" />
                         : <TrendingDown className="w-3 h-3" />
                       }
                       <span>{totalToPayChange >= 0 ? '+' : ''}{totalToPayChange.toFixed(1)}%</span>
@@ -380,8 +550,8 @@ const Dashboard = () => {
                   </div>
                   {totalPaidChange !== null && (
                     <div className={`flex items-center gap-1 text-sm ${totalPaidChange >= 0 ? 'text-success' : 'text-destructive'}`}>
-                      {totalPaidChange >= 0 
-                        ? <TrendingUp className="w-3 h-3" /> 
+                      {totalPaidChange >= 0
+                        ? <TrendingUp className="w-3 h-3" />
                         : <TrendingDown className="w-3 h-3" />
                       }
                       <span>{totalPaidChange >= 0 ? '+' : ''}{totalPaidChange.toFixed(1)}%</span>
