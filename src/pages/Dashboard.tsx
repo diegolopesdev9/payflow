@@ -121,24 +121,39 @@ const Dashboard = () => {
   const calculateWeeklyExpenses = (bills: Bill[]) => {
     const daysOfWeek = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
     const today = new Date();
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(today.getDate() - today.getDay()); // Domingo
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
+    endOfWeek.setHours(23, 59, 59, 999);
+
+    const expenses = Array(7).fill(0);
+
+    bills.forEach((bill: any) => {
+      if (!bill.is_paid && !bill.isPaid) return; // Só contas pagas (ambos os formatos)
+      
+      const billDate = new Date(bill.due_date || bill.dueDate);
+      
+      // Verifica se está na semana atual
+      if (billDate >= startOfWeek && billDate <= endOfWeek) {
+        const dayOfWeek = billDate.getDay(); // 0 = Dom, 1 = Seg, etc
+        expenses[dayOfWeek] += bill.amount / 100; // Converter de centavos
+      }
+    });
 
     const weeklyData = daysOfWeek.map((day, index) => {
-      const targetDate = new Date(today);
-      targetDate.setDate(today.getDate() + index);
-
-      const dayBills = bills.filter(bill => {
-        const billDate = new Date(bill.due_date);
-        return billDate.toDateString() === targetDate.toDateString() && !bill.is_paid;
-      });
-
-      const amount = dayBills.reduce((sum, bill) => sum + (bill.amount / 100), 0); // Convert from cents
+      const targetDate = new Date(startOfWeek);
+      targetDate.setDate(startOfWeek.getDate() + index);
 
       return {
         day,
         date: targetDate.getDate(),
-        amount
+        amount: expenses[index]
       };
     });
+    
     return weeklyData;
   };
 
@@ -595,7 +610,9 @@ const Dashboard = () => {
                         </div>
                         <div>
                           <div className="font-medium">{bill.name}</div>
-                          <div className="text-sm text-muted-foreground">{bill.categoryName}</div>
+                          <div className="text-sm text-muted-foreground">
+                            {categories.find((cat: any) => cat.id === (bill.category_id || bill.categoryId))?.name || 'Sem categoria'}
+                          </div>
                         </div>
                       </div>
 
