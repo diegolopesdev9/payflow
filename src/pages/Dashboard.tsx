@@ -51,11 +51,6 @@ const Dashboard = () => {
       const json = await response.json();
       const data = Array.isArray(json) ? json : (json?.bills ?? []);
 
-      // DEBUG: Verificar estrutura dos dados
-      console.log('📊 [Dashboard] Bills recebidos:', data);
-      console.log('📊 [Dashboard] Primeira bill:', data[0]);
-      console.log('📊 [Dashboard] Keys da primeira bill:', data[0] ? Object.keys(data[0]) : 'nenhuma');
-
       return data;
     },
     enabled: authenticated === true && !!user?.id,
@@ -133,6 +128,25 @@ const Dashboard = () => {
   // Function to calculate weekly expenses based on real bills grouped by day of week
   const calculateWeeklyExpenses = (bills: Bill[]) => {
     const daysOfWeek = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+    
+    // Se não há bills ainda, retorna array zerado
+    if (!bills || bills.length === 0) {
+      return daysOfWeek.map((day, index) => {
+        const today = new Date();
+        const startOfWeek = new Date(today);
+        startOfWeek.setDate(today.getDate() - today.getDay());
+        startOfWeek.setHours(0, 0, 0, 0);
+        const targetDate = new Date(startOfWeek);
+        targetDate.setDate(startOfWeek.getDate() + index);
+        
+        return {
+          day,
+          date: targetDate.getDate(),
+          amount: 0
+        };
+      });
+    }
+    
     const today = new Date();
     const startOfWeek = new Date(today);
     startOfWeek.setDate(today.getDate() - today.getDay()); // Domingo
@@ -145,7 +159,10 @@ const Dashboard = () => {
     const expenses = Array(7).fill(0);
 
     bills.forEach((bill: any) => {
-      const billDate = new Date(bill.due_date || bill.dueDate);
+      // Validar que bill tem os campos necessários
+      if (!bill.dueDate || !bill.amount) return;
+      
+      const billDate = new Date(bill.dueDate);
 
       // Verifica se está na semana atual
       if (billDate >= startOfWeek && billDate <= endOfWeek) {
@@ -164,13 +181,6 @@ const Dashboard = () => {
         amount: expenses[index]
       };
     });
-
-    console.log('📊 [Dashboard] Bills total:', bills.length);
-    console.log('📊 [Dashboard] Weekly expenses:', expenses);
-    console.log('📊 [Dashboard] Bills na semana:', bills.filter((bill: any) => {
-      const billDate = new Date(bill.dueDate || bill.due_date);
-      return billDate >= startOfWeek && billDate <= endOfWeek;
-    }).length);
 
     return weeklyData;
   };
