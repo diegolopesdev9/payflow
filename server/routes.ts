@@ -103,9 +103,22 @@ app.delete("/api/categories/:id", requireUser, async (c: Context) => {
 // ============ BILLS ============
 app.get("/api/bills", requireUser, async (c: Context) => {
   const userId = c.get("userId") as string;
+  
+  console.log('\n📊 GET /api/bills - INÍCIO');
+  console.log('👤 userId:', userId);
+  
   const bills = await storage.getBills(userId);
+  
+  console.log('📦 Bills do storage (ANTES conversão):', bills.length);
+  console.log('📦 Primeira bill (ANTES):', JSON.stringify(bills[0], null, 2));
+  
   // Converter de snake_case (banco) para camelCase (frontend)
   const convertedBills = bills.map(convertBillToFrontend);
+  
+  console.log('✅ Bills convertidas (DEPOIS conversão):', convertedBills.length);
+  console.log('✅ Primeira bill (DEPOIS):', JSON.stringify(convertedBills[0], null, 2));
+  console.log('✅ Keys da primeira bill:', convertedBills[0] ? Object.keys(convertedBills[0]) : 'nenhuma');
+  
   return c.json(convertedBills);
 });
 
