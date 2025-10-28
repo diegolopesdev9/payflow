@@ -25,7 +25,7 @@ const EditBill = () => {
     name: "",
     amount: "",
     dueDate: "",
-    categoryId: "",
+    categoryId: "none",
     description: "",
   });
 
@@ -65,7 +65,7 @@ const EditBill = () => {
         name: bill.name || "",
         amount: String((bill.amount / 100).toFixed(2)),
         dueDate: bill.dueDate ? new Date(bill.dueDate).toISOString().split('T')[0] : "",
-        categoryId: bill.categoryId || "",
+        categoryId: bill.categoryId || "none",
         description: bill.description || "",
       });
     }
@@ -81,7 +81,7 @@ const EditBill = () => {
           name: data.name,
           amount: Math.round(parseFloat(data.amount) * 100),
           dueDate: data.dueDate,
-          categoryId: data.categoryId || null,
+          categoryId: data.categoryId === "none" ? null : data.categoryId,
           description: data.description || null,
         }),
       });
@@ -264,7 +264,7 @@ const EditBill = () => {
                     <SelectValue placeholder="Selecione uma categoria" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Sem categoria</SelectItem>
+                    <SelectItem value="none">Sem categoria</SelectItem>
                     {categories.map((cat: any) => (
                       <SelectItem key={cat.id} value={cat.id}>
                         {cat.name}
