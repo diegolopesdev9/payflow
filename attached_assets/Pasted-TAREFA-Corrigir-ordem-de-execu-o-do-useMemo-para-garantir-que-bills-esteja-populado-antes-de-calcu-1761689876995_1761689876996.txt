@@ -1,0 +1,123 @@
+TAREFA: Corrigir ordem de execução do useMemo para garantir que bills esteja populado antes de calcular despesas semanais.
+
+INSTRUÇÕES CRÍTICAS:
+- MODIFIQUE APENAS src/pages/Dashboard.tsx
+- Adicione verificação de bills.length
+- Remova logs desnecessários
+- Mostre o diff antes de aplicar
+
+ARQUIVO: src/pages/Dashboard.tsx
+
+---
+
+PROBLEMA IDENTIFICADO:
+O useMemo de weeklyExpenses executa antes de bills ter dados. Console mostra:
+1. "Bills total: 0" (executou cedo demais)
+2. "Bills recebidos: Array(7)" (dados chegaram)
+3. "Bills total: 7" (executou novamente, agora certo)
+
+Mas a UI não atualiza porque o primeiro cálculo (com 0) já renderizou.
+
+CORREÇÃO:
+
+LOCALIZAR o cálculo de weeklyExpenses (linhas ~83-118):
+```typescript
+const weeklyExpenses = useMemo(() => {
+  const today = new Date();
+  const startOfWeek = new Date(today);
+  startOfWeek.setDate(today.getDate() - today.getDay());
+  startOfWeek.setHours(0, 0, 0, 0);
+
+  const endOfWeek = new Date(startOfWeek);
+  endOfWeek.setDate(startOfWeek.getDate() + 6);
+  endOfWeek.setHours(23, 59, 59, 999);
+
+  const expenses = Array(7).fill(0);
+
+  bills.forEach((bill: any) => {
+    const billDate = new Date(bill.dueDate);
+    
+    if (billDate >= startOfWeek && billDate <= endOfWeek) {
+      const dayOfWeek = billDate.getDay();
+      expenses[dayOfWeek] += bill.amount / 100;
+    }
+  });
+
+  console.log('📊 [Dashboard] Bills total:', bills.length);
+  console.log('📊 [Dashboard] Weekly expenses:', expenses);
+  console.log('📊 [Dashboard] Bills na semana:', bills.filter((bill: any) => {
+    const billDate = new Date(bill.dueDate);
+    const today = new Date();
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(today.getDate() - today.getDay());
+    startOfWeek.setHours(0, 0, 0, 0);
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
+    endOfWeek.setHours(23, 59, 59, 999);
+    return billDate >= startOfWeek && billDate <= endOfWeek;
+  }).length);
+  
+  return expenses;
+}, [bills]);
+```
+
+SUBSTITUIR POR:
+```typescript
+const weeklyExpenses = useMemo(() => {
+  // Se não há bills ainda, retorna array zerado
+  if (!bills || bills.length === 0) {
+    return Array(7).fill(0);
+  }
+
+  const today = new Date();
+  const startOfWeek = new Date(today);
+  startOfWeek.setDate(today.getDate() - today.getDay());
+  startOfWeek.setHours(0, 0, 0, 0);
+
+  const endOfWeek = new Date(startOfWeek);
+  endOfWeek.setDate(startOfWeek.getDate() + 6);
+  endOfWeek.setHours(23, 59, 59, 999);
+
+  const expenses = Array(7).fill(0);
+
+  bills.forEach((bill: any) => {
+    // Validar que bill tem os campos necessários
+    if (!bill.dueDate || !bill.amount) return;
+    
+    const billDate = new Date(bill.dueDate);
+    
+    if (billDate >= startOfWeek && billDate <= endOfWeek) {
+      const dayOfWeek = billDate.getDay();
+      expenses[dayOfWeek] += bill.amount / 100;
+    }
+  });
+  
+  return expenses;
+}, [bills]);
+```
+
+E REMOVER os console.log da query de bills (linhas ~54-56):
+```typescript
+console.log('📊 [Dashboard] Bills recebidos:', data);
+console.log('📊 [Dashboard] Primeira bill:', data[0]);
+console.log('📊 [Dashboard] Keys da primeira bill:', data[0] ? Object.keys(data[0]) : 'nenhuma');
+```
+
+DELETAR essas 3 linhas completamente.
+
+---
+
+RESULTADO ESPERADO:
+1. weeklyExpenses só calcula quando bills tem dados
+2. UI atualiza corretamente quando dados chegam
+3. Despesas Semanais mostra valor real
+4. Total e Média mostram valores corretos
+5. Logs de debug removidos
+
+VALIDAÇÃO:
+Após aplicar, você deve ver:
+- "Despesas Semanais: R$ XX,XX" (não R$ 0,00)
+- Barras do gráfico com alturas proporcionais
+- Total de despesas e Média diária com valores reais
+
+Mostre o diff e aplique.
