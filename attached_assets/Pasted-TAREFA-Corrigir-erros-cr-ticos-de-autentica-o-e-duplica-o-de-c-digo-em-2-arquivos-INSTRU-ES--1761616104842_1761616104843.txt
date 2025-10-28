@@ -1,0 +1,201 @@
+TAREFA: Corrigir erros críticos de autenticação e duplicação de código em 2 arquivos.
+
+INSTRUÇÕES CRÍTICAS:
+- MODIFIQUE APENAS os arquivos especificados abaixo
+- Faça as correções EXATAMENTE como indicado
+- Mostre o diff antes de aplicar
+- NÃO modifique mais nada
+
+---
+
+ARQUIVO 1: server/supabase.ts
+
+PROBLEMA: Código duplicado no final do arquivo causando conflitos de export.
+
+CORREÇÃO:
+REMOVER as linhas duplicadas após a linha 195 (linhas ~196-200):
+
+LOCALIZAR E REMOVER:
+```
+export const supabaseStorage = new SupabaseStorage();
+export { supabase };
+import { createClient } from "@supabase/supabase-js";
+```
+
+MANTER APENAS (linhas finais corretas):
+```
+export const supabaseStorage = new SupabaseStorage();
+
+export const supabaseServer = createClient(
+  process.env.SUPABASE_URL!,
+  process.env.SUPABASE_ANON_KEY!,
+  { auth: { persistSession: false, autoRefreshToken: false } }
+);
+```
+
+---
+
+ARQUIVO 2: src/pages/Dashboard.tsx
+
+PROBLEMA 1: Não usa fetchWithAuth, causando erro 401 (Unauthorized)
+PROBLEMA 2: Valor não convertido para centavos
+PROBLEMA 3: Falta validações
+
+CORREÇÃO 1 - ADICIONAR IMPORT (no topo do arquivo, linha ~6):
+
+LOCALIZAR:
+```
+import { useAuth } from "@/lib/auth";
+```
+
+SUBSTITUIR POR:
+```
+import { useAuth, fetchWithAuth } from "@/lib/auth";
+```
+
+CORREÇÃO 2 - SUBSTITUIR FUNÇÃO handleQuickBillSubmit (linhas ~230-280):
+
+LOCALIZAR A FUNÇÃO COMPLETA:
+```typescript
+const handleQuickBillSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setIsQuickBillSubmitting(true);
+
+  try {
+    const billData = {
+      name: quickBillData.name,
+      amount: parseFloat(quickBillData.amount),
+      dueDate: quickBillData.dueDate,
+      categoryId: quickBillData.categoryId || null,
+      description: quickBillData.description || null,
+      isPaid: false,
+      userId: user?.id,
+    };
+
+    const response = await fetch("/api/bills", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(billData),
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to create bill");
+    }
+
+    toast({
+      title: "Conta adicionada!",
+      description: "Nova despesa registrada com sucesso.",
+    });
+
+    setShowQuickBillForm(false);
+    setQuickBillData({ name: "", amount: "", dueDate: "", categoryId: "", description: "" });
+    queryClient.invalidateQueries({ queryKey: ["/api/bills"] });
+  } catch (error) {
+    toast({
+      title: "Erro ao criar conta",
+      description: "Não foi possível adicionar a despesa.",
+      variant: "destructive",
+    });
+  } finally {
+    setIsQuickBillSubmitting(false);
+  }
+};
+```
+
+SUBSTITUIR POR:
+```typescript
+const handleQuickBillSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+
+  // Validações
+  if (!quickBillData.name.trim()) {
+    toast({
+      title: "Nome obrigatório",
+      description: "Por favor, informe o nome da conta.",
+      variant: "destructive",
+    });
+    return;
+  }
+
+  if (!quickBillData.amount || parseFloat(quickBillData.amount) <= 0) {
+    toast({
+      title: "Valor inválido",
+      description: "Por favor, informe um valor maior que zero.",
+      variant: "destructive",
+    });
+    return;
+  }
+
+  if (!quickBillData.dueDate) {
+    toast({
+      title: "Data obrigatória",
+      description: "Por favor, informe a data de vencimento.",
+      variant: "destructive",
+    });
+    return;
+  }
+
+  setIsQuickBillSubmitting(true);
+
+  try {
+    const billData = {
+      name: quickBillData.name,
+      amount: Math.round(parseFloat(quickBillData.amount) * 100),
+      dueDate: quickBillData.dueDate,
+      categoryId: quickBillData.categoryId || null,
+      description: quickBillData.description || null,
+      isPaid: false,
+    };
+
+    const response = await fetchWithAuth("/api/bills", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(billData),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || "Failed to create bill");
+    }
+
+    toast({
+      title: "Conta adicionada!",
+      description: "Nova despesa registrada com sucesso.",
+    });
+
+    setShowQuickBillForm(false);
+    setQuickBillData({ name: "", amount: "", dueDate: "", categoryId: "", description: "" });
+    queryClient.invalidateQueries({ queryKey: ["/api/bills"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/bills/upcoming"] });
+  } catch (error: any) {
+    toast({
+      title: "Erro ao criar conta",
+      description: error.message || "Não foi possível adicionar a despesa.",
+      variant: "destructive",
+    });
+  } finally {
+    setIsQuickBillSubmitting(false);
+  }
+};
+```
+
+---
+
+EXPLICAÇÃO DAS CORREÇÕES:
+
+supabase.ts:
+- Remove exports duplicados que causam conflitos
+
+Dashboard.tsx:
+1. Adiciona import de fetchWithAuth
+2. Adiciona validações de campos obrigatórios
+3. Converte valor para centavos (x100)
+4. USA fetchWithAuth ao invés de fetch (CRÍTICO - adiciona token de autenticação)
+5. Melhora tratamento de erros
+
+RESULTADO ESPERADO:
+- Sem erro 401 ao criar conta pelo Dashboard
+- Valor salvo corretamente em centavos
+- Validações impedem dados inválidos
+
+NÃO MODIFIQUE MAIS NADA. Aguarde confirmação após aplicar.

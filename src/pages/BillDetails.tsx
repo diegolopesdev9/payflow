@@ -16,8 +16,7 @@ import {
   Check,
   Calendar,
   Tag,
-  Clock,
-  Home
+  Clock
 } from "lucide-react";
 
 const BillDetails = () => {
@@ -50,6 +49,17 @@ const BillDetails = () => {
       return response.json();
     },
     enabled: !!billId && !!user?.id,
+  });
+
+  // ✅ FETCH CATEGORIES - para mostrar o nome da categoria
+  const { data: categories = [] } = useQuery({
+    queryKey: ['/api/categories'],
+    queryFn: async () => {
+      const response = await fetchWithAuth('/api/categories');
+      if (!response.ok) throw new Error('Failed to fetch categories');
+      return response.json();
+    },
+    enabled: authenticated === true && !!user?.id,
   });
 
   // ✅ MUTATIONS NO TOPO - ANTES DE QUALQUER RETURN!
@@ -165,6 +175,10 @@ const BillDetails = () => {
     );
   }
 
+  // ✅ BUSCAR NOME DA CATEGORIA
+  const category = categories.find((cat: any) => cat.id === bill.categoryId);
+  const categoryName = category?.name || 'Sem categoria';
+
   // ✅ JSX PRINCIPAL - BILL GARANTIDO QUE EXISTE
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary via-primary/95 to-secondary">
@@ -230,7 +244,7 @@ const BillDetails = () => {
                   <div>
                     <p className="text-sm text-muted-foreground">Categoria</p>
                     <p className="font-semibold text-gray-900">
-                      {bill.categoryId ? String(bill.categoryId).slice(0, 8) + '...' : 'Sem categoria'}
+                      {categoryName}
                     </p>
                   </div>
                 </div>
@@ -245,18 +259,6 @@ const BillDetails = () => {
                     <p className="text-sm text-muted-foreground">Data de Criação</p>
                     <p className="font-semibold text-gray-900">
                       {new Date(bill.createdAt).toLocaleDateString('pt-BR')}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                    <Home className="w-5 h-5 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">ID da Conta</p>
-                    <p className="font-semibold text-gray-900">
-                      {String(bill.id).slice(0, 8)}...
                     </p>
                   </div>
                 </div>

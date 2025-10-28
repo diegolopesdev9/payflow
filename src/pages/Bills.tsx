@@ -6,18 +6,14 @@ import { queryClient } from "@/lib/queryClient";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { BottomNavigation } from "@/components/BottomNavigation";
 import {
   Search,
   Plus,
-  Calendar,
   CheckCircle2,
   Circle,
   ArrowLeft,
-  Tag,
   DollarSign
 } from "lucide-react";
 
@@ -61,24 +57,18 @@ const Bills = () => {
   // Toggle paid mutation
   const togglePaidMutation = useMutation({
     mutationFn: async ({ id, isPaid }: { id: string; isPaid: boolean }) => {
-      console.log('🔄 Enviando PUT:', { id, isPaid });
       const response = await fetchWithAuth(`/api/bills/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ isPaid }),
       });
-      console.log('📡 Response status:', response.status);
       if (!response.ok) {
         const error = await response.json();
-        console.error('❌ Erro do servidor:', error);
         throw new Error(error.error || 'Failed to update bill');
       }
-      const data = await response.json();
-      console.log('✅ Resposta:', data);
-      return data;
+      return response.json();
     },
     onSuccess: (data) => {
-      console.log('✅ Mutation success, refetchando...');
       queryClient.refetchQueries({ queryKey: ['/api/bills'] });
       queryClient.refetchQueries({ queryKey: ['/api/bills/upcoming'] });
       toast({
@@ -87,7 +77,6 @@ const Bills = () => {
       });
     },
     onError: (error: any) => {
-      console.error('❌ Mutation error:', error);
       toast({
         title: "Erro ao atualizar",
         description: error.message || "Não foi possível atualizar o status da conta.",
@@ -108,10 +97,19 @@ const Bills = () => {
     const category = categoryMap.get(bill.categoryId);
     const dueDate = bill.dueDate ? new Date(bill.dueDate) : null;
     const today = new Date();
-    const daysLeft = dueDate ? Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)) : 0;
+    today.setHours(0, 0, 0, 0); // Zerar horas para comparação apenas de data
+
+    const dueDateOnly = dueDate ? new Date(dueDate) : null;
+    if (dueDateOnly) {
+      dueDateOnly.setHours(0, 0, 0, 0);
+    }
+
+    const daysLeft = dueDateOnly ? Math.ceil((dueDateOnly.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)) : 0;
+    const isOverdue = dueDateOnly && dueDateOnly < today && !bill.isPaid;
 
     let priority = "low";
-    if (daysLeft <= 3 && !bill.isPaid) priority = "high";
+    if (isOverdue) priority = "overdue";
+    else if (daysLeft <= 3 && !bill.isPaid) priority = "high";
     else if (daysLeft <= 7 && !bill.isPaid) priority = "medium";
 
     return {
@@ -122,15 +120,29 @@ const Bills = () => {
       formattedAmount: `R$ ${(bill.amount / 100).toFixed(2).replace('.', ',')}`,
       daysLeft,
       priority,
+      isOverdue,
     };
   });
 
   // Filter bills
   const filterBills = (status: string) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
     switch (status) {
       case "vencer":
-        return transformedBills.filter((bill: any) => !bill.isPaid);
-      case "pagos":
+        return transformedBills.filter((bill: any) => {
+          const dueDate = new Date(bill.dueDate);
+          dueDate.setHours(0, 0, 0, 0);
+          return !bill.isPaid && dueDate >= today;
+        });
+      case "vencidas":
+        return transformedBills.filter((bill: any) => {
+          const dueDate = new Date(bill.dueDate);
+          dueDate.setHours(0, 0, 0, 0);
+          return !bill.isPaid && dueDate < today;
+        });
+      case "pagas":
         return transformedBills.filter((bill: any) => bill.isPaid);
       default:
         return transformedBills;
@@ -144,6 +156,7 @@ const Bills = () => {
   // Sort bills
   const sortedBills = [...filteredBills].sort((a: any, b: any) => {
     if (a.isPaid !== b.isPaid) return a.isPaid ? 1 : -1;
+    if (a.isOverdue !== b.isOverdue) return a.isOverdue ? -1 : 1;
     return a.daysLeft - b.daysLeft;
   });
 
@@ -189,14 +202,57 @@ const Bills = () => {
             />
           </div>
 
-          {/* Filters */}
-          <Tabs value={activeFilter} onValueChange={setActiveFilter}>
-            <TabsList className="grid w-full grid-cols-3 bg-primary-foreground/10">
-              <TabsTrigger value="todas">Todas</TabsTrigger>
-              <TabsTrigger value="vencer">A Vencer</TabsTrigger>
-              <TabsTrigger value="pagos">Pagas</TabsTrigger>
-            </TabsList>
-          </Tabs>
+          {/* Filters - Estilo dos Relatórios */}
+          <div className="grid grid-cols-4 gap-2">
+            <button
+              onClick={() => setActiveFilter("todas")}
+              className={`
+                py-3 px-4 rounded-lg text-sm font-medium transition-all
+                ${activeFilter === "todas" 
+                  ? "bg-white text-gray-900 shadow-sm" 
+                  : "bg-white/10 text-white hover:bg-white/20"
+                }
+              `}
+            >
+              Todas
+            </button>
+            <button
+              onClick={() => setActiveFilter("vencer")}
+              className={`
+                py-3 px-4 rounded-lg text-sm font-medium transition-all
+                ${activeFilter === "vencer" 
+                  ? "bg-white text-gray-900 shadow-sm" 
+                  : "bg-white/10 text-white hover:bg-white/20"
+                }
+              `}
+            >
+              A Vencer
+            </button>
+            <button
+              onClick={() => setActiveFilter("vencidas")}
+              className={`
+                py-3 px-4 rounded-lg text-sm font-medium transition-all
+                ${activeFilter === "vencidas" 
+                  ? "bg-white text-gray-900 shadow-sm" 
+                  : "bg-white/10 text-white hover:bg-white/20"
+                }
+              `}
+            >
+              Vencidas
+            </button>
+            <button
+              onClick={() => setActiveFilter("pagas")}
+              className={`
+                py-3 px-4 rounded-lg text-sm font-medium transition-all
+                ${activeFilter === "pagas" 
+                  ? "bg-white text-gray-900 shadow-sm" 
+                  : "bg-white/10 text-white hover:bg-white/20"
+                }
+              `}
+            >
+              Pagas
+            </button>
+          </div>
         </div>
       </div>
 
@@ -234,13 +290,13 @@ const Bills = () => {
                   hover:bg-gray-50 transition-all
                   shadow-sm
                   ${bill.isPaid ? 'border-l-4 border-l-green-500' : ''}
-                  ${bill.priority === 'high' && !bill.isPaid ? 'border-l-4 border-l-red-500' : ''}
-                  ${bill.priority === 'medium' && !bill.isPaid ? 'border-l-4 border-l-yellow-500' : ''}
+                  ${bill.isOverdue ? 'border-l-4 border-l-red-500' : ''}
+                  ${bill.priority === 'medium' && !bill.isPaid && !bill.isOverdue ? 'border-l-4 border-l-yellow-500' : ''}
                 `}
               >
                 <CardContent className="p-3">
                   <div className="flex items-center gap-3">
-                    {/* Checkbox compacto */}
+                    {/* Checkbox */}
                     <div onClick={(e) => e.stopPropagation()}>
                       <button
                         onClick={() => handleTogglePaid(bill.id, bill.isPaid)}
@@ -255,22 +311,23 @@ const Bills = () => {
                       </button>
                     </div>
 
-                    {/* Conteúdo - linha única */}
+                    {/* Conteúdo */}
                     <div className="flex-1 min-w-0 flex items-center justify-between">
-                      {/* Título e data na mesma linha */}
                       <div className="flex-1 min-w-0">
                         <h3 className="font-medium text-gray-900 truncate mb-0.5">
                           {bill.name}
                         </h3>
                         <div className="flex items-center gap-2 text-xs text-gray-600">
-                          <span>{bill.formattedDueDate}</span>
+                          <span className={bill.isOverdue ? 'text-red-600 font-medium' : ''}>
+                            {bill.formattedDueDate}
+                          </span>
                           <span>•</span>
                           <span className="truncate">{bill.categoryName}</span>
                         </div>
                       </div>
 
-                      {/* Valor à direita */}
-                      <span className={`font-semibold text-base ml-3 shrink-0 ${bill.isPaid ? 'line-through text-gray-500' : 'text-green-600'}`}>
+                      {/* Valor */}
+                      <span className={`font-semibold text-base ml-3 shrink-0 ${bill.isPaid ? 'line-through text-gray-500' : bill.isOverdue ? 'text-red-600' : 'text-green-600'}`}>
                         {bill.formattedAmount}
                       </span>
                     </div>
