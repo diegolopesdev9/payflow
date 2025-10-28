@@ -133,9 +133,9 @@ const Dashboard = () => {
 
     bills.forEach((bill: any) => {
       if (!bill.is_paid && !bill.isPaid) return; // Só contas pagas (ambos os formatos)
-      
+
       const billDate = new Date(bill.due_date || bill.dueDate);
-      
+
       // Verifica se está na semana atual
       if (billDate >= startOfWeek && billDate <= endOfWeek) {
         const dayOfWeek = billDate.getDay(); // 0 = Dom, 1 = Seg, etc
@@ -153,7 +153,7 @@ const Dashboard = () => {
         amount: expenses[index]
       };
     });
-    
+
     return weeklyData;
   };
 
