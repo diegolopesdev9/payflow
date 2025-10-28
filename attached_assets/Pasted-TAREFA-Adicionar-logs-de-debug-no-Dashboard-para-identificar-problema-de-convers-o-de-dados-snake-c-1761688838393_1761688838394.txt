@@ -1,0 +1,94 @@
+TAREFA: Adicionar logs de debug no Dashboard para identificar problema de conversão de dados snake_case/camelCase.
+
+INSTRUÇÕES CRÍTICAS:
+- MODIFIQUE APENAS src/pages/Dashboard.tsx
+- Adicione console.log para verificar dados recebidos
+- Mostre o diff antes de aplicar
+
+ARQUIVO: src/pages/Dashboard.tsx
+
+---
+
+PROBLEMA IDENTIFICADO:
+Os dados das contas podem estar vindo em snake_case (due_date, is_paid) mas o código espera camelCase (dueDate, isPaid).
+
+CORREÇÃO:
+
+LOCALIZAR a query de bills (linhas ~48-59):
+```typescript
+const { data: bills = [], isLoading: billsLoading } = useQuery({
+  queryKey: ['/api/bills'],
+  queryFn: async () => {
+    const response = await fetchWithAuth('/api/bills');
+    if (!response.ok) throw new Error('Failed to fetch bills');
+    const data = await response.json();
+    return Array.isArray(data) ? data : [];
+  },
+  enabled: authenticated === true && !!user?.id,
+});
+```
+
+SUBSTITUIR POR:
+```typescript
+const { data: bills = [], isLoading: billsLoading } = useQuery({
+  queryKey: ['/api/bills'],
+  queryFn: async () => {
+    const response = await fetchWithAuth('/api/bills');
+    if (!response.ok) throw new Error('Failed to fetch bills');
+    const data = await response.json();
+    
+    // DEBUG: Verificar estrutura dos dados
+    console.log('📊 [Dashboard] Bills recebidos:', data);
+    console.log('📊 [Dashboard] Primeira bill:', data[0]);
+    console.log('📊 [Dashboard] Keys da primeira bill:', data[0] ? Object.keys(data[0]) : 'nenhuma');
+    
+    return Array.isArray(data) ? data : [];
+  },
+  enabled: authenticated === true && !!user?.id,
+});
+```
+
+E TAMBÉM ADICIONAR LOG no cálculo de weeklyExpenses (após linha 105):
+
+LOCALIZAR:
+```typescript
+const weeklyExpenses = useMemo(() => {
+  // ... código existente ...
+  return expenses;
+}, [bills]);
+```
+
+ADICIONAR APÓS O RETURN:
+```typescript
+const weeklyExpenses = useMemo(() => {
+  // ... código existente ...
+  
+  console.log('📊 [Dashboard] Bills total:', bills.length);
+  console.log('📊 [Dashboard] Weekly expenses:', expenses);
+  console.log('📊 [Dashboard] Bills na semana:', bills.filter((bill: any) => {
+    const billDate = new Date(bill.dueDate || bill.due_date);
+    const today = new Date();
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(today.getDate() - today.getDay());
+    startOfWeek.setHours(0, 0, 0, 0);
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
+    endOfWeek.setHours(23, 59, 59, 999);
+    return billDate >= startOfWeek && billDate <= endOfWeek;
+  }).length);
+  
+  return expenses;
+}, [bills]);
+```
+
+---
+
+RESULTADO ESPERADO:
+Após rebuild, abra o console do navegador (F12) e verifique os logs:
+- Verá a estrutura exata dos dados recebidos
+- Saberá se está em snake_case ou camelCase
+- Verá quantas bills estão na semana atual
+
+Com essas informações, poderei fazer a correção definitiva.
+
+Mostre o diff e aplique.
