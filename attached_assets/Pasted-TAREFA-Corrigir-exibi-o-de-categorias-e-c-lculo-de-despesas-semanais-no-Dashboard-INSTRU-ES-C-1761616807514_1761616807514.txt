@@ -1,0 +1,95 @@
+TAREFA: Corrigir exibição de categorias e cálculo de despesas semanais no Dashboard.
+
+INSTRUÇÕES CRÍTICAS:
+- MODIFIQUE APENAS src/pages/Dashboard.tsx
+- Faça as 2 correções especificadas abaixo
+- Mostre o diff antes de aplicar
+- NÃO modifique mais nada
+
+ARQUIVO: src/pages/Dashboard.tsx
+
+---
+
+CORREÇÃO 1: DESPESAS SEMANAIS COM DADOS REAIS (linhas ~60-62)
+
+LOCALIZAR:
+```typescript
+const weeklyExpenses = useMemo(() => {
+  return Array(7).fill(0);
+}, []);
+```
+
+SUBSTITUIR POR:
+```typescript
+const weeklyExpenses = useMemo(() => {
+  const today = new Date();
+  const startOfWeek = new Date(today);
+  startOfWeek.setDate(today.getDate() - today.getDay()); // Domingo
+  startOfWeek.setHours(0, 0, 0, 0);
+
+  const endOfWeek = new Date(startOfWeek);
+  endOfWeek.setDate(startOfWeek.getDate() + 6);
+  endOfWeek.setHours(23, 59, 59, 999);
+
+  const expenses = Array(7).fill(0);
+
+  bills.forEach((bill: any) => {
+    if (!bill.isPaid) return; // Só contas pagas
+    
+    const billDate = new Date(bill.dueDate);
+    
+    // Verifica se está na semana atual
+    if (billDate >= startOfWeek && billDate <= endOfWeek) {
+      const dayOfWeek = billDate.getDay(); // 0 = Dom, 1 = Seg, etc
+      expenses[dayOfWeek] += bill.amount / 100; // Converter de centavos
+    }
+  });
+
+  return expenses;
+}, [bills]);
+```
+
+---
+
+CORREÇÃO 2: EXIBIR NOME DA CATEGORIA NAS PRÓXIMAS CONTAS (linha ~335)
+
+LOCALIZAR (dentro do map de upcomingBills, linha ~335):
+```typescript
+<p className="text-sm text-muted-foreground">Sem categoria</p>
+```
+
+SUBSTITUIR POR:
+```typescript
+<p className="text-sm text-muted-foreground">
+  {categories.find((cat: any) => cat.id === bill.categoryId)?.name || 'Sem categoria'}
+</p>
+```
+
+---
+
+EXPLICAÇÃO DAS CORREÇÕES:
+
+CORREÇÃO 1 - Despesas Semanais:
+- Calcula início e fim da semana atual (Domingo a Sábado)
+- Filtra apenas contas PAGAS
+- Agrupa valores por dia da semana
+- Converte de centavos para reais (/100)
+- Atualiza quando bills mudar
+
+CORREÇÃO 2 - Nome da Categoria:
+- Busca a categoria pelo categoryId da conta
+- Exibe o nome da categoria encontrada
+- Mostra "Sem categoria" se não encontrar
+
+RESULTADO ESPERADO:
+1. Gráfico semanal com valores reais das contas pagas
+2. Nome da categoria aparecendo nas próximas contas
+3. "Sem categoria" apenas quando realmente não tiver categoria
+
+VALIDAÇÃO:
+Após aplicar:
+1. Dashboard deve mostrar valores no gráfico semanal
+2. Próximas contas devem mostrar nome da categoria
+3. Total de despesas deve estar correto
+
+NÃO MODIFIQUE MAIS NADA. Mostre o diff e aguarde confirmação.
