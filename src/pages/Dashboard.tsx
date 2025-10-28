@@ -49,7 +49,14 @@ const Dashboard = () => {
       const response = await fetchWithAuth(`/api/bills`);
       if (!response.ok) throw new Error('Failed to fetch bills');
       const json = await response.json();
-      return Array.isArray(json) ? json : (json?.bills ?? []);
+      const data = Array.isArray(json) ? json : (json?.bills ?? []);
+      
+      // DEBUG: Verificar estrutura dos dados
+      console.log('📊 [Dashboard] Bills recebidos:', data);
+      console.log('📊 [Dashboard] Primeira bill:', data[0]);
+      console.log('📊 [Dashboard] Keys da primeira bill:', data[0] ? Object.keys(data[0]) : 'nenhuma');
+      
+      return data;
     },
     enabled: authenticated === true && !!user?.id,
     retry: 3,
@@ -151,6 +158,13 @@ const Dashboard = () => {
         amount: expenses[index]
       };
     });
+
+    console.log('📊 [Dashboard] Bills total:', bills.length);
+    console.log('📊 [Dashboard] Weekly expenses:', expenses);
+    console.log('📊 [Dashboard] Bills na semana:', bills.filter((bill: any) => {
+      const billDate = new Date(bill.dueDate || bill.due_date);
+      return billDate >= startOfWeek && billDate <= endOfWeek;
+    }).length);
 
     return weeklyData;
   };
