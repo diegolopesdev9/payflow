@@ -1,0 +1,97 @@
+TAREFA: Corrigir cálculo de despesas semanais no Dashboard para mostrar dados reais de todas as contas da semana.
+
+INSTRUÇÕES CRÍTICAS:
+- MODIFIQUE APENAS src/pages/Dashboard.tsx
+- Faça APENAS a correção especificada abaixo
+- Mostre o diff antes de aplicar
+- NÃO modifique mais nada
+
+ARQUIVO: src/pages/Dashboard.tsx
+
+---
+
+PROBLEMA IDENTIFICADO:
+O cálculo de despesas semanais (linhas ~82-105) está filtrando apenas contas PAGAS, mas deveria mostrar TODAS as contas com vencimento na semana atual (pagas ou não pagas).
+
+CORREÇÃO NECESSÁRIA:
+
+LOCALIZAR a função weeklyExpenses (aproximadamente linhas 82-105):
+```typescript
+const weeklyExpenses = useMemo(() => {
+  const today = new Date();
+  const startOfWeek = new Date(today);
+  startOfWeek.setDate(today.getDate() - today.getDay());
+  startOfWeek.setHours(0, 0, 0, 0);
+
+  const endOfWeek = new Date(startOfWeek);
+  endOfWeek.setDate(startOfWeek.getDate() + 6);
+  endOfWeek.setHours(23, 59, 59, 999);
+
+  const expenses = Array(7).fill(0);
+
+  bills.forEach((bill: any) => {
+    if (!bill.isPaid) return; // ❌ ESTA LINHA DEVE SER REMOVIDA
+    
+    const billDate = new Date(bill.dueDate);
+    
+    if (billDate >= startOfWeek && billDate <= endOfWeek) {
+      const dayOfWeek = billDate.getDay();
+      expenses[dayOfWeek] += bill.amount / 100;
+    }
+  });
+
+  return expenses;
+}, [bills]);
+```
+
+SUBSTITUIR POR:
+```typescript
+const weeklyExpenses = useMemo(() => {
+  const today = new Date();
+  const startOfWeek = new Date(today);
+  startOfWeek.setDate(today.getDate() - today.getDay());
+  startOfWeek.setHours(0, 0, 0, 0);
+
+  const endOfWeek = new Date(startOfWeek);
+  endOfWeek.setDate(startOfWeek.getDate() + 6);
+  endOfWeek.setHours(23, 59, 59, 999);
+
+  const expenses = Array(7).fill(0);
+
+  bills.forEach((bill: any) => {
+    const billDate = new Date(bill.dueDate);
+    
+    // ✅ CONTA TODAS as contas com vencimento na semana (pagas ou não)
+    if (billDate >= startOfWeek && billDate <= endOfWeek) {
+      const dayOfWeek = billDate.getDay();
+      expenses[dayOfWeek] += bill.amount / 100;
+    }
+  });
+
+  return expenses;
+}, [bills]);
+```
+
+---
+
+MUDANÇA ESPECÍFICA:
+REMOVER a linha: `if (!bill.isPaid) return;`
+
+MOTIVO:
+Esta linha estava impedindo que contas não pagas fossem contabilizadas no gráfico semanal. O usuário quer ver TODAS as despesas da semana, independente de estarem pagas ou não.
+
+---
+
+RESULTADO ESPERADO APÓS CORREÇÃO:
+1. Dashboard mostrará valores reais no gráfico semanal
+2. Barras do gráfico terão alturas proporcionais aos valores
+3. "Total de despesas" e "Média diária" mostrarão valores corretos
+4. Exemplo: Se há contas de R$ 13,00 + R$ 13,00 + R$ 11,00 + R$ 13,00 + R$ 10,00 = R$ 60,00 na semana, o gráfico deve mostrar esse total
+
+VALIDAÇÃO:
+Após aplicar:
+- Verifique se "Despesas Semanais" no topo do card mostra valor diferente de R$ 0,00
+- Verifique se as barras do gráfico têm alturas visíveis
+- Verifique se "Total de despesas" e "Média diária" mostram valores reais
+
+NÃO MODIFIQUE MAIS NADA. Mostre o diff antes de aplicar e aguarde confirmação.
