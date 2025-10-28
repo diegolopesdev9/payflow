@@ -1,0 +1,103 @@
+TAREFA: Limpar cache do React Query e forçar refetch de dados no Dashboard.
+
+INSTRUÇÕES CRÍTICAS:
+- MODIFIQUE APENAS src/pages/Dashboard.tsx
+- Force invalidação de cache
+- Adicione refetchOnMount
+- Mostre o diff antes de aplicar
+
+ARQUIVO: src/pages/Dashboard.tsx
+
+---
+
+PROBLEMA IDENTIFICADO:
+React Query está usando cache antigo com dados vazios. O backend está retornando dados corretos (log mostra 7 bills convertidas), mas o frontend usa cache vazio.
+
+CORREÇÃO:
+
+LOCALIZAR a query de bills (linhas ~48-67):
+```typescript
+const { data: bills = [], isLoading: billsLoading } = useQuery({
+  queryKey: ['/api/bills'],
+  queryFn: async () => {
+    const response = await fetchWithAuth('/api/bills');
+    if (!response.ok) throw new Error('Failed to fetch bills');
+    const data = await response.json();
+    
+    // DEBUG logs...
+    
+    return Array.isArray(data) ? data : [];
+  },
+  enabled: authenticated === true && !!user?.id,
+});
+```
+
+SUBSTITUIR POR:
+```typescript
+const { data: bills = [], isLoading: billsLoading } = useQuery({
+  queryKey: ['/api/bills'],
+  queryFn: async () => {
+    const response = await fetchWithAuth('/api/bills');
+    if (!response.ok) throw new Error('Failed to fetch bills');
+    const data = await response.json();
+    
+    console.log('📊 [Dashboard] Bills recebidos:', data);
+    console.log('📊 [Dashboard] Primeira bill:', data[0]);
+    console.log('📊 [Dashboard] Keys da primeira bill:', data[0] ? Object.keys(data[0]) : 'nenhuma');
+    
+    return Array.isArray(data) ? data : [];
+  },
+  enabled: authenticated === true && !!user?.id,
+  staleTime: 0,           // ✅ Não usar cache
+  refetchOnMount: true,   // ✅ Sempre refetch ao montar
+  refetchOnWindowFocus: true, // ✅ Refetch ao focar janela
+});
+```
+
+E FAZER O MESMO para upcoming bills (linhas ~69-81):
+
+LOCALIZAR:
+```typescript
+const { data: upcomingBills = [] } = useQuery({
+  queryKey: ['/api/bills/upcoming'],
+  queryFn: async () => {
+    const response = await fetchWithAuth('/api/bills/upcoming');
+    if (!response.ok) throw new Error('Failed to fetch upcoming bills');
+    return response.json();
+  },
+  enabled: authenticated === true && !!user?.id,
+});
+```
+
+SUBSTITUIR POR:
+```typescript
+const { data: upcomingBills = [] } = useQuery({
+  queryKey: ['/api/bills/upcoming'],
+  queryFn: async () => {
+    const response = await fetchWithAuth('/api/bills/upcoming');
+    if (!response.ok) throw new Error('Failed to fetch upcoming bills');
+    return response.json();
+  },
+  enabled: authenticated === true && !!user?.id,
+  staleTime: 0,
+  refetchOnMount: true,
+  refetchOnWindowFocus: true,
+});
+```
+
+---
+
+RESULTADO ESPERADO:
+1. React Query não usará cache antigo
+2. Sempre buscará dados frescos do servidor
+3. Bills total mostrará 7 (não 0)
+4. Despesas semanais mostrarão valores reais
+5. Total Pago mostrará R$ 60,00
+
+APÓS APLICAR:
+1. Salve o arquivo
+2. Force rebuild: pkill -f node && npm run build && npm run start
+3. Abra o navegador em modo anônimo ou limpe cache (Ctrl+Shift+Delete)
+4. Acesse o dashboard novamente
+
+Mostre o diff e aplique.
