@@ -50,17 +50,20 @@ const Dashboard = () => {
       if (!response.ok) throw new Error('Failed to fetch bills');
       const json = await response.json();
       const data = Array.isArray(json) ? json : (json?.bills ?? []);
-      
+
       // DEBUG: Verificar estrutura dos dados
       console.log('📊 [Dashboard] Bills recebidos:', data);
       console.log('📊 [Dashboard] Primeira bill:', data[0]);
       console.log('📊 [Dashboard] Keys da primeira bill:', data[0] ? Object.keys(data[0]) : 'nenhuma');
-      
+
       return data;
     },
     enabled: authenticated === true && !!user?.id,
     retry: 3,
     retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
+    staleTime: 0,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
   });
 
   // Fetch upcoming bills
@@ -75,6 +78,9 @@ const Dashboard = () => {
     enabled: authenticated === true && !!user?.id,
     retry: 3,
     retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
+    staleTime: 0,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
   });
 
   // Fetch categories for mapping
