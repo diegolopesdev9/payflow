@@ -1,0 +1,79 @@
+TAREFA: Adicionar rota de edição de contas no App.tsx.
+
+INSTRUÇÕES CRÍTICAS:
+- MODIFIQUE APENAS src/App.tsx
+- Adicione o import e a rota conforme especificado abaixo
+- Mostre o diff antes de aplicar
+- Aguarde confirmação
+
+ARQUIVO: src/App.tsx
+
+MUDANÇA 1 - ADICIONAR IMPORT (após a linha 16):
+
+LOCALIZAR:
+import BillDetails from "@/pages/BillDetails";
+import NewBill from "@/pages/NewBill";
+
+ADICIONAR APÓS:
+import EditBill from "@/pages/EditBill";
+
+MUDANÇA 2 - ADICIONAR ROTA (após a rota /bills/:id):
+
+LOCALIZAR (linhas 61-65):
+          <Route path="/bills/:id">
+            <ProtectedRoute>
+              <BillDetails />
+            </ProtectedRoute>
+          </Route>
+
+ADICIONAR LOGO APÓS:
+          <Route path="/bills/:id/edit">
+            <ProtectedRoute>
+              <EditBill />
+            </ProtectedRoute>
+          </Route>
+
+IMPORTANTE:
+- A rota /bills/:id/edit DEVE vir ANTES da rota /bills/:id no código
+- Isso é importante para o roteador do wouter funcionar corretamente
+
+PORTANTO, A ORDEM CORRETA SERÁ:
+1. /bills/new
+2. /bills/:id/edit  ← NOVA ROTA (mais específica)
+3. /bills/:id       ← já existe (menos específica)
+
+ENTÃO A ORDEM FINAL DAS ROTAS DE BILLS SERÁ:
+
+          <Route path="/bills">
+            <ProtectedRoute>
+              <Bills />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/bills/new">
+            <ProtectedRoute>
+              <NewBill />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/bills/:id/edit">
+            <ProtectedRoute>
+              <EditBill />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/bills/:id">
+            <ProtectedRoute>
+              <BillDetails />
+            </ProtectedRoute>
+          </Route>
+
+EXPLICAÇÃO:
+- Rotas mais específicas devem vir primeiro
+- /bills/:id/edit é mais específica que /bills/:id
+- Isso evita que /bills/:id capture a URL antes
+
+VALIDAÇÃO:
+Após aplicar e rebuild:
+1. Acessar detalhes de uma conta
+2. Clicar em "Editar Conta"
+3. Deve abrir o formulário de edição (não 404)
+
+NÃO MODIFIQUE MAIS NADA. Mostre o diff e aguarde confirmação.
