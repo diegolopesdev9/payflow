@@ -18,6 +18,16 @@ import {
   Tag,
   Clock
 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const BillDetails = () => {
   const [match, params] = useRoute<{ id: string }>("/bills/:id");
@@ -25,6 +35,8 @@ const BillDetails = () => {
   const [location, setLocation] = useLocation();
   const { user, authenticated } = useAuth();
   const { toast } = useToast();
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showMarkPaidDialog, setShowMarkPaidDialog] = useState(false);
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -118,9 +130,12 @@ const BillDetails = () => {
 
   // ✅ HANDLERS
   const handleMarkAsPaid = () => {
-    if (window.confirm('Tem certeza que deseja marcar esta conta como paga?')) {
-      markAsPaidMutation.mutate();
-    }
+    setShowMarkPaidDialog(true);
+  };
+
+  const confirmMarkAsPaid = () => {
+    markAsPaidMutation.mutate();
+    setShowMarkPaidDialog(false);
   };
 
   const handleEdit = () => {
@@ -128,9 +143,12 @@ const BillDetails = () => {
   };
 
   const handleDelete = () => {
-    if (window.confirm('Tem certeza que deseja excluir esta conta?')) {
-      deleteBillMutation.mutate();
-    }
+    setShowDeleteDialog(true);
+  };
+
+  const confirmDelete = () => {
+    deleteBillMutation.mutate();
+    setShowDeleteDialog(false);
   };
 
   const getStatusColor = (status: string) => {
@@ -307,6 +325,42 @@ const BillDetails = () => {
           </Button>
         </div>
       </div>
+
+      {/* Dialog - Marcar como Pago */}
+      <AlertDialog open={showMarkPaidDialog} onOpenChange={setShowMarkPaidDialog}>
+        <AlertDialogContent className="bg-white">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Marcar como paga?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja marcar esta conta como paga? Esta ação pode ser desfeita depois.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmMarkAsPaid} className="bg-green-600 hover:bg-green-700">
+              Confirmar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Dialog - Excluir Conta */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent className="bg-white">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir conta?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir esta conta? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-red-600 hover:bg-red-700">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
