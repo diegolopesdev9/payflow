@@ -470,7 +470,7 @@ const Dashboard = () => {
                   return (
                     <div
                       key={bill.id}
-                      onClick={() => setLocation(`/bills/${bill.id}`)}
+                      onClick={() => setLocation(`/bill/${bill.id}`)}
                       className={`
                         p-4 rounded-lg border-l-4 cursor-pointer
                         hover:bg-gray-50 transition-all
