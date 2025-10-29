@@ -1,0 +1,114 @@
+TAREFA: Corrigir visualização do gráfico de barras de despesas semanais no Dashboard.
+
+INSTRUÇÕES CRÍTICAS:
+- MODIFIQUE APENAS src/pages/Dashboard.tsx
+- Faça APENAS a correção especificada abaixo
+- Mostre o diff antes de aplicar
+- NÃO modifique mais nada
+
+ARQUIVO: src/pages/Dashboard.tsx
+
+---
+
+PROBLEMA IDENTIFICADO:
+O gráfico de despesas semanais não está mostrando as barras visualmente, mesmo com dados corretos (R$ 11,00 total).
+
+CORREÇÃO NECESSÁRIA:
+
+LOCALIZAR o código do gráfico de barras (aproximadamente linhas 391-405):
+```typescript
+{/* Bar Chart */}
+<div className="flex items-end justify-between gap-2 h-32">
+  {weeklyExpenses.map((expense, index) => {
+    const heightPercent = maxWeeklyExpense > 0 ? (expense / maxWeeklyExpense) * 100 : 0;
+    return (
+      <div key={index} className="flex-1 flex flex-col items-center gap-2">
+        <div className="w-full bg-gray-200 rounded-t relative" style={{ height: '100%' }}>
+          {expense > 0 && (
+            <div
+              className="w-full bg-primary rounded-t absolute bottom-0 transition-all"
+              style={{ height: `${heightPercent}%` }}
+              title={formatCurrency(expense)}
+            />
+          )}
+        </div>
+        <span className="text-xs text-gray-600 font-medium">{weekDays[index]}</span>
+      </div>
+    );
+  })}
+</div>
+```
+
+SUBSTITUIR POR:
+```typescript
+{/* Bar Chart */}
+<div className="flex items-end justify-between gap-2 h-40 bg-gray-50 rounded-lg p-2">
+  {weeklyExpenses.map((expense, index) => {
+    const heightPercent = maxWeeklyExpense > 0 ? (expense / maxWeeklyExpense) * 100 : 0;
+    const minHeight = expense > 0 ? Math.max(heightPercent, 5) : 0;
+    
+    return (
+      <div key={index} className="flex-1 flex flex-col items-center gap-2">
+        <div className="w-full flex items-end justify-center relative" style={{ height: '128px' }}>
+          {expense > 0 ? (
+            <div
+              className="w-full bg-primary rounded-t transition-all hover:bg-primary/80 cursor-pointer"
+              style={{ 
+                height: `${minHeight}%`,
+                minHeight: '8px'
+              }}
+              title={`${weekDays[index]}: ${formatCurrency(expense)}`}
+            />
+          ) : (
+            <div className="w-full h-2 bg-gray-300 rounded" />
+          )}
+        </div>
+        <span className="text-xs text-gray-600 font-medium">{weekDays[index]}</span>
+      </div>
+    );
+  })}
+</div>
+```
+
+---
+
+EXPLICAÇÃO DAS MUDANÇAS:
+
+1. Container do gráfico:
+   - Aumentado de h-32 para h-40
+   - Adicionado fundo cinza claro (bg-gray-50)
+   - Adicionado padding (p-2)
+   - Adicionado bordas arredondadas (rounded-lg)
+
+2. Container de cada barra:
+   - Altura fixa de 128px para garantir visualização
+   - Removido posicionamento relativo/absoluto problemático
+
+3. Barras individuais:
+   - Altura mínima de 8px para barras com valores pequenos
+   - Altura mínima percentual de 5% para garantir visibilidade
+   - Efeito hover (escurece ao passar mouse)
+   - Cursor pointer para indicar interatividade
+   - Tooltip melhorado mostrando dia e valor
+
+4. Dias sem gastos:
+   - Mostra uma linha cinza pequena (h-2) para indicar "sem dados"
+   - Mais intuitivo que espaço vazio
+
+---
+
+RESULTADO ESPERADO:
+1. Barras do gráfico ficam visíveis
+2. Dias com gastos mostram barras verdes proporcionais
+3. Dias sem gastos mostram linha cinza
+4. Hover mostra tooltip com dia e valor
+5. Layout mais profissional com fundo e espaçamento
+
+VALIDAÇÃO:
+Após aplicar, recarregue o navegador e verifique:
+- Barras verdes aparecem nos dias com gastos
+- Linhas cinzas aparecem nos dias sem gastos
+- Passar mouse sobre barra mostra tooltip
+- Proporção entre barras está correta
+
+Mostre o diff e aplique.
