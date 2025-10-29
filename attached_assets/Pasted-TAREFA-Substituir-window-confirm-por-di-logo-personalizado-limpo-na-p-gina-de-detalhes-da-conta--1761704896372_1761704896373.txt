@@ -1,0 +1,142 @@
+TAREFA: Substituir window.confirm por diálogo personalizado limpo na página de detalhes da conta.
+
+INSTRUÇÕES CRÍTICAS:
+- MODIFIQUE APENAS src/pages/BillDetails.tsx
+- Remova window.confirm
+- Use AlertDialog do shadcn/ui
+- Mostre o diff antes de aplicar
+
+ARQUIVO: src/pages/BillDetails.tsx
+
+---
+
+PROBLEMA IDENTIFICADO:
+O window.confirm mostra URL longa e código na mensagem, deixando a interface pouco profissional.
+
+CORREÇÃO:
+
+1. ADICIONAR imports no início do arquivo (após os imports existentes):
+```typescript
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+```
+
+2. ADICIONAR estado para controlar o diálogo (após os outros useState):
+```typescript
+const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+const [showMarkPaidDialog, setShowMarkPaidDialog] = useState(false);
+```
+
+3. SUBSTITUIR a função handleMarkAsPaid:
+LOCALIZAR:
+```typescript
+const handleMarkAsPaid = () => {
+  if (window.confirm('Tem certeza que deseja marcar esta conta como paga?')) {
+    markAsPaidMutation.mutate();
+  }
+};
+```
+
+SUBSTITUIR POR:
+```typescript
+const handleMarkAsPaid = () => {
+  setShowMarkPaidDialog(true);
+};
+
+const confirmMarkAsPaid = () => {
+  markAsPaidMutation.mutate();
+  setShowMarkPaidDialog(false);
+};
+```
+
+4. SUBSTITUIR a função handleDelete:
+LOCALIZAR:
+```typescript
+const handleDelete = () => {
+  if (window.confirm('Tem certeza que deseja excluir esta conta?')) {
+    deleteBillMutation.mutate();
+  }
+};
+```
+
+SUBSTITUIR POR:
+```typescript
+const handleDelete = () => {
+  setShowDeleteDialog(true);
+};
+
+const confirmDelete = () => {
+  deleteBillMutation.mutate();
+  setShowDeleteDialog(false);
+};
+```
+
+5. ADICIONAR os diálogos ANTES do fechamento do último </div> (antes de </div> final):
+```typescript
+      {/* Dialog - Marcar como Pago */}
+      <AlertDialog open={showMarkPaidDialog} onOpenChange={setShowMarkPaidDialog}>
+        <AlertDialogContent className="bg-white">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Marcar como paga?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja marcar esta conta como paga? Esta ação pode ser desfeita depois.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmMarkAsPaid} className="bg-green-600 hover:bg-green-700">
+              Confirmar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Dialog - Excluir Conta */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent className="bg-white">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir conta?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir esta conta? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-red-600 hover:bg-red-700">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+};
+
+export default BillDetails;
+```
+
+---
+
+RESULTADO ESPERADO:
+1. Diálogos limpos e profissionais
+2. Sem URLs ou códigos visíveis
+3. Botões coloridos (verde para confirmar pago, vermelho para excluir)
+4. Mensagens claras e objetivas
+5. Pode cancelar clicando fora ou no botão Cancelar
+
+VALIDAÇÃO:
+Após aplicar:
+1. Acesse uma conta
+2. Clique em "Marcar como Pago" - deve abrir diálogo limpo
+3. Clique em "Excluir" - deve abrir diálogo limpo
+4. Teste cancelar e confirmar
+
+Mostre o diff e aplique.
