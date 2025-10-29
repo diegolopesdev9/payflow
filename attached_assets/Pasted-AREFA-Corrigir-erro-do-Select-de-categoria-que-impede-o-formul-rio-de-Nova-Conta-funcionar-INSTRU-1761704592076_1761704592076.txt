@@ -1,0 +1,90 @@
+AREFA: Corrigir erro do Select de categoria que impede o formulário de Nova Conta funcionar.
+
+INSTRUÇÕES CRÍTICAS:
+- MODIFIQUE APENAS src/pages/Dashboard.tsx
+- Corrija o valor inicial do Select
+- Mostre o diff antes de aplicar
+
+ARQUIVO: src/pages/Dashboard.tsx
+
+---
+
+PROBLEMA IDENTIFICADO:
+Console mostra erro: "A <select> must have a value prop that is not an empty string"
+Isso impede o botão "Nova Conta" de funcionar.
+
+CORREÇÃO:
+
+LOCALIZAR o Select de categoria no formulário (aproximadamente linhas 325-342):
+```typescript
+<div className="space-y-2">
+  <Label htmlFor="quick-category">Categoria</Label>
+  <Select
+    value={quickBillData.categoryId}
+    onValueChange={(value) => setQuickBillData(prev => ({ ...prev, categoryId: value }))}
+  >
+    <SelectTrigger className="bg-white border-gray-300">
+      <SelectValue placeholder="Selecione..." />
+    </SelectTrigger>
+    <SelectContent>
+      <SelectItem value="">Sem categoria</SelectItem>
+      {categories.map((cat: any) => (
+        <SelectItem key={cat.id} value={cat.id}>
+          {cat.name}
+        </SelectItem>
+      ))}
+    </SelectContent>
+  </Select>
+</div>
+```
+
+SUBSTITUIR POR:
+```typescript
+<div className="space-y-2">
+  <Label htmlFor="quick-category">Categoria</Label>
+  <Select
+    value={quickBillData.categoryId || undefined}
+    onValueChange={(value) => setQuickBillData(prev => ({ ...prev, categoryId: value }))}
+  >
+    <SelectTrigger className="bg-white border-gray-300">
+      <SelectValue placeholder="Selecione..." />
+    </SelectTrigger>
+    <SelectContent>
+      {categories.map((cat: any) => (
+        <SelectItem key={cat.id} value={cat.id}>
+          {cat.name}
+        </SelectItem>
+      ))}
+    </SelectContent>
+  </Select>
+</div>
+```
+
+---
+
+MUDANÇAS FEITAS:
+
+1. Alterado `value={quickBillData.categoryId}` para `value={quickBillData.categoryId || undefined}`
+   - Isso garante que string vazia "" seja convertida para undefined
+   - Corrige o erro do Select
+
+2. Removido `<SelectItem value="">Sem categoria</SelectItem>`
+   - Categoria é opcional, então não precisa dessa opção
+   - Se não selecionar nada, enviará null ao backend
+
+---
+
+RESULTADO ESPERADO:
+1. Erro do console desaparece
+2. Botão "Nova Conta" volta a funcionar
+3. Formulário abre normalmente
+4. Pode criar conta com ou sem categoria
+
+VALIDAÇÃO:
+Após aplicar:
+1. Clique no botão "Nova Conta"
+2. Formulário deve abrir
+3. Preencha e envie
+4. Deve criar a conta com sucesso
+
+Mostre o diff e aplique.
