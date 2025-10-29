@@ -197,7 +197,7 @@ export default function Profile() {
             </div>
 
             <Button
-              onClick={() => setLocation("/edit-profile")}
+              onClick={() => setLocation("/profile/edit")}
               className="w-full btn-financial mt-4"
             >
               <Edit className="w-4 h-4 mr-2" />
