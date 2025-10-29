@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { BottomNavigation } from "@/components/BottomNavigation";
 import { 
   ArrowLeft,
   HelpCircle,
@@ -15,11 +16,7 @@ import {
   FileText,
   Star,
   Search,
-  ChevronRight,
-  Home,
-  CreditCard,
-  TrendingUp,
-  User
+  ChevronRight
 } from "lucide-react";
 
 const Help = () => {
@@ -245,44 +242,7 @@ const Help = () => {
           </CardContent>
         </Card>
 
-        {/* Bottom Navigation */}
-        <div className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-sm border-t border-border">
-          <div className="container mx-auto px-4">
-            <div className="grid grid-cols-4 gap-1">
-              <button 
-                onClick={() => setLocation("/dashboard")}
-                className="nav-item"
-              >
-                <Home className="w-5 h-5" />
-                <span className="text-sm">Home</span>
-              </button>
-              <button 
-                onClick={() => setLocation("/bills")}
-                className="nav-item"
-              >
-                <CreditCard className="w-5 h-5" />
-                <span className="text-sm">Contas</span>
-              </button>
-              <button 
-                onClick={() => setLocation("/reports")}
-                className="nav-item"
-              >
-                <TrendingUp className="w-5 h-5" />
-                <span className="text-sm">Relatórios</span>
-              </button>
-              <button 
-                onClick={() => setLocation("/profile")}
-                className="nav-item active"
-              >
-                <User className="w-5 h-5" />
-                <span className="text-sm">Perfil</span>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Add bottom padding to prevent content being hidden by navigation */}
-        <div className="h-20" />
+        <BottomNavigation />
       </div>
     </div>
   );
