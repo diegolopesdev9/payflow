@@ -1,0 +1,76 @@
+TAREFA: Substituir navegação hardcoded pelo componente BottomNavigation no Security.tsx.
+
+⚠️ INSTRUÇÕES CRÍTICAS:
+- MODIFIQUE APENAS src/pages/Security.tsx
+- Substitua o Bottom Navigation hardcoded
+- Adicione import do componente
+- Remova div de espaçamento extra
+- NÃO altere mais nada
+
+ARQUIVO: src/pages/Security.tsx
+
+---
+
+PROBLEMA: Bottom Navigation está hardcoded ao invés de usar componente reutilizável.
+
+CORREÇÃO:
+
+1. ADICIONAR import no início (após os imports existentes):
+```typescript
+import { BottomNavigation } from "@/components/BottomNavigation";
+```
+
+2. LOCALIZAR e REMOVER todo este bloco (linhas ~196-231):
+```typescript
+{/* Bottom Navigation */}
+<div className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-sm border-t border-border">
+  <div className="container mx-auto px-4">
+    <div className="grid grid-cols-4 gap-1">
+      <button 
+        onClick={() => setLocation("/dashboard")}
+        className="nav-item"
+      >
+        <Home className="w-5 h-5" />
+        <span className="text-sm">Home</span>
+      </button>
+      <button 
+        onClick={() => setLocation("/bills")}
+        className="nav-item"
+      >
+        <CreditCard className="w-5 h-5" />
+        <span className="text-sm">Contas</span>
+      </button>
+      <button 
+        onClick={() => setLocation("/reports")}
+        className="nav-item"
+      >
+        <TrendingUp className="w-5 h-5" />
+        <span className="text-sm">Relatórios</span>
+      </button>
+      <button 
+        onClick={() => setLocation("/profile")}
+        className="nav-item active"
+      >
+        <User className="w-5 h-5" />
+        <span className="text-sm">Perfil</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+{/* Add bottom padding to prevent content being hidden by navigation */}
+<div className="h-20" />
+```
+
+3. SUBSTITUIR POR:
+```typescript
+<BottomNavigation />
+```
+
+4. REMOVER imports não utilizados de Home, CreditCard, TrendingUp, User (se não forem usados em outro lugar)
+
+---
+
+RESULTADO: Bottom Navigation consistente e reutilizável.
+
+Mostre o diff e aplique.
