@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { BottomNavigation } from "@/components/BottomNavigation";
 import { ArrowLeft, Bell, Mail, Smartphone, Shield, AlertTriangle } from "lucide-react";
 
 const Notifications = () => {
@@ -164,6 +165,8 @@ const Notifications = () => {
           </CardContent>
         </Card>
       </div>
+
+      <BottomNavigation />
     </div>
   );
 };
