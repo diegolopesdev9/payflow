@@ -372,18 +372,25 @@ const Dashboard = () => {
               </div>
 
               {/* Bar Chart */}
-              <div className="flex items-end justify-between gap-2 h-32">
+              <div className="flex items-end justify-between gap-2 h-40 bg-gray-50 rounded-lg p-2">
                 {weeklyExpenses.map((expense, index) => {
                   const heightPercent = maxWeeklyExpense > 0 ? (expense / maxWeeklyExpense) * 100 : 0;
+                  const minHeight = expense > 0 ? Math.max(heightPercent, 5) : 0;
+                  
                   return (
                     <div key={index} className="flex-1 flex flex-col items-center gap-2">
-                      <div className="w-full bg-gray-200 rounded-t relative" style={{ height: '100%' }}>
-                        {expense > 0 && (
+                      <div className="w-full flex items-end justify-center relative" style={{ height: '128px' }}>
+                        {expense > 0 ? (
                           <div
-                            className="w-full bg-primary rounded-t absolute bottom-0 transition-all"
-                            style={{ height: `${heightPercent}%` }}
-                            title={formatCurrency(expense)}
+                            className="w-full bg-primary rounded-t transition-all hover:bg-primary/80 cursor-pointer"
+                            style={{ 
+                              height: `${minHeight}%`,
+                              minHeight: '8px'
+                            }}
+                            title={`${weekDays[index]}: ${formatCurrency(expense)}`}
                           />
+                        ) : (
+                          <div className="w-full h-2 bg-gray-300 rounded" />
                         )}
                       </div>
                       <span className="text-xs text-gray-600 font-medium">{weekDays[index]}</span>
