@@ -303,14 +303,13 @@ const Dashboard = () => {
                   <div className="space-y-2">
                     <Label htmlFor="quick-category">Categoria</Label>
                     <Select
-                      value={quickBillData.categoryId}
+                      value={quickBillData.categoryId || undefined}
                       onValueChange={(value) => setQuickBillData(prev => ({ ...prev, categoryId: value }))}
                     >
                       <SelectTrigger className="bg-white border-gray-300">
                         <SelectValue placeholder="Selecione..." />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Sem categoria</SelectItem>
                         {categories.map((cat: any) => (
                           <SelectItem key={cat.id} value={cat.id}>
                             {cat.name}
