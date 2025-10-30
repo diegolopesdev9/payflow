@@ -1,0 +1,136 @@
+Error: Minified React error #310
+```
+
+Isso geralmente indica problema com **hooks sendo chamados condicionalmente** ou **fora da ordem**.
+
+---
+
+## 📝 **PROMPT DE CORREÇÃO:**
+```
+TAREFA: Corrigir ordem dos hooks no EditProfile.tsx - mutation deve vir ANTES de qualquer conditional return.
+
+⚠️ INSTRUÇÕES CRÍTICAS:
+- MODIFIQUE APENAS src/pages/EditProfile.tsx
+- Mova updateProfileMutation para DEPOIS dos hooks de estado
+- ANTES de qualquer return condicional
+- NÃO altere mais nada
+- Mostre o diff antes de aplicar
+
+ARQUIVO: src/pages/EditProfile.tsx
+
+---
+
+PROBLEMA: 
+A mutation updateProfileMutation está sendo definida DEPOIS de alguns returns condicionais, violando as regras dos React Hooks.
+
+CORREÇÃO:
+
+LOCALIZAR a seção onde estão definidos os estados (linhas ~13-19):
+```typescript
+const [formData, setFormData] = useState({
+  name: "",
+  email: ""
+});
+```
+
+ADICIONAR a mutation LOGO APÓS os estados e queries, MAS ANTES dos useEffect e returns:
+
+A ORDEM CORRETA DEVE SER:
+
+1. useState
+2. useQuery  
+3. useMutation (← ADICIONAR AQUI)
+4. useEffect
+5. Returns condicionais
+6. Funções (handleSubmit, etc)
+
+---
+
+ESTRUTURA CORRETA DO ARQUIVO:
+```typescript
+const EditProfile = () => {
+  const [location, setLocation] = useLocation();
+  const { user, authenticated } = useAuth();
+  const { toast } = useToast();
+  
+  const [formData, setFormData] = useState({
+    name: "",
+    email: ""
+  });
+
+  // ✅ useQuery - OK aqui
+  const { data: userProfile, isLoading: profileLoading, isError: profileError } = useQuery({
+    queryKey: ['/api/users/me'],
+    queryFn: async () => {
+      const response = await fetchWithAuth('/api/users/me');
+      if (!response.ok) throw new Error('Failed to fetch profile');
+      const data = await response.json();
+      return data?.user ?? data;
+    },
+    enabled: !!user?.id,
+  });
+
+  // ✅ useMutation - DEVE VIR AQUI (ANTES DOS useEffect)
+  const updateProfileMutation = useMutation({
+    mutationFn: async (data: { name: string; email: string }) => {
+      const response = await fetchWithAuth('/api/users/me', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Erro ao atualizar perfil');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/users/me'] });
+      toast({
+        title: "Perfil atualizado!",
+        description: "Suas informações foram salvas com sucesso.",
+      });
+      setLocation('/profile');
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro ao atualizar perfil",
+        description: error.message || "Não foi possível salvar as alterações.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // ✅ useEffect - DEPOIS das mutations
+  useEffect(() => {
+    if (authenticated === false) {
+      setLocation("/login");
+    }
+  }, [authenticated, setLocation]);
+
+  useEffect(() => {
+    if (userProfile) {
+      setFormData({
+        name: userProfile.name || "",
+        email: userProfile.email || ""
+      });
+    }
+  }, [userProfile]);
+
+  // ✅ Returns condicionais - DEPOIS de todos os hooks
+  if (authenticated === false) {
+    return null;
+  }
+
+  // ... resto do código
+```
+
+---
+
+RESUMO:
+MOVER a declaração de updateProfileMutation para ANTES dos useEffect e ANTES dos returns condicionais.
+
+RESULTADO ESPERADO:
+Erro #310 desaparece e página funciona normalmente.
+
+Mostre o diff e aplique.
