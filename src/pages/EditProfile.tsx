@@ -15,7 +15,7 @@ const EditProfile = () => {
   const [location, setLocation] = useLocation();
   const { user, authenticated } = useAuth();
   const { toast } = useToast();
-  
+
   const [formData, setFormData] = useState({
     name: "",
     email: ""
@@ -83,17 +83,43 @@ const EditProfile = () => {
     );
   }
 
-  // Note: Update profile mutation temporarily disabled until backend endpoint is implemented
-  // const updateProfileMutation = useMutation({ ... });
+  // Update profile mutation
+  const updateProfileMutation = useMutation({
+    mutationFn: async (updatedProfile: { name: string; email: string }) => {
+      const response = await fetchWithAuth('/api/users/me', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updatedProfile),
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to update profile');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/users/me'] });
+      toast({
+        title: "Sucesso!",
+        description: "Seu perfil foi atualizado com sucesso.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Erro ao atualizar perfil",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    toast({
-      title: "Funcionalidade em desenvolvimento",
-      description: "A edição de perfil será implementada quando o endpoint do backend estiver pronto.",
-      variant: "destructive",
-    });
+
+    updateProfileMutation.mutate(formData);
   };
 
   const updateField = (field: string, value: string) => {
@@ -162,13 +188,6 @@ const EditProfile = () => {
                 />
               </div>
 
-              {/* Note about limited functionality */}
-              <div className="bg-muted/50 rounded-lg p-4">
-                <p className="text-sm text-muted-foreground" data-testid="text-limited-functionality">
-                  <strong>Nota:</strong> Esta tela exibe dados reais do seu perfil buscados da API. A funcionalidade de edição será implementada quando o endpoint de atualização estiver disponível no backend.
-                </p>
-              </div>
-
               {/* Action Buttons */}
               <div className="flex gap-4 pt-6">
                 <Button 
@@ -181,15 +200,15 @@ const EditProfile = () => {
                   <X className="w-4 h-4 mr-2" />
                   Cancelar
                 </Button>
-                
+
                 <Button 
                   type="submit" 
                   className="flex-1 btn-financial"
-                  disabled={true}
+                  disabled={updateProfileMutation.isPending}
                   data-testid="button-save"
                 >
                   <Save className="w-4 h-4 mr-2" />
-                  Salvar alterações (Em breve)
+                  {updateProfileMutation.isPending ? 'Salvando...' : 'Salvar alterações'}
                 </Button>
               </div>
             </form>
