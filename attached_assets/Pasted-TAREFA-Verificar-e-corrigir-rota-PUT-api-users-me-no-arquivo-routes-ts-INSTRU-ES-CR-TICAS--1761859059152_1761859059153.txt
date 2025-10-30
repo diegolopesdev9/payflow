@@ -1,0 +1,93 @@
+TAREFA: Verificar e corrigir rota PUT /api/users/me no arquivo routes.ts.
+
+⚠️ INSTRUÇÕES CRÍTICAS:
+- MODIFIQUE APENAS server/routes.ts
+- Verifique se a rota PUT existe
+- Se não existir, adicione corretamente
+- NÃO altere mais nada
+- Mostre o diff antes de aplicar
+
+ARQUIVO: server/routes.ts
+
+---
+
+PROBLEMA:
+Request PUT /api/users/me retorna 404, indicando que a rota não existe ou está mal configurada.
+
+VERIFICAÇÃO:
+
+1. ABRA server/routes.ts
+
+2. PROCURE pela rota GET /api/users/me
+
+3. VERIFIQUE se logo APÓS essa rota existe a rota PUT /api/users/me
+
+4. Se NÃO EXISTIR, ADICIONE logo após a rota GET:
+```typescript
+// Update user profile
+app.put("/api/users/me", requireUser, async (req, res) => {
+  try {
+    const userId = req.userId!;
+    const { name, email } = req.body;
+
+    console.log('🔄 PUT /api/users/me - INÍCIO');
+    console.log('👤 userId:', userId);
+    console.log('📝 Dados para atualizar:', { name, email });
+
+    // Validate input
+    if (!name || !email) {
+      return res.status(400).json({ error: "Nome e email são obrigatórios" });
+    }
+
+    // Check if email is already in use by another user
+    if (email) {
+      const existingUser = await storage.getUserByEmail(email);
+      if (existingUser && existingUser.id !== userId) {
+        return res.status(400).json({ error: "Este email já está em uso" });
+      }
+    }
+
+    // Update user
+    const updatedUser = await storage.updateUser(userId, { name, email });
+
+    console.log('✅ Usuário atualizado:', updatedUser);
+    res.json({ user: updatedUser });
+  } catch (error: any) {
+    console.error('❌ Erro ao atualizar usuário:', error);
+    res.status(500).json({ error: error.message || "Erro ao atualizar perfil" });
+  }
+});
+```
+
+---
+
+ESTRUTURA CORRETA:
+```typescript
+// Get current user
+app.get("/api/users/me", requireUser, async (req, res) => {
+  // ... código existente ...
+});
+
+// ✅ ADICIONAR LOGO APÓS
+app.put("/api/users/me", requireUser, async (req, res) => {
+  // ... código acima ...
+});
+
+// Outras rotas...
+```
+
+---
+
+IMPORTANTE:
+- A rota DEVE estar no nível correto (não dentro de outra função)
+- Use app.put (não app.post)
+- O path deve ser exatamente "/api/users/me"
+- Deve ter requireUser middleware
+
+RESULTADO ESPERADO:
+Rota PUT /api/users/me responde corretamente.
+
+VALIDAÇÃO:
+Após aplicar, teste salvando o perfil. Deve aparecer os logs no terminal.
+
+Mostre o diff e aplique.
