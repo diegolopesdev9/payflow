@@ -15,6 +15,7 @@ export interface IStorage {
   getUser(id: string): Promise<User | null>;
   getUserByEmail(email: string): Promise<User | null>;
   createUser(user: NewUser): Promise<User>;
+  updateUser(userId: string, data: { name?: string; email?: string }): Promise<User | null>; // Added to interface
 
   // Category operations
   getCategories(userId: string): Promise<Category[]>;
@@ -45,6 +46,16 @@ export class MemStorage implements IStorage {
 
   async getUserByEmail(email: string): Promise<User | null> {
     return this.users.find(u => u.email === email) || null;
+  }
+
+  async updateUser(userId: string, data: { name?: string; email?: string }): Promise<User | null> {
+    const index = this.users.findIndex(u => u.id === userId);
+    if (index === -1) return null;
+
+    if (data.name !== undefined) this.users[index].name = data.name;
+    if (data.email !== undefined) this.users[index].email = data.email;
+
+    return this.users[index];
   }
 
   async createUser(userData: NewUser): Promise<User> {
