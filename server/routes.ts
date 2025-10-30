@@ -36,6 +36,45 @@ app.get("/api/users/me", requireUser, (c: Context) => {
   return c.json({ user });
 });
 
+// Update user profile
+app.put("/api/users/me", requireUser, async (c: Context) => {
+  try {
+    const userId = c.get("userId") as string;
+    const body = await c.req.json();
+    const { name, email } = body;
+
+    console.log('🔄 PUT /api/users/me - INÍCIO');
+    console.log('👤 userId:', userId);
+    console.log('📝 Dados para atualizar:', { name, email });
+
+    // Validate input
+    if (!name || !email) {
+      return c.json({ error: "Nome e email são obrigatórios" }, 400);
+    }
+
+    // Check if email is already in use by another user
+    if (email) {
+      const existingUser = await storage.getUserByEmail(email);
+      if (existingUser && existingUser.id !== userId) {
+        return c.json({ error: "Este email já está em uso" }, 400);
+      }
+    }
+
+    // Update user
+    const updatedUser = await storage.updateUser(userId, { name, email });
+
+    if (!updatedUser) {
+      return c.json({ error: "Usuário não encontrado" }, 404);
+    }
+
+    console.log('✅ Usuário atualizado:', updatedUser);
+    return c.json({ user: updatedUser });
+  } catch (error: any) {
+    console.error('❌ Erro ao atualizar usuário:', error);
+    return c.json({ error: error.message || "Erro ao atualizar perfil" }, 500);
+  }
+});
+
 // ============ CATEGORIES ============
 app.get("/api/categories", requireUser, async (c: Context) => {
   console.log('\n🔍 GET /api/categories - INÍCIO');
