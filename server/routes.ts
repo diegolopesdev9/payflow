@@ -1,4 +1,3 @@
-
 import { Hono } from "hono";
 import { requireUser } from "./supabaseAuth";
 import type { Context } from "hono";
@@ -43,12 +42,14 @@ app.put("/api/users/me", requireUser, async (c: Context) => {
     const body = await c.req.json();
     const { name, email } = body;
 
-    console.log('🔄 PUT /api/users/me - INÍCIO');
+    console.log('🔄 [PUT /api/users/me] INÍCIO');
     console.log('👤 userId:', userId);
+    console.log('📝 Body recebido:', body);
     console.log('📝 Dados para atualizar:', { name, email });
 
     // Validate input
     if (!name || !email) {
+      console.log('❌ Validação falhou: nome ou email ausente');
       return c.json({ error: "Nome e email são obrigatórios" }, 400);
     }
 
@@ -56,21 +57,24 @@ app.put("/api/users/me", requireUser, async (c: Context) => {
     if (email) {
       const existingUser = await storage.getUserByEmail(email);
       if (existingUser && existingUser.id !== userId) {
+        console.log('❌ Email já em uso por outro usuário:', existingUser.id);
         return c.json({ error: "Este email já está em uso" }, 400);
       }
     }
 
     // Update user
+    console.log('💾 Chamando storage.updateUser...');
     const updatedUser = await storage.updateUser(userId, { name, email });
 
     if (!updatedUser) {
+      console.log('❌ Usuário não encontrado');
       return c.json({ error: "Usuário não encontrado" }, 404);
     }
 
-    console.log('✅ Usuário atualizado:', updatedUser);
+    console.log('✅ [PUT /api/users/me] Usuário atualizado com sucesso:', updatedUser);
     return c.json({ user: updatedUser });
   } catch (error: any) {
-    console.error('❌ Erro ao atualizar usuário:', error);
+    console.error('❌ [PUT /api/users/me] Erro ao atualizar usuário:', error);
     return c.json({ error: error.message || "Erro ao atualizar perfil" }, 500);
   }
 });
@@ -78,10 +82,10 @@ app.put("/api/users/me", requireUser, async (c: Context) => {
 // ============ CATEGORIES ============
 app.get("/api/categories", requireUser, async (c: Context) => {
   console.log('\n🔍 GET /api/categories - INÍCIO');
-  
+
   const userId = c.get("userId") as string;
   console.log('👤 userId:', userId);
-  
+
   try {
     console.log('📞 Chamando storage.getCategories...');
     const categories = await storage.getCategories(userId);
@@ -96,13 +100,13 @@ app.get("/api/categories", requireUser, async (c: Context) => {
 
 app.post("/api/categories", requireUser, async (c: Context) => {
   console.log('\n🔵 POST /api/categories - INÍCIO');
-  
+
   const userId = c.get("userId") as string;
   console.log('👤 userId:', userId);
-  
+
   const body = await c.req.json();
   console.log('📦 body recebido:', JSON.stringify(body, null, 2));
-  
+
   // Converter para snake_case para o Supabase
   const categoryData = {
     name: body.name,
@@ -110,10 +114,10 @@ app.post("/api/categories", requireUser, async (c: Context) => {
     icon: body.icon || null,
     user_id: userId,
   };
-  
+
   console.log('📄 categoryData convertido:', JSON.stringify(categoryData, null, 2));
   console.log('📞 Chamando storage.createCategory...');
-  
+
   try {
     const category = await storage.createCategory(categoryData);
     console.log('✅ Categoria criada com sucesso:', category);
@@ -142,22 +146,22 @@ app.delete("/api/categories/:id", requireUser, async (c: Context) => {
 // ============ BILLS ============
 app.get("/api/bills", requireUser, async (c: Context) => {
   const userId = c.get("userId") as string;
-  
+
   console.log('\n📊 GET /api/bills - INÍCIO');
   console.log('👤 userId:', userId);
-  
+
   const bills = await storage.getBills(userId);
-  
+
   console.log('📦 Bills do storage (ANTES conversão):', bills.length);
   console.log('📦 Primeira bill (ANTES):', JSON.stringify(bills[0], null, 2));
-  
+
   // Converter de snake_case (banco) para camelCase (frontend)
   const convertedBills = bills.map(convertBillToFrontend);
-  
+
   console.log('✅ Bills convertidas (DEPOIS conversão):', convertedBills.length);
   console.log('✅ Primeira bill (DEPOIS):', JSON.stringify(convertedBills[0], null, 2));
   console.log('✅ Keys da primeira bill:', convertedBills[0] ? Object.keys(convertedBills[0]) : 'nenhuma');
-  
+
   return c.json(convertedBills);
 });
 
@@ -184,13 +188,13 @@ app.get("/api/bills/:id", requireUser, async (c: Context) => {
 
 app.post("/api/bills", requireUser, async (c: Context) => {
   console.log('\n🔵 POST /api/bills - INÍCIO');
-  
+
   const userId = c.get("userId") as string;
   console.log('👤 userId:', userId);
-  
+
   const body = await c.req.json();
   console.log('📦 body recebido:', JSON.stringify(body, null, 2));
-  
+
   // Converter de camelCase (frontend) para snake_case (banco Supabase)
   const billData = {
     name: body.name,
@@ -201,10 +205,10 @@ app.post("/api/bills", requireUser, async (c: Context) => {
     category_id: body.categoryId || null,
     description: body.description || null,
   };
-  
+
   console.log('🔄 billData convertido:', JSON.stringify(billData, null, 2));
   console.log('📞 Chamando storage.createBill...');
-  
+
   try {
     const bill = await storage.createBill(billData);
     console.log('✅ Bill criado com sucesso:', bill);
@@ -217,15 +221,15 @@ app.post("/api/bills", requireUser, async (c: Context) => {
 
 app.put("/api/bills/:id", requireUser, async (c: Context) => {
   console.log('\n🔵 PUT /api/bills/:id - INÍCIO');
-  
+
   const id = c.req.param("id");
   const body = await c.req.json();
-  
+
   console.log('📦 body recebido:', JSON.stringify(body, null, 2));
-  
+
   // Converter de camelCase (frontend) para snake_case (banco)
   const updateData: any = {};
-  
+
   if (body.name !== undefined) updateData.name = body.name;
   if (body.amount !== undefined) updateData.amount = body.amount;
   if (body.dueDate !== undefined) updateData.due_date = body.dueDate;
@@ -233,20 +237,20 @@ app.put("/api/bills/:id", requireUser, async (c: Context) => {
   if (body.paidAt !== undefined) updateData.paid_at = body.paidAt;
   if (body.categoryId !== undefined) updateData.category_id = body.categoryId;
   if (body.description !== undefined) updateData.description = body.description;
-  
+
   console.log('📄 updateData convertido:', JSON.stringify(updateData, null, 2));
   console.log('📞 Chamando storage.updateBill...');
-  
+
   try {
     const bill = await storage.updateBill(id, updateData);
-    
+
     if (!bill) {
       console.log('❌ Bill não encontrado');
       return c.json({ error: "Conta não encontrada" }, 404);
     }
-    
+
     console.log('✅ Bill atualizado:', bill);
-    
+
     // Converter resposta para camelCase usando função existente
     return c.json(convertBillToFrontend(bill));
   } catch (error) {
