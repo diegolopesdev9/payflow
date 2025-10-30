@@ -21,13 +21,6 @@ const EditProfile = () => {
     email: ""
   });
 
-  // Redirect if not authenticated
-  useEffect(() => {
-    if (authenticated === false) {
-      setLocation("/login");
-    }
-  }, [authenticated, setLocation]);
-
   // Fetch user profile data
   const { data: userProfile, isLoading: profileLoading, isError: profileError } = useQuery({
     queryKey: ['/api/users/me'],
@@ -39,6 +32,44 @@ const EditProfile = () => {
     },
     enabled: !!user?.id,
   });
+
+  // Update profile mutation (DEVE vir ANTES dos useEffect e returns condicionais)
+  const updateProfileMutation = useMutation({
+    mutationFn: async (data: { name: string; email: string }) => {
+      const response = await fetchWithAuth('/api/users/me', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Erro ao atualizar perfil');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/users/me'] });
+      toast({
+        title: "Perfil atualizado!",
+        description: "Suas informações foram salvas com sucesso.",
+      });
+      setLocation('/profile');
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro ao atualizar perfil",
+        description: error.message || "Não foi possível salvar as alterações.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (authenticated === false) {
+      setLocation("/login");
+    }
+  }, [authenticated, setLocation]);
 
   // Update form data when user profile loads
   useEffect(() => {
@@ -82,38 +113,6 @@ const EditProfile = () => {
       </div>
     );
   }
-
-  // Update profile mutation
-  const updateProfileMutation = useMutation({
-    mutationFn: async (updatedProfile: { name: string; email: string }) => {
-      const response = await fetchWithAuth('/api/users/me', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(updatedProfile),
-      });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to update profile');
-      }
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/users/me'] });
-      toast({
-        title: "Sucesso!",
-        description: "Seu perfil foi atualizado com sucesso.",
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: "Erro ao atualizar perfil",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
 
 
   const handleSubmit = async (e: React.FormEvent) => {
