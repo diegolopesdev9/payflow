@@ -49,6 +49,29 @@ export class SupabaseStorage implements IStorage {
     return data;
   }
 
+  async updateUser(userId: string, data: { name?: string; email?: string }): Promise<User | null> {
+    console.log('💾 [SupabaseStorage.updateUser] Atualizando usuário:', userId, data);
+    
+    const updateData: any = {};
+    if (data.name !== undefined) updateData.name = data.name;
+    if (data.email !== undefined) updateData.email = data.email;
+
+    const { data: user, error } = await supabase
+      .from('users')
+      .update(updateData)
+      .eq('id', userId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('❌ [SupabaseStorage.updateUser] Erro:', error);
+      return null;
+    }
+
+    console.log('✅ [SupabaseStorage.updateUser] Usuário atualizado:', user);
+    return user;
+  }
+
   // Category operations
   async getCategories(userId: string): Promise<Category[]> {
     const { data, error } = await supabase
