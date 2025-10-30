@@ -1,0 +1,155 @@
+TAREFA: Implementar funcionalidade de salvar alterações no formulário de edição de perfil.
+
+⚠️ INSTRUÇÕES CRÍTICAS:
+- MODIFIQUE APENAS src/pages/EditProfile.tsx
+- Implemente mutation e handleSubmit
+- Remova nota de desenvolvimento
+- Habilite botão salvar
+- NÃO altere mais nada
+- Mostre o diff antes de aplicar
+
+ARQUIVO: src/pages/EditProfile.tsx
+
+---
+
+MUDANÇA 1: ADICIONAR mutation ANTES do handleSubmit (linha ~87):
+
+LOCALIZAR:
+```typescript
+const handleSubmit = async (e: React.FormEvent) => {
+```
+
+ADICIONAR ANTES:
+```typescript
+const updateProfileMutation = useMutation({
+  mutationFn: async (data: { name: string; email: string }) => {
+    const response = await fetchWithAuth('/api/users/me', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Erro ao atualizar perfil');
+    }
+    return response.json();
+  },
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ['/api/users/me'] });
+    toast({
+      title: "Perfil atualizado!",
+      description: "Suas informações foram salvas com sucesso.",
+    });
+    setLocation('/profile');
+  },
+  onError: (error: any) => {
+    toast({
+      title: "Erro ao atualizar perfil",
+      description: error.message || "Não foi possível salvar as alterações.",
+      variant: "destructive",
+    });
+  },
+});
+```
+
+---
+
+MUDANÇA 2: SUBSTITUIR handleSubmit (linhas ~87-96):
+
+DE:
+```typescript
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  
+  toast({
+    title: "Funcionalidade em desenvolvimento",
+    description: "A edição de perfil será implementada quando o endpoint do backend estiver pronto.",
+    variant: "destructive",
+  });
+};
+```
+
+PARA:
+```typescript
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  
+  if (!formData.name.trim()) {
+    toast({
+      title: "Nome obrigatório",
+      description: "Por favor, informe seu nome.",
+      variant: "destructive",
+    });
+    return;
+  }
+
+  if (!formData.email.trim()) {
+    toast({
+      title: "Email obrigatório",
+      description: "Por favor, informe seu email.",
+      variant: "destructive",
+    });
+    return;
+  }
+
+  updateProfileMutation.mutate({
+    name: formData.name,
+    email: formData.email,
+  });
+};
+```
+
+---
+
+MUDANÇA 3: REMOVER nota de desenvolvimento (linhas ~165-172):
+
+PROCURAR e DELETAR este bloco completo:
+```typescript
+{/* Note about limited functionality */}
+<div className="bg-muted/50 rounded-lg p-4">
+  <p className="text-sm text-muted-foreground" data-testid="text-limited-functionality">
+    <strong>Nota:</strong> Esta tela exibe dados reais do seu perfil buscados da API. A funcionalidade de edição será implementada quando o endpoint de atualização estiver disponível no backend.
+  </p>
+</div>
+```
+
+---
+
+MUDANÇA 4: ATUALIZAR botão salvar (linha ~182):
+
+DE:
+```typescript
+<Button 
+  type="submit" 
+  className="flex-1 btn-financial"
+  disabled={true}
+  data-testid="button-save"
+>
+  <Save className="w-4 h-4 mr-2" />
+  Salvar alterações (Em breve)
+</Button>
+```
+
+PARA:
+```typescript
+<Button 
+  type="submit" 
+  className="flex-1 btn-financial"
+  disabled={updateProfileMutation.isPending}
+  data-testid="button-save"
+>
+  <Save className="w-4 h-4 mr-2" />
+  {updateProfileMutation.isPending ? 'Salvando...' : 'Salvar alterações'}
+</Button>
+```
+
+---
+
+RESULTADO ESPERADO:
+1. Formulário valida campos
+2. Envia dados para API
+3. Mostra mensagem de sucesso/erro
+4. Redireciona para /profile após sucesso
+5. Botão fica desabilitado durante salvamento
+
+Mostre o diff e aplique TODAS as 4 mudanças.
