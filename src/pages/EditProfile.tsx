@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useAuth } from "@/lib/auth";
-import { queryClient, apiRequest } from "@/lib/queryClient";
+import { useAuth, fetchWithAuth } from "@/lib/auth";
+import { queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,9 +29,14 @@ const EditProfile = () => {
   }, [authenticated, setLocation]);
 
   // Fetch user profile data
-  const { data: userProfile, isLoading: profileLoading, isError: profileError } = useQuery<User>({
-    queryKey: ['/api/users', user?.id],
-    queryFn: () => apiRequest(`/api/users/${user?.id}`),
+  const { data: userProfile, isLoading: profileLoading, isError: profileError } = useQuery({
+    queryKey: ['/api/users/me'],
+    queryFn: async () => {
+      const response = await fetchWithAuth('/api/users/me');
+      if (!response.ok) throw new Error('Failed to fetch profile');
+      const data = await response.json();
+      return data?.user ?? data;
+    },
     enabled: !!user?.id,
   });
 
