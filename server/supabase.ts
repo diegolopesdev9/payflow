@@ -38,6 +38,55 @@ export class SupabaseStorage implements IStorage {
     return data;
   }
 
+  async updateUser(userId: string, data: { name?: string; email?: string }): Promise<User | null> {
+    console.log('💾 [SupabaseStorage.updateUser] Atualizando usuário:', userId, data);
+    
+    try {
+      const updateData: any = {};
+      if (data.name !== undefined) updateData.name = data.name;
+      if (data.email !== undefined) updateData.email = data.email;
+
+      console.log('📝 [SupabaseStorage.updateUser] Dados a enviar:', updateData);
+
+      const { data: user, error } = await supabase
+        .from('users')
+        .update(updateData)
+        .eq('id', userId)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('❌ [SupabaseStorage.updateUser] Erro do Supabase:', error);
+        
+        // Se não encontrou nenhuma linha, retornar null
+        if (error.code === 'PGRST116') {
+          console.log('⚠️ Usuário não existe no banco:', userId);
+          return null;
+        }
+        
+        throw new Error(error.message);
+      }
+
+      if (!user) {
+        console.log('⚠️ Update não retornou usuário');
+        return null;
+      }
+
+      console.log('✅ [SupabaseStorage.updateUser] Usuário atualizado:', user);
+      
+      // Converter snake_case para camelCase
+      return {
+        id: user.id,
+        email: user.email,
+        name: user.name || null,
+        createdAt: user.created_at ? new Date(user.created_at) : new Date(),
+      };
+    } catch (error: any) {
+      console.error('❌ [SupabaseStorage.updateUser] Erro:', error);
+      throw error;
+    }
+  }
+
   async createUser(userData: NewUser): Promise<User> {
     const { data, error } = await supabase
       .from('users')
