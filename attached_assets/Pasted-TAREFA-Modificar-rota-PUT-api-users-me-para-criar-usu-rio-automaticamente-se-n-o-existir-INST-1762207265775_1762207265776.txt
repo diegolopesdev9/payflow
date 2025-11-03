@@ -1,0 +1,81 @@
+TAREFA: Modificar rota PUT /api/users/me para criar usuário automaticamente se não existir.
+
+⚠️ INSTRUÇÕES CRÍTICAS:
+- MODIFIQUE APENAS server/routes.ts
+- Adicione lógica para criar usuário se não existir
+- NÃO altere mais nada
+- Mostre o diff antes de aplicar
+
+ARQUIVO: server/routes.ts
+
+---
+
+LOCALIZAR a rota PUT /api/users/me (linha ~46)
+
+SUBSTITUIR TODO o bloco dessa rota por:
+```typescript
+// Update user profile
+app.put("/api/users/me", requireUser, async (req, res) => {
+  try {
+    const userId = req.userId!;
+    const { name, email } = req.body;
+
+    console.log('🔄 PUT /api/users/me - INÍCIO');
+    console.log('👤 userId:', userId);
+    console.log('📝 Dados para atualizar:', { name, email });
+
+    // Validate input
+    if (!name || !email) {
+      return res.status(400).json({ error: "Nome e email são obrigatórios" });
+    }
+
+    // Check if email is already in use by another user
+    if (email) {
+      const existingUser = await storage.getUserByEmail(email);
+      if (existingUser && existingUser.id !== userId) {
+        return res.status(400).json({ error: "Este email já está em uso" });
+      }
+    }
+
+    // Try to update user
+    console.log('💾 Tentando atualizar usuário...');
+    let updatedUser = await storage.updateUser(userId, { name, email });
+
+    // If user doesn't exist, create it
+    if (!updatedUser) {
+      console.log('⚠️ Usuário não existe, criando...');
+      try {
+        const newUser = await storage.createUser({
+          id: userId,
+          email: email,
+          name: name,
+        });
+        console.log('✅ Usuário criado:', newUser);
+        return res.json({ user: newUser });
+      } catch (createError: any) {
+        console.error('❌ Erro ao criar usuário:', createError);
+        return res.status(500).json({ error: "Erro ao criar usuário" });
+      }
+    }
+
+    console.log('✅ Usuário atualizado:', updatedUser);
+    res.json({ user: updatedUser });
+  } catch (error: any) {
+    console.error('❌ Erro ao atualizar usuário:', error);
+    res.status(500).json({ error: error.message || "Erro ao atualizar perfil" });
+  }
+});
+```
+
+---
+
+RESULTADO ESPERADO:
+Se usuário não existir na tabela, será criado automaticamente.
+
+VALIDAÇÃO:
+1. Aplique
+2. Rebuild: pkill -f node && npm run build && npm run start
+3. Tente salvar o perfil
+4. Deve criar o usuário e funcionar!
+
+Mostre o diff e aplique.

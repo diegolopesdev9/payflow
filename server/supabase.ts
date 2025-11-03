@@ -1,4 +1,3 @@
-
 import { createClient } from '@supabase/supabase-js';
 import { IStorage } from './storage';
 import type { User, Category, Bill, NewUser, NewCategory, NewBill } from '../shared/schema';
@@ -6,7 +5,6 @@ import type { User, Category, Bill, NewUser, NewCategory, NewBill } from '../sha
 const supabaseUrl = process.env.SUPABASE_URL || '';
 const supabaseKey = process.env.SUPABASE_ANON_KEY || '';
 
-// Client Supabase SIMPLES - configuração mínima
 const supabase = createClient(supabaseUrl, supabaseKey, {
   auth: { 
     persistSession: false, 
@@ -15,16 +13,23 @@ const supabase = createClient(supabaseUrl, supabaseKey, {
 });
 
 export class SupabaseStorage implements IStorage {
-  // User operations
+  // ========== USER OPERATIONS ==========
+
   async getUser(id: string): Promise<User | null> {
     const { data, error } = await supabase
       .from('users')
       .select('*')
       .eq('id', id)
       .single();
-    
+
     if (error || !data) return null;
-    return data;
+
+    return {
+      id: data.id,
+      email: data.email,
+      name: data.name || null,
+      createdAt: data.created_at ? new Date(data.created_at) : new Date(),
+    };
   }
 
   async getUserByEmail(email: string): Promise<User | null> {
@@ -33,101 +38,100 @@ export class SupabaseStorage implements IStorage {
       .select('*')
       .eq('email', email)
       .single();
-    
+
     if (error || !data) return null;
-    return data;
+
+    return {
+      id: data.id,
+      email: data.email,
+      name: data.name || null,
+      createdAt: data.created_at ? new Date(data.created_at) : new Date(),
+    };
   }
 
-  async updateUser(userId: string, data: { name?: string; email?: string }): Promise<User | null> {
-    console.log('💾 [SupabaseStorage.updateUser] Atualizando usuário:', userId, data);
-    
+  async createUser(userData: NewUser): Promise<User> {
+    console.log('👤 [createUser] Criando usuário:', userData);
+
+    const { data, error } = await supabase
+      .from('users')
+      .insert({
+        id: userData.id,
+        email: userData.email,
+        name: userData.name || null,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('❌ [createUser] Erro:', error);
+      throw error;
+    }
+
+    console.log('✅ [createUser] Usuário criado:', data);
+
+    return {
+      id: data.id,
+      email: data.email,
+      name: data.name || null,
+      createdAt: data.created_at ? new Date(data.created_at) : new Date(),
+    };
+  }
+
+  async updateUser(userId: string, updateData: { name?: string; email?: string }): Promise<User | null> {
+    console.log('💾 [updateUser] Atualizando usuário:', userId, updateData);
+
     try {
-      const updateData: any = {};
-      if (data.name !== undefined) updateData.name = data.name;
-      if (data.email !== undefined) updateData.email = data.email;
+      const payload: any = {};
+      if (updateData.name !== undefined) payload.name = updateData.name;
+      if (updateData.email !== undefined) payload.email = updateData.email;
 
-      console.log('📝 [SupabaseStorage.updateUser] Dados a enviar:', updateData);
+      console.log('📝 [updateUser] Payload:', payload);
 
-      const { data: user, error } = await supabase
+      const { data, error } = await supabase
         .from('users')
-        .update(updateData)
+        .update(payload)
         .eq('id', userId)
         .select()
         .single();
 
       if (error) {
-        console.error('❌ [SupabaseStorage.updateUser] Erro do Supabase:', error);
-        
-        // Se não encontrou nenhuma linha, retornar null
+        console.error('❌ [updateUser] Erro do Supabase:', error);
+
         if (error.code === 'PGRST116') {
-          console.log('⚠️ Usuário não existe no banco:', userId);
+          console.log('⚠️ Usuário não existe:', userId);
           return null;
         }
-        
+
         throw new Error(error.message);
       }
 
-      if (!user) {
-        console.log('⚠️ Update não retornou usuário');
+      if (!data) {
+        console.log('⚠️ Update não retornou dados');
         return null;
       }
 
-      console.log('✅ [SupabaseStorage.updateUser] Usuário atualizado:', user);
-      
-      // Converter snake_case para camelCase
+      console.log('✅ [updateUser] Usuário atualizado:', data);
+
       return {
-        id: user.id,
-        email: user.email,
-        name: user.name || null,
-        createdAt: user.created_at ? new Date(user.created_at) : new Date(),
+        id: data.id,
+        email: data.email,
+        name: data.name || null,
+        createdAt: data.created_at ? new Date(data.created_at) : new Date(),
       };
     } catch (error: any) {
-      console.error('❌ [SupabaseStorage.updateUser] Erro:', error);
+      console.error('❌ [updateUser] Erro:', error);
       throw error;
     }
   }
 
-  async createUser(userData: NewUser): Promise<User> {
-    const { data, error } = await supabase
-      .from('users')
-      .insert(userData)
-      .select()
-      .single();
-    
-    if (error) throw error;
-    return data;
-  }
+  // ========== CATEGORY OPERATIONS ==========
 
-  async updateUser(userId: string, data: { name?: string; email?: string }): Promise<User | null> {
-    console.log('💾 [SupabaseStorage.updateUser] Atualizando usuário:', userId, data);
-    
-    const updateData: any = {};
-    if (data.name !== undefined) updateData.name = data.name;
-    if (data.email !== undefined) updateData.email = data.email;
-
-    const { data: user, error } = await supabase
-      .from('users')
-      .update(updateData)
-      .eq('id', userId)
-      .select()
-      .single();
-
-    if (error) {
-      console.error('❌ [SupabaseStorage.updateUser] Erro:', error);
-      return null;
-    }
-
-    console.log('✅ [SupabaseStorage.updateUser] Usuário atualizado:', user);
-    return user;
-  }
-
-  // Category operations
   async getCategories(userId: string): Promise<Category[]> {
     const { data, error } = await supabase
       .from('categories')
       .select('*')
       .eq('user_id', userId);
-    
+
     if (error) throw error;
     return data || [];
   }
@@ -138,7 +142,7 @@ export class SupabaseStorage implements IStorage {
       .select('*')
       .eq('id', id)
       .single();
-    
+
     if (error || !data) return null;
     return data;
   }
@@ -149,7 +153,7 @@ export class SupabaseStorage implements IStorage {
       .insert(categoryData)
       .select()
       .single();
-    
+
     if (error) throw error;
     return data;
   }
@@ -161,7 +165,7 @@ export class SupabaseStorage implements IStorage {
       .eq('id', id)
       .select()
       .single();
-    
+
     if (error || !data) return null;
     return data;
   }
@@ -171,22 +175,22 @@ export class SupabaseStorage implements IStorage {
       .from('categories')
       .delete()
       .eq('id', id);
-    
+
     return !error;
   }
 
-  // Bill operations
+  // ========== BILL OPERATIONS ==========
+
   async getBills(userId: string): Promise<Bill[]> {
     const { data, error } = await supabase
       .from('bills')
       .select('id, name, amount, due_date, is_paid, user_id, category_id, description, created_at')
       .eq('user_id', userId);
-    
+
     if (error) throw error;
-    
-    console.log('🔍 [getBills] RAW DATA do Supabase:', JSON.stringify(data?.[0], null, 2));
-    console.log('🔍 [getBills] Nomes das chaves:', data?.[0] ? Object.keys(data[0]) : 'nenhum dado');
-    
+
+    console.log('🔍 [getBills] RAW DATA:', JSON.stringify(data?.[0], null, 2));
+
     return data || [];
   }
 
@@ -196,39 +200,38 @@ export class SupabaseStorage implements IStorage {
       .select('id, name, amount, due_date, is_paid, user_id, category_id, description, created_at')
       .eq('id', id)
       .single();
-    
+
     if (error || !data) return null;
     return data;
   }
 
   async createBill(billData: any): Promise<any> {
-    console.log('📝 [SupabaseStorage] createBill - dados recebidos:', billData);
-    
-    // GARANTIR conversão para snake_case (caso routes.ts não tenha convertido)
+    console.log('📝 [createBill] Dados recebidos:', billData);
+
     const billDataSnakeCase = {
       name: billData.name,
       amount: billData.amount,
-      due_date: billData.due_date || billData.dueDate,  // Aceita ambos
+      due_date: billData.due_date || billData.dueDate,
       is_paid: billData.is_paid !== undefined ? billData.is_paid : (billData.isPaid ?? false),
       user_id: billData.user_id || billData.userId,
       category_id: billData.category_id || billData.categoryId || null,
       description: billData.description || null,
     };
-    
-    console.log('🔄 [SupabaseStorage] Dados convertidos para snake_case:', billDataSnakeCase);
-    
+
+    console.log('📤 [createBill] Enviando:', billDataSnakeCase);
+
     const { data, error } = await supabase
       .from('bills')
       .insert([billDataSnakeCase])
       .select()
       .single();
-    
+
     if (error) {
-      console.error('❌ [SupabaseStorage] Erro ao criar bill:', error);
+      console.error('❌ [createBill] Erro:', error);
       throw error;
     }
-    
-    console.log('✅ [SupabaseStorage] Bill criado com sucesso:', data);
+
+    console.log('✅ [createBill] Criado:', data);
     return data;
   }
 
@@ -239,7 +242,7 @@ export class SupabaseStorage implements IStorage {
       .eq('id', id)
       .select()
       .single();
-    
+
     if (error || !data) return null;
     return data;
   }
@@ -249,7 +252,7 @@ export class SupabaseStorage implements IStorage {
       .from('bills')
       .delete()
       .eq('id', id);
-    
+
     return !error;
   }
 
@@ -263,7 +266,7 @@ export class SupabaseStorage implements IStorage {
       .gt('due_date', now)
       .order('due_date', { ascending: true })
       .limit(limit);
-    
+
     if (error) throw error;
     return data || [];
   }
@@ -273,7 +276,7 @@ export class SupabaseStorage implements IStorage {
       await supabase.from('bills').delete().neq('id', '');
       await supabase.from('categories').delete().neq('id', '');
       await supabase.from('users').delete().neq('id', '');
-      return { success: true, message: "Todos os dados foram excluídos com sucesso" };
+      return { success: true, message: "Todos os dados foram excluídos" };
     } catch (error) {
       return { success: false, message: "Erro ao excluir dados" };
     }

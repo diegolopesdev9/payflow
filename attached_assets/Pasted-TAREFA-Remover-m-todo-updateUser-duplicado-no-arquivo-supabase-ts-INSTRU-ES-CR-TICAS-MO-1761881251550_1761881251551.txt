@@ -1,0 +1,128 @@
+TAREFA: Remover método updateUser duplicado no arquivo supabase.ts.
+
+⚠️ INSTRUÇÕES CRÍTICAS:
+- MODIFIQUE APENAS server/supabase.ts
+- REMOVA o método updateUser duplicado
+- MANTENHA apenas a versão completa
+- NÃO altere mais nada
+- Mostre o diff antes de aplicar
+
+ARQUIVO: server/supabase.ts
+
+---
+
+PROBLEMA:
+Existem DOIS métodos updateUser na classe SupabaseStorage (linhas ~47-89 e ~98-112), causando conflito. O segundo método está sobrescrevendo o primeiro.
+
+SOLUÇÃO:
+
+REMOVER COMPLETAMENTE o segundo método updateUser (linhas ~98-112):
+```typescript
+async updateUser(userId: string, data: { name?: string; email?: string }): Promise<User | null> {
+  console.log('💾 [SupabaseStorage.updateUser] Atualizando usuário:', userId, data);
+  
+  const updateData: any = {};
+  if (data.name !== undefined) updateData.name = data.name;
+  if (data.email !== undefined) updateData.email = data.email;
+
+  const { data: user, error } = await supabase
+    .from('users')
+    .update(updateData)
+    .eq('id', userId)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('❌ [SupabaseStorage.updateUser] Erro:', error);
+    return null;
+  }
+
+  console.log('✅ [SupabaseStorage.updateUser] Usuário atualizado:', user);
+  return user;
+}
+```
+
+ESTE MÉTODO ACIMA DEVE SER DELETADO COMPLETAMENTE.
+
+---
+
+MANTER APENAS o primeiro método updateUser (que já existe nas linhas ~47-89), que é mais completo e tem tratamento de erros correto.
+
+---
+
+ESTRUTURA CORRETA FINAL:
+```typescript
+export class SupabaseStorage implements IStorage {
+  async getUser(id: string): Promise<User | null> { ... }
+  
+  async getUserByEmail(email: string): Promise<User | null> { ... }
+  
+  // ✅ MANTER ESTE (linhas 47-89)
+  async updateUser(userId: string, data: { name?: string; email?: string }): Promise<User | null> {
+    console.log('💾 [SupabaseStorage.updateUser] Atualizando usuário:', userId, data);
+    
+    try {
+      const updateData: any = {};
+      if (data.name !== undefined) updateData.name = data.name;
+      if (data.email !== undefined) updateData.email = data.email;
+
+      console.log('📝 [SupabaseStorage.updateUser] Dados a enviar:', updateData);
+
+      const { data: user, error } = await supabase
+        .from('users')
+        .update(updateData)
+        .eq('id', userId)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('❌ [SupabaseStorage.updateUser] Erro do Supabase:', error);
+        
+        if (error.code === 'PGRST116') {
+          console.log('⚠️ Usuário não existe no banco:', userId);
+          return null;
+        }
+        
+        throw new Error(error.message);
+      }
+
+      if (!user) {
+        console.log('⚠️ Update não retornou usuário');
+        return null;
+      }
+
+      console.log('✅ [SupabaseStorage.updateUser] Usuário atualizado:', user);
+      
+      return {
+        id: user.id,
+        email: user.email,
+        name: user.name || null,
+        createdAt: user.created_at ? new Date(user.created_at) : new Date(),
+      };
+    } catch (error: any) {
+      console.error('❌ [SupabaseStorage.updateUser] Erro:', error);
+      throw error;
+    }
+  }
+  
+  async createUser(userData: NewUser): Promise<User> { ... }
+  
+  // ❌ REMOVER ESTE DUPLICADO (linhas 98-112)
+  
+  async getCategories(userId: string): Promise<Category[]> { ... }
+  // ... resto dos métodos
+}
+```
+
+---
+
+RESULTADO ESPERADO:
+Apenas um método updateUser, funcionando corretamente.
+
+VALIDAÇÃO:
+1. Aplique a mudança
+2. Rebuild: pkill -f node && npm run build && npm run start
+3. Tente salvar o perfil
+4. Deve funcionar!
+
+Mostre o diff e aplique.
