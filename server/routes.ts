@@ -62,13 +62,25 @@ app.put("/api/users/me", requireUser, async (c: Context) => {
       }
     }
 
-    // Update user
-    console.log('💾 Chamando storage.updateUser...');
-    const updatedUser = await storage.updateUser(userId, { name, email });
+    // Try to update user
+    console.log('💾 Tentando atualizar usuário...');
+    let updatedUser = await storage.updateUser(userId, { name, email });
 
+    // If user doesn't exist, create it
     if (!updatedUser) {
-      console.log('❌ Usuário não encontrado');
-      return c.json({ error: "Usuário não encontrado" }, 404);
+      console.log('⚠️ Usuário não existe, criando...');
+      try {
+        const newUser = await storage.createUser({
+          id: userId,
+          email: email,
+          name: name,
+        });
+        console.log('✅ Usuário criado:', newUser);
+        return c.json({ user: newUser });
+      } catch (createError: any) {
+        console.error('❌ Erro ao criar usuário:', createError);
+        return c.json({ error: "Erro ao criar usuário" }, 500);
+      }
     }
 
     console.log('✅ [PUT /api/users/me] Usuário atualizado com sucesso:', updatedUser);
