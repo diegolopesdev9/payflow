@@ -1,0 +1,100 @@
+TAREFA: Remover .single() do método updateUser no arquivo supabase.ts.
+
+⚠️ INSTRUÇÕES CRÍTICAS:
+- MODIFIQUE APENAS server/supabase.ts
+- Remova o .single() da linha 95
+- Ajuste o código para usar data[0]
+- NÃO altere mais nada
+- Mostre o diff antes de aplicar
+
+ARQUIVO: server/supabase.ts
+
+---
+
+LOCALIZAR o método updateUser (linha ~80-120)
+
+PROCURAR por estas linhas (linha ~91-96):
+```typescript
+const { data, error } = await supabase
+  .from('users')
+  .update(payload)
+  .eq('id', userId)
+  .select()
+  .single();  // ❌ REMOVER ESTA LINHA
+```
+
+SUBSTITUIR por:
+```typescript
+const { data, error } = await supabase
+  .from('users')
+  .update(payload)
+  .eq('id', userId)
+  .select();  // ✅ SEM .single()
+```
+
+E TAMBÉM SUBSTITUIR o bloco de verificação (linhas ~98-112):
+
+DE:
+```typescript
+if (error) {
+  console.error('❌ [updateUser] Erro do Supabase:', error);
+
+  if (error.code === 'PGRST116') {
+    console.log('⚠️ Usuário não existe:', userId);
+    return null;
+  }
+
+  throw new Error(error.message);
+}
+
+if (!data) {
+  console.log('⚠️ Update não retornou dados');
+  return null;
+}
+
+console.log('✅ [updateUser] Usuário atualizado:', data);
+
+return {
+  id: data.id,
+  email: data.email,
+  name: data.name || null,
+  createdAt: data.created_at ? new Date(data.created_at) : new Date(),
+};
+```
+
+PARA:
+```typescript
+if (error) {
+  console.error('❌ [updateUser] Erro do Supabase:', error);
+  throw new Error(error.message);
+}
+
+// Verificar se retornou dados (agora é array)
+if (!data || data.length === 0) {
+  console.log('⚠️ Nenhum usuário foi atualizado');
+  return null;
+}
+
+const user = data[0];  // ✅ PEGAR O PRIMEIRO DO ARRAY
+console.log('✅ [updateUser] Usuário atualizado:', user);
+
+return {
+  id: user.id,
+  email: user.email,
+  name: user.name || null,
+  createdAt: user.created_at ? new Date(user.created_at) : new Date(),
+};
+```
+
+---
+
+RESULTADO ESPERADO:
+Método updateUser funciona sem erro PGRST116.
+
+VALIDAÇÃO:
+1. Aplique as mudanças
+2. Rebuild: pkill -f node && npm run build && npm run start
+3. Tente salvar o perfil
+4. DEVE FUNCIONAR!
+
+Mostre o diff e aplique AS DUAS mudanças (remover .single() E ajustar data[0]).
