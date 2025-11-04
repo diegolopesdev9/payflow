@@ -91,32 +91,27 @@ export class SupabaseStorage implements IStorage {
         .from('users')
         .update(payload)
         .eq('id', userId)
-        .select()
-        .single();
+        .select();
 
       if (error) {
         console.error('❌ [updateUser] Erro do Supabase:', error);
-
-        if (error.code === 'PGRST116') {
-          console.log('⚠️ Usuário não existe:', userId);
-          return null;
-        }
-
         throw new Error(error.message);
       }
 
-      if (!data) {
-        console.log('⚠️ Update não retornou dados');
+      // Verificar se retornou dados (agora é array)
+      if (!data || data.length === 0) {
+        console.log('⚠️ Nenhum usuário foi atualizado');
         return null;
       }
 
-      console.log('✅ [updateUser] Usuário atualizado:', data);
+      const user = data[0];  // ✅ PEGAR O PRIMEIRO DO ARRAY
+      console.log('✅ [updateUser] Usuário atualizado:', user);
 
       return {
-        id: data.id,
-        email: data.email,
-        name: data.name || null,
-        createdAt: data.created_at ? new Date(data.created_at) : new Date(),
+        id: user.id,
+        email: user.email,
+        name: user.name || null,
+        createdAt: user.created_at ? new Date(user.created_at) : new Date(),
       };
     } catch (error: any) {
       console.error('❌ [updateUser] Erro:', error);
