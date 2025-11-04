@@ -1,6 +1,7 @@
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useLocation } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import { fetchWithAuth, useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,33 +18,29 @@ type UserProfile = {
 
 export default function Profile() {
   const [location, setLocation] = useLocation();
-  const { logout } = useAuth();
+  const { user: authUser, authenticated, logout } = useAuth();
   const { toast } = useToast();
-  const [user, setUser] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    let alive = true;
-    (async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const res = await fetchWithAuth("/api/users/me");
-        if (!res.ok) {
-          throw new Error(`Erro ao carregar perfil (${res.status})`);
-        }
-        const data = await res.json();
-        const userData: UserProfile = data?.user ?? data ?? null;
-        if (alive) setUser(userData);
-      } catch (e: any) {
-        if (alive) setError(e?.message || "Erro ao carregar perfil");
-      } finally {
-        if (alive) setLoading(false);
+  // ✅ USAR React Query ao invés de useState manual
+  const { data: userData, isLoading: loading, isError: error, refetch } = useQuery({
+    queryKey: ['/api/users/me'],
+    queryFn: async () => {
+      const res = await fetchWithAuth("/api/users/me");
+      if (!res.ok) {
+        throw new Error(`Erro ao carregar perfil (${res.status})`);
       }
-    })();
-    return () => { alive = false; };
-  }, []);
+      const data = await res.json();
+      return data?.user ?? data ?? null;
+    },
+    enabled: !!authUser?.id,
+  });
+
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (authenticated === false) {
+      setLocation("/login");
+    }
+  }, [authenticated, setLocation]);
 
   const handleLogout = async () => {
     try {
@@ -62,7 +59,11 @@ export default function Profile() {
     }
   };
 
-  if (loading) {
+  if (authenticated === false) {
+    return null;
+  }
+
+  if (loading || authenticated === null) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary via-primary/95 to-secondary">
         {/* Header Skeleton */}
@@ -114,7 +115,7 @@ export default function Profile() {
     );
   }
 
-  if (error || !user) {
+  if (error || !userData) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary via-primary/95 to-secondary flex items-center justify-center">
         <Card className="stat-card max-w-md">
@@ -128,6 +129,8 @@ export default function Profile() {
       </div>
     );
   }
+
+  const user: UserProfile = userData;
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return "N/A";
