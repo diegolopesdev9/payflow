@@ -4,8 +4,18 @@ import type { User, Category, Bill, NewUser, NewCategory, NewBill } from '../sha
 
 const supabaseUrl = process.env.SUPABASE_URL || '';
 const supabaseKey = process.env.SUPABASE_ANON_KEY || '';
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
+// Cliente normal com ANON_KEY (para operações com RLS)
 const supabase = createClient(supabaseUrl, supabaseKey, {
+  auth: { 
+    persistSession: false, 
+    autoRefreshToken: false 
+  }
+});
+
+// Cliente admin com SERVICE_ROLE_KEY (bypassa RLS - usar com cuidado!)
+const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
   auth: { 
     persistSession: false, 
     autoRefreshToken: false 
@@ -52,7 +62,8 @@ export class SupabaseStorage implements IStorage {
   async createUser(userData: NewUser): Promise<User> {
     console.log('👤 [createUser] Criando usuário:', userData);
 
-    const { data, error } = await supabase
+    // ✅ USAR supabaseAdmin para bypassa RLS
+    const { data, error } = await supabaseAdmin
       .from('users')
       .insert({
         id: userData.id,
@@ -87,7 +98,8 @@ export class SupabaseStorage implements IStorage {
 
       console.log('📝 [updateUser] Payload:', payload);
 
-      const { data, error } = await supabase
+      // ✅ USAR supabaseAdmin para bypassa RLS
+      const { data, error } = await supabaseAdmin
         .from('users')
         .update(payload)
         .eq('id', userId)
