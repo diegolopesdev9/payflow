@@ -146,7 +146,7 @@ export default function Profile() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary via-primary/95 to-secondary">
-      <div className="bg-primary/80 backdrop-blur-sm border-b border-primary-foreground/10">
+      <div className="bg-primary/80 backdrop-blur-sm border-b border-primary-foreground/10 relative z-10">
         <div className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
             <div>
@@ -156,7 +156,7 @@ export default function Profile() {
             <Button
               onClick={handleLogout}
               variant="outline"
-              className="text-primary-foreground border-primary-foreground/20 hover:bg-primary-foreground/10"
+              className="text-primary-foreground border-primary-foreground/20 hover:bg-primary-foreground/10 relative z-10 bg-primary/50"
             >
               <LogOut className="w-4 h-4 mr-2" />
               Sair
