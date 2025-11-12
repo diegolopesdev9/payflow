@@ -1,11 +1,10 @@
-
 import { useEffect } from "react";
 import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { fetchWithAuth, useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Home, CreditCard, TrendingUp, User as UserIcon, Mail, Calendar, Edit, LogOut } from "lucide-react";
+import { User as UserIcon, Mail, Calendar, Edit, LogOut } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { BottomNavigation } from "@/components/BottomNavigation";
 
@@ -14,6 +13,7 @@ type UserProfile = {
   email: string;
   name?: string | null;
   created_at?: string;
+  createdAt?: string;
 };
 
 export default function Profile() {
@@ -21,18 +21,24 @@ export default function Profile() {
   const { user: authUser, authenticated, logout } = useAuth();
   const { toast } = useToast();
 
-  // ✅ USAR React Query ao invés de useState manual
-  const { data: userData, isLoading: loading, isError: error, refetch } = useQuery({
+  // ✅ useQuery SEM refetch automático
+  const { data: userData, isLoading: loading, isError: error } = useQuery({
     queryKey: ['/api/users/me'],
     queryFn: async () => {
+      console.log('🔄 [Profile] Buscando dados do usuário...');
       const res = await fetchWithAuth("/api/users/me");
       if (!res.ok) {
         throw new Error(`Erro ao carregar perfil (${res.status})`);
       }
       const data = await res.json();
-      return data?.user ?? data ?? null;
+      const userData = data?.user ?? data ?? null;
+      console.log('✅ [Profile] Dados recebidos:', userData);
+      return userData;
     },
     enabled: !!authUser?.id,
+    staleTime: 5 * 60 * 1000, // ✅ 5 minutos - considera dados "frescos"
+    refetchOnMount: false, // ✅ NÃO refetch ao montar
+    refetchOnWindowFocus: false, // ✅ NÃO refetch ao focar
   });
 
   // Redirect if not authenticated
@@ -66,7 +72,6 @@ export default function Profile() {
   if (loading || authenticated === null) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary via-primary/95 to-secondary">
-        {/* Header Skeleton */}
         <div className="bg-primary/80 backdrop-blur-sm border-b border-primary-foreground/10">
           <div className="container mx-auto px-4 py-6">
             <div className="flex items-center justify-between">
@@ -80,7 +85,6 @@ export default function Profile() {
         </div>
 
         <div className="container mx-auto px-4 py-6 space-y-6 pb-24">
-          {/* Profile Card Skeleton */}
           <Card className="stat-card">
             <CardHeader>
               <div className="h-6 w-48 bg-muted/50 rounded animate-pulse" />
@@ -101,7 +105,6 @@ export default function Profile() {
             </CardContent>
           </Card>
 
-          {/* Account Info Card Skeleton */}
           <Card className="stat-card">
             <CardHeader>
               <div className="h-6 w-40 bg-muted/50 rounded animate-pulse" />
@@ -143,7 +146,6 @@ export default function Profile() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary via-primary/95 to-secondary">
-      {/* Header */}
       <div className="bg-primary/80 backdrop-blur-sm border-b border-primary-foreground/10">
         <div className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
@@ -164,7 +166,6 @@ export default function Profile() {
       </div>
 
       <div className="container mx-auto px-4 py-6 space-y-6 pb-24">
-        {/* Profile Card */}
         <Card className="stat-card">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -194,7 +195,7 @@ export default function Profile() {
                 <Calendar className="w-5 h-5 text-muted-foreground mt-0.5" />
                 <div>
                   <div className="text-sm text-muted-foreground">Membro desde</div>
-                  <div className="font-medium">{formatDate(user.created_at)}</div>
+                  <div className="font-medium">{formatDate(user.created_at || user.createdAt)}</div>
                 </div>
               </div>
             </div>
@@ -209,7 +210,6 @@ export default function Profile() {
           </CardContent>
         </Card>
 
-        {/* Account Info Card */}
         <Card className="stat-card">
           <CardHeader>
             <CardTitle>Informações da Conta</CardTitle>

@@ -1,0 +1,52 @@
+TAREFA: Corrigir visibilidade do botão "Sair" no cabeçalho da página Profile.
+
+INSTRUÇÕES CRÍTICAS:
+- MODIFIQUE APENAS o arquivo src/pages/Profile.tsx
+- CORRIJA o estilo do botão de logout para que seja sempre visível
+- O botão está sendo coberto por um elemento branco
+- AJUSTE o z-index e remova qualquer sobreposição
+- Mostre o diff antes de aplicar
+
+ARQUIVO A MODIFICAR: src/pages/Profile.tsx
+
+PROBLEMA IDENTIFICADO:
+O botão "Sair" no canto superior direito do cabeçalho só aparece quando o mouse passa por cima. Parece haver uma máscara branca sobrepondo o botão.
+
+SOLUÇÃO:
+No componente Profile.tsx, localize a div do cabeçalho (linha ~171) e ajuste o botão de logout:
+
+1. Adicione position: relative ao container do cabeçalho
+2. Garanta que o botão tenha z-index adequado
+3. Remova qualquer elemento que possa estar sobrepondo
+
+CÓDIGO ATUALIZADO DO CABEÇALHO (substituir a partir da linha ~171):
+```typescript
+      <div className="bg-primary/80 backdrop-blur-sm border-b border-primary-foreground/10 relative z-10">
+        <div className="container mx-auto px-4 py-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-primary-foreground">Perfil</h1>
+              <p className="text-primary-foreground/80">Gerencie suas informações</p>
+            </div>
+            <Button
+              onClick={handleLogout}
+              variant="outline"
+              className="text-primary-foreground border-primary-foreground/20 hover:bg-primary-foreground/10 relative z-10 bg-primary/50"
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Sair
+            </Button>
+          </div>
+        </div>
+      </div>
+```
+
+MUDANÇAS:
+1. Adicionado `relative z-10` na div externa do cabeçalho
+2. Adicionado `relative z-10 bg-primary/50` no Button de logout
+3. O `bg-primary/50` garante que o botão tenha fundo visível
+
+BENEFÍCIOS:
+- Botão sempre visível
+- Não há mais sobreposição
+- Mantém a aparência consistente

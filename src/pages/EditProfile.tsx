@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import type { User } from "../../shared/schema";
-import { ArrowLeft, Save, X, User as UserIcon, Mail, Phone, Calendar, MapPin } from "lucide-react";
+import { ArrowLeft, Save, X, User as UserIcon, Mail } from "lucide-react";
 
 const EditProfile = () => {
   const [location, setLocation] = useLocation();
@@ -33,9 +33,10 @@ const EditProfile = () => {
     enabled: !!user?.id,
   });
 
-  // Update profile mutation (DEVE vir ANTES dos useEffect e returns condicionais)
+  // Update profile mutation
   const updateProfileMutation = useMutation({
     mutationFn: async (data: { name: string; email: string }) => {
+      console.log('📤 [EditProfile] Enviando atualização:', data);
       const response = await fetchWithAuth('/api/users/me', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -45,17 +46,30 @@ const EditProfile = () => {
         const error = await response.json();
         throw new Error(error.error || 'Erro ao atualizar perfil');
       }
-      return response.json();
+      const result = await response.json();
+      console.log('✅ [EditProfile] Resposta do servidor:', result);
+      return result;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/users/me'] });
+    onSuccess: (data) => {
+      console.log('✅ [EditProfile] Atualização bem-sucedida, data:', data);
+
+      // ✅ ATUALIZAR CACHE MANUALMENTE com os dados do servidor
+      const userData = data?.user ?? data;
+      queryClient.setQueryData(['/api/users/me'], userData);
+      console.log('✅ [EditProfile] Cache atualizado com:', userData);
+
       toast({
         title: "Perfil atualizado!",
         description: "Suas informações foram salvas com sucesso.",
       });
-      setLocation('/profile');
+
+      // Redirecionar
+      setTimeout(() => {
+        setLocation('/profile');
+      }, 100);
     },
     onError: (error: any) => {
+      console.error('❌ [EditProfile] Erro:', error);
       toast({
         title: "Erro ao atualizar perfil",
         description: error.message || "Não foi possível salvar as alterações.",
@@ -85,27 +99,24 @@ const EditProfile = () => {
     return null;
   }
 
-  // Show loading while auth is resolving or profile data is loading
   if (authenticated === null || (authenticated && !user) || profileLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary via-primary/95 to-secondary flex items-center justify-center">
-        <div className="text-primary-foreground text-lg" data-testid="loading-edit-profile">Carregando perfil...</div>
+        <div className="text-primary-foreground text-lg">Carregando perfil...</div>
       </div>
     );
   }
 
-  // Show error if profile failed to load
   if (authenticated && user && profileError) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary via-primary/95 to-secondary flex items-center justify-center">
         <div className="text-center">
-          <div className="text-primary-foreground text-lg mb-4" data-testid="error-edit-profile">
+          <div className="text-primary-foreground text-lg mb-4">
             Erro ao carregar dados do perfil
           </div>
           <button 
             onClick={() => setLocation("/profile")}
             className="text-primary-foreground underline"
-            data-testid="button-back-profile"
           >
             Voltar para Perfil
           </button>
@@ -114,10 +125,9 @@ const EditProfile = () => {
     );
   }
 
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
+    console.log('🚀 [EditProfile] Iniciando atualização...');
     updateProfileMutation.mutate(formData);
   };
 
@@ -127,7 +137,6 @@ const EditProfile = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary via-primary/95 to-secondary">
-      {/* Header */}
       <div className="bg-primary/80 backdrop-blur-sm border-b border-primary-foreground/10">
         <div className="container mx-auto px-4 py-6">
           <div className="flex items-center gap-4">
@@ -148,13 +157,12 @@ const EditProfile = () => {
       </div>
 
       <div className="container mx-auto px-4 py-6">
-        <Card className="max-w-2xl mx-auto stat-card" data-testid="card-edit-profile">
+        <Card className="max-w-2xl mx-auto stat-card">
           <CardHeader>
             <CardTitle>Informações Pessoais</CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Name */}
               <div className="space-y-2">
                 <Label htmlFor="name" className="flex items-center gap-2">
                   <UserIcon className="w-4 h-4" />
@@ -166,11 +174,9 @@ const EditProfile = () => {
                   onChange={(e) => updateField("name", e.target.value)}
                   className="input-financial"
                   required
-                  data-testid="input-name"
                 />
               </div>
 
-              {/* Email */}
               <div className="space-y-2">
                 <Label htmlFor="email" className="flex items-center gap-2">
                   <Mail className="w-4 h-4" />
@@ -183,18 +189,15 @@ const EditProfile = () => {
                   onChange={(e) => updateField("email", e.target.value)}
                   className="input-financial"
                   required
-                  data-testid="input-email"
                 />
               </div>
 
-              {/* Action Buttons */}
               <div className="flex gap-4 pt-6">
                 <Button 
                   type="button"
                   variant="outline"
                   onClick={() => setLocation("/profile")}
                   className="flex-1"
-                  data-testid="button-cancel"
                 >
                   <X className="w-4 h-4 mr-2" />
                   Cancelar
@@ -204,7 +207,6 @@ const EditProfile = () => {
                   type="submit" 
                   className="flex-1 btn-financial"
                   disabled={updateProfileMutation.isPending}
-                  data-testid="button-save"
                 >
                   <Save className="w-4 h-4 mr-2" />
                   {updateProfileMutation.isPending ? 'Salvando...' : 'Salvar alterações'}
