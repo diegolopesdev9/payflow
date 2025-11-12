@@ -21,8 +21,10 @@ function convertBillToFrontend(bill: any) {
   };
 }
 
-// Health check
-app.get("/api/healthz", (c) => c.json({ ok: true }));
+// Health check endpoint for Render
+app.get("/api/healthz", (c) => {
+  return c.json({ ok: true, timestamp: new Date().toISOString(), service: "PayFlow API" });
+});
 
 // Auth routes
 app.get("/api/whoami", requireUser, (c: Context) => {
