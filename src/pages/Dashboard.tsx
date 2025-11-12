@@ -32,6 +32,7 @@ const Dashboard = () => {
     categoryId: "",
     description: "",
   });
+  const [periodFilter, setPeriodFilter] = useState('week');
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -82,24 +83,69 @@ const Dashboard = () => {
     if (!bills || bills.length === 0) return Array(7).fill(0);
 
     const today = new Date();
-    const startOfWeek = new Date(today);
-    startOfWeek.setDate(today.getDate() - today.getDay());
-    startOfWeek.setHours(0, 0, 0, 0);
+    const expenses = Array(7).fill(0);
 
-    const endOfWeek = new Date(startOfWeek);
-    endOfWeek.setDate(startOfWeek.getDate() + 6);
-    endOfWeek.setHours(23, 59, 59, 999);
+    bills.forEach((bill: any) => {
+      if (!bill.dueDate || !bill.amount) return;
 
-    const expenses = [0, 0, 0, 0, 0, 0, 0];
+      const billDate = new Date(bill.dueDate);
+      const diffTime = today.getTime() - billDate.getTime();
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+      if (diffDays >= 0 && diffDays < 7) {
+        const dayIndex = 6 - diffDays;
+        expenses[dayIndex] += bill.amount / 100;
+      }
+    });
+
+    return expenses;
+  };
+
+  const calculateMonthlyExpenses = () => {
+    if (!bills || bills.length === 0) return Array(6).fill(0);
+
+    const today = new Date();
+    const expenses = Array(30).fill(0);
+
+    bills.forEach((bill: any) => {
+      if (!bill.dueDate || !bill.amount) return;
+
+      const billDate = new Date(bill.dueDate);
+      const diffTime = today.getTime() - billDate.getTime();
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+      if (diffDays >= 0 && diffDays < 30) {
+        const index = 29 - diffDays;
+        expenses[index] += bill.amount / 100;
+      }
+    });
+
+    const grouped = [];
+    for (let i = 0; i < 6; i++) {
+      const start = i * 5;
+      const end = start + 5;
+      const sum = expenses.slice(start, end).reduce((acc, val) => acc + val, 0);
+      grouped.push(sum);
+    }
+
+    return grouped;
+  };
+
+  const calculateYearlyExpenses = () => {
+    if (!bills || bills.length === 0) return Array(12).fill(0);
+
+    const today = new Date();
+    const currentYear = today.getFullYear();
+    const expenses = Array(12).fill(0);
 
     bills.forEach((bill: any) => {
       if (!bill.dueDate || !bill.amount) return;
 
       const billDate = new Date(bill.dueDate);
 
-      if (billDate >= startOfWeek && billDate <= endOfWeek) {
-        const dayOfWeek = billDate.getDay();
-        expenses[dayOfWeek] += bill.amount / 100;
+      if (billDate.getFullYear() === currentYear) {
+        const month = billDate.getMonth();
+        expenses[month] += bill.amount / 100;
       }
     });
 
@@ -127,9 +173,30 @@ const Dashboard = () => {
 
   // Recalcular sempre que bills mudar
   const weeklyExpenses = calculateWeeklyExpenses();
+  const monthlyExpenses = calculateMonthlyExpenses();
+  const yearlyExpenses = calculateYearlyExpenses();
+
+  const currentExpenses = periodFilter === 'week' ? weeklyExpenses : 
+                          periodFilter === 'month' ? monthlyExpenses : 
+                          yearlyExpenses;
+
+  const maxExpense = Math.max(...currentExpenses, 0.01);
+  const currentTotal = currentExpenses.reduce((sum, val) => sum + val, 0);
+  const currentAverage = currentTotal > 0 ? currentTotal / currentExpenses.length : 0;
+
+  const currentLabels = periodFilter === 'week' ? ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'] :
+                        periodFilter === 'month' ? ['Dia 1-5', 'Dia 6-10', 'Dia 11-15', 'Dia 16-20', 'Dia 21-25', 'Dia 26-30'] :
+                        ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+
+  const periodTitle = periodFilter === 'week' ? 'Despesas Semanais' :
+                      periodFilter === 'month' ? 'Despesas Mensais' :
+                      'Despesas Anuais';
+
+  const periodLabel = periodFilter === 'week' ? 'Esta semana' :
+                      periodFilter === 'month' ? 'Este mês' :
+                      'Este ano';
+
   const totals = calculateTotals();
-  const weeklyTotal = weeklyExpenses.reduce((sum, val) => sum + val, 0);
-  const weeklyAverage = weeklyTotal > 0 ? weeklyTotal / 7 : 0;
 
   const handleQuickBillSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -225,7 +292,6 @@ const Dashboard = () => {
     return null;
   }
 
-  const maxWeeklyExpense = Math.max(...weeklyExpenses, 1);
   const weekDays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 
   return (
@@ -356,26 +422,62 @@ const Dashboard = () => {
           </Card>
         )}
 
-        {/* Weekly Expenses Chart */}
+        {/* Expense Chart Card */}
         <Card className="bg-white shadow-lg">
-          <CardHeader>
-            <CardTitle className="text-gray-900">Despesas Semanais</CardTitle>
+          <CardHeader className="space-y-4">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-gray-900">{periodTitle}</CardTitle>
+            </div>
+
+            {/* Tabs de filtro */}
+            <div className="flex gap-2 bg-gray-100 p-1 rounded-lg">
+              <button
+                onClick={() => setPeriodFilter('week')}
+                className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                  periodFilter === 'week'
+                    ? 'bg-white text-primary shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                Semana
+              </button>
+              <button
+                onClick={() => setPeriodFilter('month')}
+                className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                  periodFilter === 'month'
+                    ? 'bg-white text-primary shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                Mês
+              </button>
+              <button
+                onClick={() => setPeriodFilter('year')}
+                className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                  periodFilter === 'year'
+                    ? 'bg-white text-primary shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                Ano
+              </button>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               <div>
                 <p className="text-3xl font-bold text-gray-900">
-                  {formatCurrency(weeklyTotal)}
+                  {formatCurrency(currentTotal)}
                 </p>
-                <p className="text-sm text-gray-500">Esta semana</p>
+                <p className="text-sm text-gray-500">{periodLabel}</p>
               </div>
 
               {/* Bar Chart */}
               <div className="flex items-end justify-between gap-2 h-40 bg-gray-50 rounded-lg p-2">
-                {weeklyExpenses.map((expense, index) => {
-                  const heightPercent = maxWeeklyExpense > 0 ? (expense / maxWeeklyExpense) * 100 : 0;
+                {currentExpenses.map((expense, index) => {
+                  const heightPercent = maxExpense > 0 ? (expense / maxExpense) * 100 : 0;
                   const minHeight = expense > 0 ? Math.max(heightPercent, 5) : 0;
-                  
+
                   return (
                     <div key={index} className="flex-1 flex flex-col items-center gap-2">
                       <div className="w-full flex items-end justify-center relative" style={{ height: '128px' }}>
@@ -386,13 +488,13 @@ const Dashboard = () => {
                               height: `${minHeight}%`,
                               minHeight: '8px'
                             }}
-                            title={`${weekDays[index]}: ${formatCurrency(expense)}`}
+                            title={`${currentLabels[index]}: ${formatCurrency(expense)}`}
                           />
                         ) : (
                           <div className="w-full h-2 bg-gray-300 rounded" />
                         )}
                       </div>
-                      <span className="text-xs text-gray-600 font-medium">{weekDays[index]}</span>
+                      <span className="text-xs text-gray-600 font-medium">{currentLabels[index]}</span>
                     </div>
                   );
                 })}
@@ -403,13 +505,17 @@ const Dashboard = () => {
                 <div>
                   <p className="text-sm text-gray-500">Total de despesas</p>
                   <p className="text-lg font-semibold text-gray-900">
-                    {formatCurrency(weeklyTotal)}
+                    {formatCurrency(currentTotal)}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500">Média diária</p>
+                  <p className="text-sm text-gray-500">
+                    {periodFilter === 'week' ? 'Média diária' : 
+                     periodFilter === 'month' ? 'Média por período' : 
+                     'Média mensal'}
+                  </p>
                   <p className="text-lg font-semibold text-gray-900">
-                    {formatCurrency(weeklyAverage)}
+                    {formatCurrency(currentAverage)}
                   </p>
                 </div>
               </div>
