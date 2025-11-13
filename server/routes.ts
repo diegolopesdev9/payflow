@@ -23,7 +23,7 @@ function convertBillToFrontend(bill: any) {
 
 // Health check endpoint for Render
 app.get("/api/healthz", (c) => {
-  return c.json({ ok: true, timestamp: new Date().toISOString(), service: "PayFlow API" });
+  return c.json({ ok: true, timestamp: new Date().toISOString(), service: "PagueFlow API" });
 });
 
 // Auth routes
