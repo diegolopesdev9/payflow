@@ -78,8 +78,8 @@ const Reports = () => {
         }
       }
 
-      // Gastos por categoria (considera apenas pagas)
-      if (bill.isPaid && bill.categoryId) {
+      // Gastos por categoria (todas as contas com categoria)
+      if (bill.categoryId) {
         if (activeFilter === "mensal" && billMonth === currentMonth && billYear === currentYear) {
           categoriesData[bill.categoryId] = (categoriesData[bill.categoryId] || 0) + amount;
         } else if (activeFilter === "anual" && billYear === currentYear) {
@@ -108,9 +108,9 @@ const Reports = () => {
   }, [bills, categories, activeFilter]);
 
   const formatCurrency = (value: number) => {
-    return value.toLocaleString('pt-BR', { 
-      style: 'currency', 
-      currency: 'BRL' 
+    return value.toLocaleString('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
     });
   };
 
@@ -144,8 +144,8 @@ const Reports = () => {
               onClick={() => setActiveFilter("mensal")}
               className={`
                 py-3 px-4 rounded-lg text-sm font-medium transition-all
-                ${activeFilter === "mensal" 
-                  ? "bg-white text-gray-900 shadow-sm" 
+                ${activeFilter === "mensal"
+                  ? "bg-white text-gray-900 shadow-sm"
                   : "bg-white/10 text-white hover:bg-white/20"
                 }
               `}
@@ -156,8 +156,8 @@ const Reports = () => {
               onClick={() => setActiveFilter("anual")}
               className={`
                 py-3 px-4 rounded-lg text-sm font-medium transition-all
-                ${activeFilter === "anual" 
-                  ? "bg-white text-gray-900 shadow-sm" 
+                ${activeFilter === "anual"
+                  ? "bg-white text-gray-900 shadow-sm"
                   : "bg-white/10 text-white hover:bg-white/20"
                 }
               `}
@@ -232,7 +232,7 @@ const Reports = () => {
                         {formatCurrency(stats.paid)}
                       </p>
                       <p className="text-xs text-gray-400 mt-1">
-                        {stats.paid + stats.pending > 0 
+                        {stats.paid + stats.pending > 0
                           ? `${((stats.paid / (stats.paid + stats.pending)) * 100).toFixed(1)}%`
                           : '0%'
                         }
@@ -244,7 +244,7 @@ const Reports = () => {
                         {formatCurrency(stats.pending)}
                       </p>
                       <p className="text-xs text-gray-400 mt-1">
-                        {stats.paid + stats.pending > 0 
+                        {stats.paid + stats.pending > 0
                           ? `${((stats.pending / (stats.paid + stats.pending)) * 100).toFixed(1)}%`
                           : '0%'
                         }
@@ -277,8 +277,8 @@ const Reports = () => {
                       <div key={category.id} className="space-y-2">
                         <div className="flex justify-between items-center">
                           <div className="flex items-center gap-2">
-                            <div 
-                              className="w-3 h-3 rounded-full" 
+                            <div
+                              className="w-3 h-3 rounded-full"
                               style={{ backgroundColor: category.color }}
                             />
                             <span className="text-gray-900 font-medium">{category.name}</span>
@@ -288,11 +288,11 @@ const Reports = () => {
                           </span>
                         </div>
                         <div className="w-full bg-gray-200 rounded-full h-2">
-                          <div 
+                          <div
                             className="h-2 rounded-full transition-all"
-                            style={{ 
+                            style={{
                               width: `${category.percentage}%`,
-                              backgroundColor: category.color 
+                              backgroundColor: category.color
                             }}
                           />
                         </div>
