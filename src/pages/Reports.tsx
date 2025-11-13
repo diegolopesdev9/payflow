@@ -91,13 +91,16 @@ const Reports = () => {
     // Converter categorias para array e ordenar
     const categoryMap = new Map(categories.map((cat: any) => [cat.id, cat]));
     const sortedCategories = Object.entries(categoriesData)
-      .map(([id, value]) => ({
-        id,
-        name: categoryMap.get(id)?.name || 'Sem categoria',
-        color: categoryMap.get(id)?.color || '#3b82f6',
-        value,
-        percentage: monthlyPaid > 0 ? (value / monthlyPaid) * 100 : 0,
-      }))
+      .map(([id, value]) => {
+        const totalAmount = monthlyPaid + monthlyPending;
+        return {
+          id,
+          name: categoryMap.get(id)?.name || 'Sem categoria',
+          color: categoryMap.get(id)?.color || '#3b82f6',
+          value,
+          percentage: totalAmount > 0 ? (value / totalAmount) * 100 : 0,
+        };
+      })
       .sort((a, b) => b.value - a.value);
 
     return {
