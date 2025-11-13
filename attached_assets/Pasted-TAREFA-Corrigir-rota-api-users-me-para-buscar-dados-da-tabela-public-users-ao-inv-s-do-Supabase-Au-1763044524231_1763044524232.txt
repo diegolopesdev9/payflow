@@ -1,0 +1,66 @@
+TAREFA: Corrigir rota /api/users/me para buscar dados da tabela public.users ao invés do Supabase Auth.
+
+INSTRUÇÕES CRÍTICAS:
+- MODIFIQUE APENAS o arquivo server/routes.ts
+- ALTERE a rota GET /api/users/me
+- BUSQUE dados da tabela users usando storage.getUser()
+- Mostre o diff antes de aplicar
+
+ARQUIVO A MODIFICAR: server/routes.ts
+
+PROBLEMA IDENTIFICADO:
+A rota /api/users/me retorna apenas os dados do Supabase Auth (que não tem o campo name). Precisa buscar da tabela public.users onde o nome está armazenado.
+
+CÓDIGO A MODIFICAR:
+
+ENCONTRE este bloco (linhas 21-24):
+```typescript
+app.get("/api/users/me", requireUser, (c: Context) => {
+  const user = c.get("user");
+  return c.json({ user });
+});
+```
+
+SUBSTITUA POR:
+```typescript
+app.get("/api/users/me", requireUser, async (c: Context) => {
+  const userId = c.get("userId") as string;
+  
+  console.log('👤 [GET /api/users/me] Buscando usuário:', userId);
+  
+  try {
+    // Buscar dados da tabela public.users
+    const userData = await storage.getUser(userId);
+    
+    if (!userData) {
+      console.log('⚠️ [GET /api/users/me] Usuário não encontrado na tabela users');
+      // Se não existe, pegar do auth e criar
+      const authUser = c.get("user");
+      const newUser = await storage.createUser({
+        id: userId,
+        email: authUser.email,
+        name: authUser.user_metadata?.name || authUser.email?.split('@')[0] || 'Usuário',
+      });
+      console.log('✅ [GET /api/users/me] Usuário criado:', newUser);
+      return c.json({ user: newUser });
+    }
+    
+    console.log('✅ [GET /api/users/me] Dados retornados:', userData);
+    return c.json({ user: userData });
+  } catch (error: any) {
+    console.error('❌ [GET /api/users/me] Erro:', error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+```
+
+MUDANÇAS:
+- Busca dados da tabela public.users usando storage.getUser()
+- Se usuário não existe na tabela, cria automaticamente
+- Retorna dados completos incluindo o campo name
+- Adiciona logs para debug
+
+BENEFÍCIOS:
+- Profile mostra o nome corretamente
+- Dados sincronizados entre auth e tabela users
+- Logs ajudam a identificar problemas
