@@ -1,11 +1,10 @@
-
-# PayFlow 💰
+# PagueFlow 💰
 
 Sistema inteligente de controle financeiro pessoal para gerenciar suas contas a pagar, nunca mais esquecer vencimentos e ter total visibilidade dos seus gastos.
 
 ## 📋 Sobre o Projeto
 
-PayFlow é uma aplicação web moderna e intuitiva desenvolvida para ajudar pessoas a organizarem suas finanças pessoais. Com interface responsiva e recursos avançados de visualização de dados, você mantém o controle total sobre suas despesas mensais.
+PagueFlow é uma aplicação web moderna e intuitiva desenvolvida para ajudar pessoas a organizarem suas finanças pessoais. Com interface responsiva e recursos avançados de visualização de dados, você mantém o controle total sobre suas despesas mensais.
 
 ## ✨ Funcionalidades
 
@@ -65,7 +64,7 @@ PayFlow é uma aplicação web moderna e intuitiva desenvolvida para ajudar pess
 1. **Clone o repositório**
 ```bash
 git clone <url-do-repositorio>
-cd payflow
+cd pagueflow
 ```
 
 2. **Instale as dependências**
@@ -102,12 +101,12 @@ Isso iniciará:
 ## 🗂️ Estrutura do Projeto
 
 ```
-payflow/
+pagueflow/
 ├── src/                    # Frontend React
-│   ├── components/         # Componentes reutilizáveis
-│   ├── pages/             # Páginas da aplicação
-│   ├── hooks/             # Custom hooks
-│   └── lib/               # Utilitários e configurações
+├── components/         # Componentes reutilizáveis
+├── pages/             # Páginas da aplicação
+├── hooks/             # Custom hooks
+└── lib/               # Utilitários e configurações
 ├── server/                # Backend Node.js
 │   ├── dev.ts            # Servidor de desenvolvimento
 │   └── supabase.ts       # Integração Supabase
