@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchWithAuth, useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { User as UserIcon, Mail, Calendar, Edit, LogOut } from "lucide-react";
+import { User as UserIcon, Mail, Calendar, Edit, LogOut, Settings } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { BottomNavigation } from "@/components/BottomNavigation";
 import { supabase } from "@/lib/supabase";
@@ -234,6 +234,28 @@ export default function Profile() {
                 <span className="font-mono text-xs">{user.id.substring(0, 8)}...</span>
               </div>
             </div>
+          </CardContent>
+        </Card>
+
+        <Card className="stat-card">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Settings className="w-5 h-5" />
+              Configurações
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="text-sm text-muted-foreground mb-4">
+              Personalize sua experiência e gerencie suas preferências
+            </div>
+            
+            <Button
+              onClick={() => setLocation("/settings")}
+              className="w-full btn-financial"
+            >
+              <Settings className="w-4 h-4 mr-2" />
+              Acessar Configurações
+            </Button>
           </CardContent>
         </Card>
       </div>
