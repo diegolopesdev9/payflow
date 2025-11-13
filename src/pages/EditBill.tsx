@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import type { Bill } from "@shared/schema";
-import { ArrowLeft, Save } from "lucide-react";
+import { ArrowLeft, Save, Plus } from "lucide-react";
 
 const EditBill = () => {
   const [match, params] = useRoute<{ id: string }>("/bills/:id/edit");
@@ -192,6 +192,16 @@ const EditBill = () => {
               <h1 className="text-2xl font-bold text-primary-foreground">Editar Conta</h1>
               <p className="text-primary-foreground/80">Atualize as informações da conta</p>
             </div>
+            {/* Link to manage categories */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setLocation("/categories")}
+              className="ml-auto text-primary-foreground hover:bg-primary-foreground/10"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Gerenciar Categorias
+            </Button>
           </div>
         </div>
       </div>
