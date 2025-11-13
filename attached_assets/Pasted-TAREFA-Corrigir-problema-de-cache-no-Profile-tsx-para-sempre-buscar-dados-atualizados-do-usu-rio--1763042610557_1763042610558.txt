@@ -1,0 +1,68 @@
+TAREFA: Corrigir problema de cache no Profile.tsx para sempre buscar dados atualizados do usuário.
+
+INSTRUÇÕES CRÍTICAS:
+- MODIFIQUE APENAS o arquivo src/pages/Profile.tsx
+- ALTERE as configurações do useQuery
+- FORCE refetch ao montar a página
+- Mostre o diff antes de aplicar
+
+ARQUIVO A MODIFICAR: src/pages/Profile.tsx
+
+PROBLEMA IDENTIFICADO:
+O perfil mostra "Não informado" no nome mesmo quando o usuário tem nome cadastrado no Supabase. Isso acontece porque o React Query está usando cache antigo.
+
+CÓDIGO A MODIFICAR:
+
+ENCONTRE este bloco (linhas 24-32):
+```typescript
+const { data: userData, isLoading: loading, isError: error } = useQuery({
+  queryKey: ['/api/users/me'],
+  queryFn: async () => {
+    console.log('📄 [Profile] Buscando dados do usuário...');
+    const res = await fetchWithAuth("/api/users/me");
+    if (!res.ok) {
+      throw new Error(`Erro ao carregar perfil (${res.status})`);
+    }
+    const data = await res.json();
+    const userData = data?.user ?? data ?? null;
+    console.log('✅ [Profile] Dados recebidos:', userData);
+    return userData;
+  },
+  enabled: !!authUser?.id,
+  staleTime: 5 * 60 * 1000,
+  refetchOnMount: false,
+  refetchOnWindowFocus: false,
+});
+```
+
+SUBSTITUA POR:
+```typescript
+const { data: userData, isLoading: loading, isError: error } = useQuery({
+  queryKey: ['/api/users/me'],
+  queryFn: async () => {
+    console.log('📄 [Profile] Buscando dados do usuário...');
+    const res = await fetchWithAuth("/api/users/me");
+    if (!res.ok) {
+      throw new Error(`Erro ao carregar perfil (${res.status})`);
+    }
+    const data = await res.json();
+    const userData = data?.user ?? data ?? null;
+    console.log('✅ [Profile] Dados recebidos:', userData);
+    return userData;
+  },
+  enabled: !!authUser?.id,
+  staleTime: 0,
+  refetchOnMount: true,
+  refetchOnWindowFocus: true,
+});
+```
+
+MUDANÇAS:
+- staleTime: 0 (sempre considera dados "velhos", força refetch)
+- refetchOnMount: true (busca dados ao entrar na página)
+- refetchOnWindowFocus: true (busca dados ao focar na aba)
+
+BENEFÍCIOS:
+- Sempre mostra dados atualizados do Supabase
+- Nome do usuário aparece corretamente
+- Perfil sincronizado em tempo real
