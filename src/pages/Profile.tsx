@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { User as UserIcon, Mail, Calendar, Edit, LogOut } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { BottomNavigation } from "@/components/BottomNavigation";
+import { supabase } from "@/lib/supabase";
 
 type UserProfile = {
   id: string;
@@ -20,6 +21,18 @@ export default function Profile() {
   const [location, setLocation] = useLocation();
   const { user: authUser, authenticated, logout } = useAuth();
   const { toast } = useToast();
+
+  // Verificar sessão do Supabase
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        console.log('❌ Sem sessão do Supabase, redirecionando...');
+        setLocation("/login");
+      }
+    };
+    checkSession();
+  }, [setLocation]);
 
   // ✅ useQuery SEM refetch automático
   const { data: userData, isLoading: loading, isError: error } = useQuery({
