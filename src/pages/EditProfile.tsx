@@ -53,20 +53,19 @@ const EditProfile = () => {
     onSuccess: (data) => {
       console.log('✅ [EditProfile] Atualização bem-sucedida, data:', data);
 
-      // ✅ ATUALIZAR CACHE MANUALMENTE com os dados do servidor
-      const userData = data?.user ?? data;
-      queryClient.setQueryData(['/api/users/me'], userData);
-      console.log('✅ [EditProfile] Cache atualizado com:', userData);
+      // ✅ INVALIDAR cache para forçar refetch
+      queryClient.invalidateQueries({ queryKey: ['/api/users/me'] });
+      console.log('✅ [EditProfile] Cache invalidado');
 
       toast({
         title: "Perfil atualizado!",
         description: "Suas informações foram salvas com sucesso.",
       });
 
-      // Redirecionar
+      // Redirecionar após cache ser invalidado
       setTimeout(() => {
         setLocation('/profile');
-      }, 100);
+      }, 200);
     },
     onError: (error: any) => {
       console.error('❌ [EditProfile] Erro:', error);
