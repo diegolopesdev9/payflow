@@ -36,9 +36,9 @@ export default function Profile() {
       return userData;
     },
     enabled: !!authUser?.id,
-    staleTime: 5 * 60 * 1000, // ✅ 5 minutos - considera dados "frescos"
-    refetchOnMount: false, // ✅ NÃO refetch ao montar
-    refetchOnWindowFocus: false, // ✅ NÃO refetch ao focar
+    staleTime: 0, // ✅ Sempre considera dados "velhos", força refetch
+    refetchOnMount: true, // ✅ Busca dados ao entrar na página
+    refetchOnWindowFocus: true, // ✅ Busca dados ao focar na aba
   });
 
   // Redirect if not authenticated
