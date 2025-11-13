@@ -26,13 +26,26 @@ export class SupabaseStorage implements IStorage {
   // ========== USER OPERATIONS ==========
 
   async getUser(id: string): Promise<User | null> {
-    const { data, error } = await supabase
+    console.log('👤 [getUser] Buscando usuário:', id);
+    
+    // ✅ USAR supabaseAdmin para bypassa RLS
+    const { data, error } = await supabaseAdmin
       .from('users')
       .select('*')
       .eq('id', id)
       .single();
 
-    if (error || !data) return null;
+    if (error) {
+      console.log('❌ [getUser] Erro:', error);
+      return null;
+    }
+    
+    if (!data) {
+      console.log('⚠️ [getUser] Usuário não encontrado');
+      return null;
+    }
+
+    console.log('✅ [getUser] Usuário encontrado:', data.name);
 
     return {
       id: data.id,
