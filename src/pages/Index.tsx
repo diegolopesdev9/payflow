@@ -11,7 +11,7 @@ const Index = () => {
         <div className="text-center mb-16">
           <div className="animate-fade-in">
             <h1 className="text-6xl font-bold text-primary-foreground mb-4">
-              PayFlow
+              PagueFlow
             </h1>
             <p className="text-xl text-primary-foreground/80 mb-8 max-w-2xl mx-auto">
               Controle suas contas a pagar de forma inteligente e nunca mais se
