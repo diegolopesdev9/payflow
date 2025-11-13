@@ -53,7 +53,7 @@ const Register = () => {
       } else if (data.user) {
         toast({
           title: "Conta criada com sucesso!",
-          description: `Bem-vindo ao PayFlow, ${name}!`,
+          description: `Bem-vindo ao PagueFlow, ${name}!`,
         });
 
         // Usar setLocation do wouter em vez de window.location.href
