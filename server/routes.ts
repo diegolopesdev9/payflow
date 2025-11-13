@@ -32,9 +32,34 @@ app.get("/api/whoami", requireUser, (c: Context) => {
   return c.json({ user });
 });
 
-app.get("/api/users/me", requireUser, (c: Context) => {
-  const user = c.get("user");
-  return c.json({ user });
+app.get("/api/users/me", requireUser, async (c: Context) => {
+  const userId = c.get("userId") as string;
+  
+  console.log('👤 [GET /api/users/me] Buscando usuário:', userId);
+  
+  try {
+    // Buscar dados da tabela public.users
+    const userData = await storage.getUser(userId);
+    
+    if (!userData) {
+      console.log('⚠️ [GET /api/users/me] Usuário não encontrado na tabela users');
+      // Se não existe, pegar do auth e criar
+      const authUser = c.get("user");
+      const newUser = await storage.createUser({
+        id: userId,
+        email: authUser.email,
+        name: authUser.user_metadata?.name || authUser.email?.split('@')[0] || 'Usuário',
+      });
+      console.log('✅ [GET /api/users/me] Usuário criado:', newUser);
+      return c.json({ user: newUser });
+    }
+    
+    console.log('✅ [GET /api/users/me] Dados retornados:', userData);
+    return c.json({ user: userData });
+  } catch (error: any) {
+    console.error('❌ [GET /api/users/me] Erro:', error);
+    return c.json({ error: error.message }, 500);
+  }
 });
 
 // Update user profile
