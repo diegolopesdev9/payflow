@@ -22,17 +22,19 @@ const convertSupabaseUser = (supabaseUser: SupabaseUser): User => {
   };
 };
 
-// Função auxiliar: tenta obter token com retry curto
-async function getTokenWithRetry(maxWaitMs = 1200): Promise<string | null> {
-  const started = Date.now();
-  while (Date.now() - started < maxWaitMs) {
-    const { data: { session } } = await supabase.auth.getSession();
-    const token = session?.access_token ?? null;
-    if (token) return token;
-    await new Promise(r => setTimeout(r, 150));
+// Função auxiliar: obtém token do Supabase
+async function getTokenWithRetry(): Promise<string | null> {
+  const { data: { session }, error } = await supabase.auth.getSession();
+  
+  if (error) {
+    console.error('[getTokenWithRetry] Erro ao obter sessão:', error);
+    return null;
   }
-  const { data: { session } } = await supabase.auth.getSession();
-  return session?.access_token ?? null;
+  
+  const token = session?.access_token ?? null;
+  console.log('[getTokenWithRetry] Token obtido:', token ? '✅ SIM' : '❌ NÃO');
+  
+  return token;
 }
 
 // Interceptor melhorado para adicionar token nas requisições
