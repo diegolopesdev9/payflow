@@ -1,0 +1,70 @@
+// Gastos por categoria (considera apenas pagas)
+if (bill.isPaid && bill.categoryId) {
+```
+
+Mas você tem R$ 450,00 em **PENDENTES**, por isso não aparece nenhuma categoria!
+
+---
+
+## 🔧 **SOLUÇÃO: Considerar TODAS as contas**
+
+### **PROMPT PARA CORRIGIR:**
+```
+TAREFA: Corrigir cálculo de gastos por categoria para incluir contas pagas E pendentes.
+
+INSTRUÇÕES CRÍTICAS:
+- MODIFIQUE APENAS o arquivo src/pages/Reports.tsx
+- ALTERE a lógica de categoriesData para incluir todas as contas
+- Mantenha o resto do código intacto
+- Mostre o diff antes de aplicar
+
+ARQUIVO A MODIFICAR: src/pages/Reports.tsx
+
+PROBLEMA IDENTIFICADO:
+O relatório só mostra gastos por categoria para contas PAGAS (isPaid: true). Quando o usuário tem apenas contas pendentes, aparece "Nenhum gasto registrado".
+
+CÓDIGO A MODIFICAR:
+
+ENCONTRE este bloco (linhas 78-88):
+```typescript
+// Gastos por categoria (considera apenas pagas)
+if (bill.isPaid && bill.categoryId) {
+  if (activeFilter === "mensal" && billMonth === currentMonth && billYear === currentYear) {
+    categoriesData[bill.categoryId] = (categoriesData[bill.categoryId] || 0) + amount;
+  } else if (activeFilter === "anual" && billYear === currentYear) {
+    categoriesData[bill.categoryId] = (categoriesData[bill.categoryId] || 0) + amount;
+  }
+}
+```
+
+SUBSTITUA POR:
+```typescript
+// Gastos por categoria (todas as contas com categoria)
+if (bill.categoryId) {
+  if (activeFilter === "mensal" && billMonth === currentMonth && billYear === currentYear) {
+    categoriesData[bill.categoryId] = (categoriesData[bill.categoryId] || 0) + amount;
+  } else if (activeFilter === "anual" && billYear === currentYear) {
+    categoriesData[bill.categoryId] = (categoriesData[bill.categoryId] || 0) + amount;
+  }
+}
+```
+
+TAMBÉM AJUSTE O CÁLCULO DA PORCENTAGEM (linha 96):
+ENCONTRE:
+```typescript
+percentage: monthlyPaid > 0 ? (value / monthlyPaid) * 100 : 0,
+```
+
+SUBSTITUA POR:
+```typescript
+percentage: (monthlyPaid + monthlyPending) > 0 ? (value / (monthlyPaid + monthlyPending)) * 100 : 0,
+```
+
+MUDANÇAS:
+1. Removeu condição `bill.isPaid` - agora considera TODAS as contas
+2. Ajustou cálculo de porcentagem para usar total (pago + pendente)
+
+BENEFÍCIOS:
+- Mostra gastos por categoria mesmo com contas pendentes
+- Visão completa dos gastos planejados
+- Relatório mais útil e preciso
