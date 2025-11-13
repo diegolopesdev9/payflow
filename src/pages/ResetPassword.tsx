@@ -85,7 +85,7 @@ const ResetPassword = () => {
     <div className="min-h-screen bg-gradient-to-br from-primary via-primary/95 to-secondary flex items-center justify-center p-4">
       <div className="w-full max-w-md animate-fade-in">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-primary-foreground mb-2">PayFlow</h1>
+          <h1 className="text-4xl font-bold text-primary-foreground mb-2">PagueFlow</h1>
         </div>
 
         <Card className="fin-card">
