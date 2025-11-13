@@ -41,7 +41,7 @@ const Login = () => {
         // Handle successful login
         toast({
           title: "Login realizado com sucesso!",
-          description: "Bem-vindo de volta ao PayFlow.",
+          description: "Bem-vindo de volta ao PagueFlow.",
         });
 
         // Navigate after a short delay to allow toast to be visible
@@ -68,7 +68,7 @@ const Login = () => {
       <div className="w-full max-w-md animate-fade-in">
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-primary-foreground mb-2">
-            PayFlow
+            PagueFlow
           </h1>
           <p className="text-primary-foreground/80">
             Controle suas contas de forma inteligente
