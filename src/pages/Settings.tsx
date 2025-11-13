@@ -18,7 +18,9 @@ import {
   Home,
   CreditCard,
   TrendingUp,
-  User
+  User,
+  Palette,
+  FolderOpen
 } from "lucide-react";
 
 const Settings = () => {
@@ -72,6 +74,26 @@ const Settings = () => {
                 onCheckedChange={setDarkMode}
               />
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Personalização */}
+        <Card className="fin-card">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Palette className="w-5 h-5" />
+              Personalização
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Button 
+              variant="outline" 
+              className="w-full justify-start"
+              onClick={() => setLocation("/categories")}
+            >
+              <FolderOpen className="w-4 h-4 mr-2" />
+              Gerenciar Categorias
+            </Button>
           </CardContent>
         </Card>
 
