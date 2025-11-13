@@ -1,0 +1,67 @@
+TAREFA: Melhorar atualização de cache no EditProfile.tsx para garantir sincronização.
+
+INSTRUÇÕES CRÍTICAS:
+- MODIFIQUE APENAS o arquivo src/pages/EditProfile.tsx
+- USE invalidateQueries ao invés de apenas setQueryData
+- Garanta que o Profile sempre mostre dados atualizados
+- Mostre o diff antes de aplicar
+
+ARQUIVO A MODIFICAR: src/pages/EditProfile.tsx
+
+PROBLEMA IDENTIFICADO:
+Após editar perfil, o nome não aparece atualizado no Profile. O código atual usa apenas setQueryData, mas precisa invalidar o cache para forçar refetch.
+
+CÓDIGO A MODIFICAR:
+
+ENCONTRE este bloco (linhas 54-62):
+```typescript
+onSuccess: (data) => {
+  console.log('✅ [EditProfile] Atualização bem-sucedida, data:', data);
+
+  // ✅ ATUALIZAR CACHE MANUALMENTE com os dados do servidor
+  const userData = data?.user ?? data;
+  queryClient.setQueryData(['/api/users/me'], userData);
+  console.log('✅ [EditProfile] Cache atualizado com:', userData);
+
+  toast({
+    title: "Perfil atualizado!",
+    description: "Suas informações foram salvas com sucesso.",
+  });
+
+  // Redirecionar
+  setTimeout(() => {
+    setLocation('/profile');
+  }, 100);
+},
+```
+
+SUBSTITUA POR:
+```typescript
+onSuccess: (data) => {
+  console.log('✅ [EditProfile] Atualização bem-sucedida, data:', data);
+
+  // ✅ INVALIDAR cache para forçar refetch
+  queryClient.invalidateQueries({ queryKey: ['/api/users/me'] });
+  console.log('✅ [EditProfile] Cache invalidado');
+
+  toast({
+    title: "Perfil atualizado!",
+    description: "Suas informações foram salvas com sucesso.",
+  });
+
+  // Redirecionar após cache ser invalidado
+  setTimeout(() => {
+    setLocation('/profile');
+  }, 200);
+},
+```
+
+MUDANÇAS:
+- Substituiu setQueryData por invalidateQueries
+- invalidateQueries força uma nova busca dos dados
+- Aumentou timeout para 200ms para dar tempo de invalidar
+
+BENEFÍCIOS:
+- Profile sempre mostra dados atualizados
+- Cache sincronizado automaticamente
+- Funciona perfeitamente com o Profile corrigido
