@@ -105,25 +105,32 @@ const Dashboard = () => {
     if (!bills || bills.length === 0) return Array(6).fill(0);
 
     const today = new Date();
-    const expenses = Array(30).fill(0);
+    const currentMonth = today.getMonth();
+    const currentYear = today.getFullYear();
+    
+    // Calcular número de dias no mês atual
+    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+    const expenses = Array(daysInMonth).fill(0);
 
     bills.forEach((bill: any) => {
       if (!bill.dueDate || !bill.amount) return;
 
       const billDate = new Date(bill.dueDate);
-      const diffTime = today.getTime() - billDate.getTime();
-      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-
-      if (diffDays >= 0 && diffDays < 30) {
-        const index = 29 - diffDays;
-        expenses[index] += bill.amount / 100;
+      
+      // Verificar se é do mês atual
+      if (billDate.getMonth() === currentMonth && billDate.getFullYear() === currentYear) {
+        const dayOfMonth = billDate.getDate() - 1; // 0-indexed
+        expenses[dayOfMonth] += bill.amount / 100;
       }
     });
 
+    // Agrupar em 6 períodos de ~5 dias cada
     const grouped = [];
+    const groupSize = Math.ceil(daysInMonth / 6);
+    
     for (let i = 0; i < 6; i++) {
-      const start = i * 5;
-      const end = start + 5;
+      const start = i * groupSize;
+      const end = Math.min(start + groupSize, daysInMonth);
       const sum = expenses.slice(start, end).reduce((acc, val) => acc + val, 0);
       grouped.push(sum);
     }
