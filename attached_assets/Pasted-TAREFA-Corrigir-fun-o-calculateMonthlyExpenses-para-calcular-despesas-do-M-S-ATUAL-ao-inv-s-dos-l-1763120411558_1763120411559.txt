@@ -1,0 +1,98 @@
+TAREFA: Corrigir função calculateMonthlyExpenses para calcular despesas do MÊS ATUAL ao invés dos últimos 30 dias.
+
+INSTRUÇÕES CRÍTICAS:
+- MODIFIQUE APENAS o arquivo src/pages/Dashboard.tsx
+- ALTERE a função calculateMonthlyExpenses (linhas 104-132)
+- Calcule despesas do dia 1 até o último dia do mês atual
+- Mostre o diff antes de aplicar
+
+ARQUIVO A MODIFICAR: src/pages/Dashboard.tsx
+
+PROBLEMA IDENTIFICADO:
+A função calcula os últimos 30 dias a partir de hoje, não o mês atual completo. Se hoje é dia 14, só mostra de 15/out até 14/nov, ao invés de todo novembro.
+
+CÓDIGO A MODIFICAR:
+
+ENCONTRE a função calculateMonthlyExpenses (linhas 104-132):
+```typescript
+const calculateMonthlyExpenses = () => {
+  if (!bills || bills.length === 0) return Array(6).fill(0);
+
+  const today = new Date();
+  const expenses = Array(30).fill(0);
+
+  bills.forEach((bill: any) => {
+    if (!bill.dueDate || !bill.amount) return;
+
+    const billDate = new Date(bill.dueDate);
+    const diffTime = today.getTime() - billDate.getTime();
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays >= 0 && diffDays < 30) {
+      const index = 29 - diffDays;
+      expenses[index] += bill.amount / 100;
+    }
+  });
+
+  const grouped = [];
+  for (let i = 0; i < 6; i++) {
+    const start = i * 5;
+    const end = start + 5;
+    const sum = expenses.slice(start, end).reduce((acc, val) => acc + val, 0);
+    grouped.push(sum);
+  }
+
+  return grouped;
+};
+```
+
+SUBSTITUA POR:
+```typescript
+const calculateMonthlyExpenses = () => {
+  if (!bills || bills.length === 0) return Array(6).fill(0);
+
+  const today = new Date();
+  const currentMonth = today.getMonth();
+  const currentYear = today.getFullYear();
+  
+  // Calcular número de dias no mês atual
+  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+  const expenses = Array(daysInMonth).fill(0);
+
+  bills.forEach((bill: any) => {
+    if (!bill.dueDate || !bill.amount) return;
+
+    const billDate = new Date(bill.dueDate);
+    
+    // Verificar se é do mês atual
+    if (billDate.getMonth() === currentMonth && billDate.getFullYear() === currentYear) {
+      const dayOfMonth = billDate.getDate() - 1; // 0-indexed
+      expenses[dayOfMonth] += bill.amount / 100;
+    }
+  });
+
+  // Agrupar em 6 períodos de ~5 dias cada
+  const grouped = [];
+  const groupSize = Math.ceil(daysInMonth / 6);
+  
+  for (let i = 0; i < 6; i++) {
+    const start = i * groupSize;
+    const end = Math.min(start + groupSize, daysInMonth);
+    const sum = expenses.slice(start, end).reduce((acc, val) => acc + val, 0);
+    grouped.push(sum);
+  }
+
+  return grouped;
+};
+```
+
+MUDANÇAS:
+- Agora verifica se bill é do MÊS ATUAL (não últimos 30 dias)
+- Usa número real de dias do mês (28, 29, 30 ou 31)
+- Agrupa dinamicamente baseado no tamanho do mês
+- Considera ano também (não confunde novembro/2024 com novembro/2023)
+
+BENEFÍCIOS:
+- Mostra todas as despesas do mês atual
+- Funciona corretamente em qualquer dia do mês
+- Respeita meses com diferentes quantidades de dias
