@@ -191,7 +191,24 @@ const Dashboard = () => {
   const currentTotal = currentExpenses.reduce((sum, val) => sum + val, 0);
   const currentAverage = currentTotal > 0 ? currentTotal / currentExpenses.length : 0;
 
-  const currentLabels = periodFilter === 'week' ? ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'] :
+  // Calcular dias da semana para labels
+  const getWeekLabels = () => {
+    const today = new Date();
+    const dayNames = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+    const labels = [];
+    
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date(today);
+      date.setDate(date.getDate() - i);
+      const dayName = dayNames[date.getDay()];
+      const dayNumber = date.getDate();
+      labels.push(`${dayName}\n${dayNumber}`);
+    }
+    
+    return labels;
+  };
+
+  const currentLabels = periodFilter === 'week' ? getWeekLabels() :
                         periodFilter === 'month' ? ['Dia 1-5', 'Dia 6-10', 'Dia 11-15', 'Dia 16-20', 'Dia 21-25', 'Dia 26-30'] :
                         ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 
@@ -501,7 +518,9 @@ const Dashboard = () => {
                           <div className="w-full h-2 bg-gray-300 rounded" />
                         )}
                       </div>
-                      <span className="text-xs text-gray-600 font-medium">{currentLabels[index]}</span>
+                      <span className="text-xs text-gray-600 font-medium whitespace-pre-line text-center">
+                        {currentLabels[index]}
+                      </span>
                     </div>
                   );
                 })}
