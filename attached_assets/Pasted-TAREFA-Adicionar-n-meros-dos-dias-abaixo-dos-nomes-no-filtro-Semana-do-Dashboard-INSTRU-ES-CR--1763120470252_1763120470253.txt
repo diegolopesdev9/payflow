@@ -1,0 +1,66 @@
+TAREFA: Adicionar números dos dias abaixo dos nomes no filtro Semana do Dashboard.
+
+INSTRUÇÕES CRÍTICAS:
+- MODIFIQUE APENAS o arquivo src/pages/Dashboard.tsx
+- ALTERE a linha 187 (currentLabels)
+- Adicione lógica para calcular dias da semana
+- Mostre o diff antes de aplicar
+
+ARQUIVO A MODIFICAR: src/pages/Dashboard.tsx
+
+OBJETIVO: Mostrar "Dom\n15" ao invés de apenas "Dom"
+
+CÓDIGO A MODIFICAR:
+
+ENCONTRE (linhas 187-189):
+```typescript
+const currentLabels = periodFilter === 'week' ? ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'] :
+                      periodFilter === 'month' ? ['Dia 1-5', 'Dia 6-10', 'Dia 11-15', 'Dia 16-20', 'Dia 21-25', 'Dia 26-30'] :
+                      ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+```
+
+ADICIONE ANTES DESTA LINHA (depois da linha 186):
+```typescript
+// Calcular dias da semana para labels
+const getWeekLabels = () => {
+  const today = new Date();
+  const dayNames = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+  const labels = [];
+  
+  for (let i = 6; i >= 0; i--) {
+    const date = new Date(today);
+    date.setDate(date.getDate() - i);
+    const dayName = dayNames[date.getDay()];
+    const dayNumber = date.getDate();
+    labels.push(`${dayName}\n${dayNumber}`);
+  }
+  
+  return labels;
+};
+
+const currentLabels = periodFilter === 'week' ? getWeekLabels() :
+                      periodFilter === 'month' ? ['Dia 1-5', 'Dia 6-10', 'Dia 11-15', 'Dia 16-20', 'Dia 21-25', 'Dia 26-30'] :
+                      ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+```
+
+E ENCONTRE a linha 497 (onde renderiza o label):
+```typescript
+<span className="text-xs text-gray-600 font-medium">{currentLabels[index]}</span>
+```
+
+SUBSTITUA POR:
+```typescript
+<span className="text-xs text-gray-600 font-medium whitespace-pre-line text-center">
+  {currentLabels[index]}
+</span>
+```
+
+MUDANÇAS:
+- Nova função getWeekLabels() calcula os últimos 7 dias
+- Labels agora mostram "Dom\n15" (nome + número)
+- whitespace-pre-line permite quebra de linha no \n
+- text-center centraliza o texto
+
+RESULTADO:
+Dom    Seg    Ter
+15     16     17
