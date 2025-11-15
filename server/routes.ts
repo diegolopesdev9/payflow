@@ -368,4 +368,64 @@ app.delete("/api/admin/users/:id", requireAdmin, async (c: Context) => {
   }
 });
 
+// Atualizar status do usuário
+app.put("/api/admin/users/:id/status", requireAdmin, async (c: Context) => {
+  const userId = c.req.param('id');
+  const { status } = await c.req.json();
+  console.log('🔄 PUT /api/admin/users/:id/status', userId, status);
+
+  if (!['active', 'suspended'].includes(status)) {
+    return c.json({ error: 'Status inválido' }, 400);
+  }
+
+  try {
+    const updated = await storage.updateUserStatus(userId, status);
+    if (!updated) {
+      return c.json({ error: 'Usuário não encontrado' }, 404);
+    }
+    return c.json({ message: 'Status atualizado com sucesso', status });
+  } catch (error: any) {
+    console.error('❌ Erro ao atualizar status:', error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Buscar atividade do usuário
+app.get("/api/admin/users/:id/activity", requireAdmin, async (c: Context) => {
+  const userId = c.req.param('id');
+  console.log('📊 GET /api/admin/users/:id/activity', userId);
+
+  try {
+    const activity = await storage.getUserActivity(userId);
+    return c.json(activity);
+  } catch (error: any) {
+    console.error('❌ Erro ao buscar atividade:', error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Enviar email de reset de senha
+app.post("/api/admin/users/:id/reset-password", requireAdmin, async (c: Context) => {
+  const userId = c.req.param('id');
+  console.log('📧 POST /api/admin/users/:id/reset-password', userId);
+
+  try {
+    // Buscar email do usuário
+    const userDetails = await storage.getUserDetails(userId);
+    if (!userDetails) {
+      return c.json({ error: 'Usuário não encontrado' }, 404);
+    }
+
+    const sent = await storage.sendPasswordResetEmail(userDetails.email);
+    if (!sent) {
+      return c.json({ error: 'Erro ao enviar email' }, 500);
+    }
+
+    return c.json({ message: 'Email de reset enviado com sucesso' });
+  } catch (error: any) {
+    console.error('❌ Erro ao enviar reset:', error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
 export default app;
