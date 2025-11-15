@@ -20,11 +20,15 @@ import {
   TrendingUp,
   User,
   Palette,
-  FolderOpen
+  FolderOpen,
+  Settings as SettingsIcon
 } from "lucide-react";
+import { useAuth } from "@/lib/auth";
+
 
 const Settings = () => {
   const [location, setLocation] = useLocation();
+  const { isAdmin } = useAuth();
   const [darkMode, setDarkMode] = useState(false);
   const [notifications, setNotifications] = useState(true);
   const [emailNotifications, setEmailNotifications] = useState(true);
@@ -118,9 +122,9 @@ const Settings = () => {
                 onCheckedChange={setNotifications}
               />
             </div>
-            
+
             <Separator />
-            
+
             <div className="flex items-center justify-between">
               <div className="space-y-1">
                 <Label className="text-sm font-medium">Notificações por E-mail</Label>
@@ -133,7 +137,7 @@ const Settings = () => {
                 onCheckedChange={setEmailNotifications}
               />
             </div>
-            
+
             <div className="flex items-center justify-between">
               <div className="space-y-1">
                 <Label className="text-sm font-medium">Notificações Push</Label>
@@ -166,7 +170,7 @@ const Settings = () => {
               <User className="w-4 h-4 mr-2" />
               Alterar Senha
             </Button>
-            
+
             <Button 
               variant="outline" 
               className="w-full justify-start"
@@ -193,7 +197,7 @@ const Settings = () => {
               <Download className="w-4 h-4 mr-2" />
               Exportar Dados
             </Button>
-            
+
             <Button 
               variant="outline" 
               className="w-full justify-start text-destructive border-destructive hover:bg-destructive/10"
@@ -204,8 +208,39 @@ const Settings = () => {
           </CardContent>
         </Card>
 
+        {/* Admin Area - Só aparece para admin */}
+        {isAdmin && (
+          <Card className="fin-card border-2 border-yellow-500/50 bg-yellow-50/50">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-yellow-900">
+                <Shield className="w-5 h-5 text-yellow-600" />
+                Área Administrativa
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <p className="text-sm text-yellow-800 mb-4">
+                Acesso exclusivo ao painel de gerenciamento do sistema
+              </p>
+              <Button 
+                variant="outline" 
+                className="w-full justify-start bg-yellow-600 text-white hover:bg-yellow-700 border-yellow-600"
+                onClick={() => setLocation("/admin/dashboard")}
+              >
+                <Shield className="w-4 h-4 mr-2" />
+                Acessar Painel Admin
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Account Actions */}
-        <Card className="fin-card">
+        <Card className="fin-card border-2 border-destructive/50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-destructive">
+              <LogOut className="w-5 h-5" />
+              Ações da Conta
+            </CardTitle>
+          </CardHeader>
           <CardContent className="pt-6 space-y-3">
             <Button 
               variant="outline" 
