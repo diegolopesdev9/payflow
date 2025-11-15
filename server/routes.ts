@@ -428,4 +428,36 @@ app.post("/api/admin/users/:id/reset-password", requireAdmin, async (c: Context)
   }
 });
 
+// Estatísticas agregadas
+app.get("/api/admin/stats/aggregated", requireAdmin, async (c: Context) => {
+  console.log('📊 GET /api/admin/stats/aggregated');
+
+  try {
+    const stats = await storage.getAggregatedStats();
+    return c.json(stats);
+  } catch (error: any) {
+    console.error('❌ Erro ao buscar stats agregadas:', error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Exportar dados de usuários
+app.get("/api/admin/export/users", requireAdmin, async (c: Context) => {
+  console.log('📥 GET /api/admin/export/users');
+
+  try {
+    const users = await storage.exportUsersData();
+    
+    // Retornar como JSON (frontend vai converter para CSV)
+    return c.json({
+      data: users,
+      exportedAt: new Date().toISOString(),
+      totalRecords: users.length,
+    });
+  } catch (error: any) {
+    console.error('❌ Erro ao exportar usuários:', error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
 export default app;
