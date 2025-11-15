@@ -27,7 +27,7 @@ export class SupabaseStorage implements IStorage {
 
   async getUser(id: string): Promise<User | null> {
     console.log('👤 [getUser] Buscando usuário:', id);
-    
+
     // ✅ USAR supabaseAdmin para bypassa RLS
     const { data, error } = await supabaseAdmin
       .from('users')
@@ -39,7 +39,7 @@ export class SupabaseStorage implements IStorage {
       console.log('❌ [getUser] Erro:', error);
       return null;
     }
-    
+
     if (!data) {
       console.log('⚠️ [getUser] Usuário não encontrado');
       return null;
