@@ -490,6 +490,105 @@ export class SupabaseStorage implements IStorage {
       throw error;
     }
   }
+
+  async updateUserStatus(userId: string, status: 'active' | 'suspended'): Promise<boolean> {
+    console.log('🔄 [updateUserStatus] Alterando status:', userId, '→', status);
+
+    try {
+      const { error } = await supabaseAdmin
+        .from('users')
+        .update({ status })
+        .eq('id', userId);
+
+      if (error) throw error;
+
+      console.log('✅ [updateUserStatus] Status atualizado com sucesso');
+      return true;
+    } catch (error: any) {
+      console.error('❌ [updateUserStatus] Erro:', error);
+      throw error;
+    }
+  }
+
+  async getUserActivity(userId: string): Promise<any> {
+    console.log('📊 [getUserActivity] Buscando atividade do usuário:', userId);
+
+    try {
+      // Buscar dados do usuário
+      const { data: user, error: userError } = await supabaseAdmin
+        .from('users')
+        .select('created_at, status')
+        .eq('id', userId)
+        .single();
+
+      if (userError) throw userError;
+
+      // Contar contas por status
+      const { data: bills } = await supabaseAdmin
+        .from('bills')
+        .select('is_paid, created_at, amount')
+        .eq('user_id', userId);
+
+      const paidBills = bills?.filter(b => b.is_paid).length || 0;
+      const unpaidBills = bills?.filter(b => !b.is_paid).length || 0;
+      const totalAmount = bills?.reduce((sum, b) => sum + (b.amount / 100), 0) || 0;
+
+      // Buscar última conta criada
+      const { data: lastBill } = await supabaseAdmin
+        .from('bills')
+        .select('created_at')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      // Contar categorias
+      const { count: categoryCount } = await supabaseAdmin
+        .from('categories')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', userId);
+
+      console.log('✅ [getUserActivity] Atividade:', {
+        totalBills: bills?.length || 0,
+        paidBills,
+        unpaidBills
+      });
+
+      return {
+        accountStatus: user.status || 'active',
+        memberSince: user.created_at,
+        lastActivity: lastBill?.created_at || user.created_at,
+        totalBills: bills?.length || 0,
+        paidBills,
+        unpaidBills,
+        totalAmount: parseFloat(totalAmount.toFixed(2)),
+        categoryCount: categoryCount || 0,
+      };
+    } catch (error: any) {
+      console.error('❌ [getUserActivity] Erro:', error);
+      throw error;
+    }
+  }
+
+  async sendPasswordResetEmail(email: string): Promise<boolean> {
+    console.log('📧 [sendPasswordResetEmail] Enviando email para:', email);
+
+    try {
+      // Usar Supabase Auth para enviar email de reset
+      const { error } = await supabaseAdmin.auth.admin.generateLink({
+        type: 'recovery',
+        email,
+      });
+
+      if (error) throw error;
+
+      console.log('✅ [sendPasswordResetEmail] Email enviado com sucesso');
+      return true;
+    } catch (error: any) {
+      console.error('❌ [sendPasswordResetEmail] Erro:', error);
+      throw error;
+    }
+  }
 }
 
 export const supabaseStorage = new SupabaseStorage();
