@@ -7,9 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
-import { AlertCircle } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth"; // Import useAuth
-import { Shield } from "lucide-react"; // Import Shield for the icon
+import { useAuth } from "@/lib/auth";
+import { AlertCircle, Shield } from "lucide-react";
 
 
 const Login = () => {
