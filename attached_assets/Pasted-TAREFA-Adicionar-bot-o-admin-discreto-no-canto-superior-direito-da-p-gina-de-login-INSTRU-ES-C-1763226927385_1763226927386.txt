@@ -1,0 +1,103 @@
+TAREFA: Adicionar botão admin discreto no canto superior direito da página de login.
+
+INSTRUÇÕES CRÍTICAS:
+- MODIFIQUE APENAS o arquivo src/pages/Login.tsx
+- SIGA AS ALTERAÇÕES EXATAS abaixo
+- Mostre o diff antes de aplicar
+
+ARQUIVO A MODIFICAR: src/pages/Login.tsx
+
+ALTERAÇÃO 1 - IMPORTS (linha 1-11):
+
+ENCONTRE:
+```typescript
+import { useState } from "react";
+import { Link, useLocation } from "wouter";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/lib/supabase";
+import { AlertCircle } from "lucide-react";
+```
+
+SUBSTITUA POR:
+```typescript
+import { useState } from "react";
+import { Link, useLocation } from "wouter";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/lib/auth";
+import { AlertCircle, Shield } from "lucide-react";
+```
+
+ALTERAÇÃO 2 - ADICIONAR useAuth (linha 15):
+
+ENCONTRE:
+```typescript
+const Login = () => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+  const [, setLocation] = useLocation();
+  const [error, setError] = useState("");
+```
+
+SUBSTITUA POR:
+```typescript
+const Login = () => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+  const [, setLocation] = useLocation();
+  const [error, setError] = useState("");
+  const { isAdmin } = useAuth();
+```
+
+ALTERAÇÃO 3 - ADICIONAR BOTÃO ADMIN (linha 68):
+
+ENCONTRE:
+```typescript
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-primary via-primary/95 to-secondary flex items-center justify-center p-4">
+      <div className="w-full max-w-md animate-fade-in">
+```
+
+SUBSTITUA POR:
+```typescript
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-primary via-primary/95 to-secondary flex items-center justify-center p-4">
+      {/* Botão Admin Discreto */}
+      {isAdmin && (
+        <div className="absolute top-4 right-4 z-10">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setLocation("/admin/dashboard")}
+            className="text-primary-foreground/60 hover:text-primary-foreground hover:bg-primary-foreground/10"
+          >
+            <Shield className="w-4 h-4 mr-2" />
+            Admin
+          </Button>
+        </div>
+      )}
+
+      <div className="w-full max-w-md animate-fade-in">
+```
+
+RESUMO DAS MUDANÇAS:
+1. Importa useAuth e Shield
+2. Adiciona const { isAdmin } = useAuth()
+3. Adiciona botão no topo com position absolute
+4. Botão só aparece se isAdmin = true
+
+IMPORTANTE: O botão só aparece DEPOIS de fazer login com o email admin (diegolopes.dev9@gmail.com)
