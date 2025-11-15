@@ -1,0 +1,103 @@
+TAREFA: Adicionar badge de status na tabela de usuários do AdminDashboard.
+
+INSTRUÇÕES CRÍTICAS:
+- MODIFIQUE APENAS o arquivo src/pages/admin/AdminDashboard.tsx
+- ADICIONE coluna de status na tabela
+- ADICIONE badge visual (verde/vermelho)
+- Mostre o diff antes de aplicar
+
+ARQUIVO A MODIFICAR: src/pages/admin/AdminDashboard.tsx
+
+ALTERAÇÃO 1 - ATUALIZAR QUERY DE USUÁRIOS:
+
+ENCONTRE a query de usuários (linha ~62):
+```typescript
+const { data: users = [], isLoading: usersLoading } = useQuery({
+  queryKey: ['/api/admin/users'],
+  queryFn: async () => {
+    const response = await fetchWithAuth('/api/admin/users');
+    if (!response.ok) throw new Error('Failed to fetch users');
+    return response.json();
+  },
+  enabled: authenticated === true && isAdmin,
+});
+```
+
+NÃO PRECISA ALTERAR - mas certifique-se que está assim.
+
+ALTERAÇÃO 2 - ATUALIZAR TABELA (adicionar coluna Status):
+
+ENCONTRE o <thead> da tabela (linha ~250):
+```typescript
+<thead>
+  <tr className="border-b">
+    <th className="text-left p-3 text-sm font-medium text-gray-600">Nome</th>
+    <th className="text-left p-3 text-sm font-medium text-gray-600">Email</th>
+    <th className="text-left p-3 text-sm font-medium text-gray-600">Cadastro</th>
+    <th className="text-left p-3 text-sm font-medium text-gray-600">Contas</th>
+    <th className="text-right p-3 text-sm font-medium text-gray-600">Ações</th>
+  </tr>
+</thead>
+```
+
+SUBSTITUA POR:
+```typescript
+<thead>
+  <tr className="border-b">
+    <th className="text-left p-3 text-sm font-medium text-gray-600">Nome</th>
+    <th className="text-left p-3 text-sm font-medium text-gray-600">Email</th>
+    <th className="text-left p-3 text-sm font-medium text-gray-600">Status</th>
+    <th className="text-left p-3 text-sm font-medium text-gray-600">Cadastro</th>
+    <th className="text-left p-3 text-sm font-medium text-gray-600">Contas</th>
+    <th className="text-right p-3 text-sm font-medium text-gray-600">Ações</th>
+  </tr>
+</thead>
+```
+
+ALTERAÇÃO 3 - ADICIONAR BADGE DE STATUS NO <tbody>:
+
+ENCONTRE o mapeamento de usuários (linha ~270):
+```typescript
+filteredUsers.map((u: any) => (
+  <tr key={u.id} className="border-b hover:bg-gray-50">
+    <td className="p-3">
+      <span className="font-medium text-gray-900">{u.name}</span>
+    </td>
+    <td className="p-3 text-gray-600">{u.email}</td>
+    <td className="p-3 text-gray-600">{formatDate(u.createdAt)}</td>
+    <td className="p-3">
+      <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
+        {u.billCount} contas
+      </span>
+    </td>
+```
+
+ADICIONE A COLUNA STATUS DEPOIS DO EMAIL:
+```typescript
+filteredUsers.map((u: any) => (
+  <tr key={u.id} className="border-b hover:bg-gray-50">
+    <td className="p-3">
+      <span className="font-medium text-gray-900">{u.name}</span>
+    </td>
+    <td className="p-3 text-gray-600">{u.email}</td>
+    <td className="p-3">
+      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+        u.status === 'suspended' 
+          ? 'bg-red-100 text-red-700' 
+          : 'bg-green-100 text-green-700'
+      }`}>
+        {u.status === 'suspended' ? '🔴 Suspenso' : '🟢 Ativo'}
+      </span>
+    </td>
+    <td className="p-3 text-gray-600">{formatDate(u.createdAt)}</td>
+    <td className="p-3">
+      <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
+        {u.billCount} contas
+      </span>
+    </td>
+```
+
+BENEFÍCIOS:
+- Badge verde para usuários ativos
+- Badge vermelho para usuários suspensos
+- Visual claro do status de cada usuário
