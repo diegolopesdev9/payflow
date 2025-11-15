@@ -22,6 +22,15 @@ const convertSupabaseUser = (supabaseUser: SupabaseUser): User => {
   };
 };
 
+// Lista de emails admin
+const ADMIN_EMAILS = ['diegolopes.dev9@gmail.com'];
+
+// Verificar se usuário é admin
+export const isAdmin = (user: User | null): boolean => {
+  if (!user || !user.email) return false;
+  return ADMIN_EMAILS.includes(user.email);
+};
+
 // Função auxiliar: obtém token do Supabase
 async function getTokenWithRetry(): Promise<string | null> {
   const { data: { session }, error } = await supabase.auth.getSession();
@@ -126,5 +135,6 @@ export const useAuth = () => {
     authenticated,
     loading,
     logout,
+    isAdmin: isAdmin(user),
   };
 };
