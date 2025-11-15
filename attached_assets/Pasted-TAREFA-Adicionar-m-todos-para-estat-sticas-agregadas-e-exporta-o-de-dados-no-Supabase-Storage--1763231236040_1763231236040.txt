@@ -1,0 +1,135 @@
+TAREFA: Adicionar métodos para estatísticas agregadas e exportação de dados no Supabase Storage.
+
+INSTRUÇÕES CRÍTICAS:
+- MODIFIQUE APENAS o arquivo server/supabase.ts
+- ADICIONE novos métodos na seção ADMIN OPERATIONS
+- Use supabaseAdmin para bypassa RLS
+- Mostre o diff antes de aplicar
+
+ARQUIVO A MODIFICAR: server/supabase.ts
+
+CÓDIGO A ADICIONAR:
+
+ADICIONE NO FINAL DA SEÇÃO // ========== ADMIN OPERATIONS ==========:
+```typescript
+  async getAggregatedStats(): Promise<any> {
+    console.log('📊 [getAggregatedStats] Buscando estatísticas agregadas');
+
+    try {
+      const now = new Date();
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      const sixtyDaysAgo = new Date();
+      sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+
+      // Total de usuários
+      const { count: totalUsers } = await supabaseAdmin
+        .from('users')
+        .select('*', { count: 'exact', head: true });
+
+      // Usuários ativos (últimos 30 dias)
+      const { count: activeUsersLast30 } = await supabaseAdmin
+        .from('users')
+        .select('*', { count: 'exact', head: true })
+        .gte('created_at', thirtyDaysAgo.toISOString());
+
+      // Usuários ativos (30-60 dias atrás) para comparação
+      const { count: activeUsersLast60 } = await supabaseAdmin
+        .from('users')
+        .select('*', { count: 'exact', head: true })
+        .gte('created_at', sixtyDaysAgo.toISOString())
+        .lt('created_at', thirtyDaysAgo.toISOString());
+
+      // Calcular taxa de crescimento
+      const growthRate = activeUsersLast60 && activeUsersLast60 > 0
+        ? ((activeUsersLast30 || 0) - activeUsersLast60) / activeUsersLast60 * 100
+        : 0;
+
+      // Usuários suspensos
+      const { count: suspendedUsers } = await supabaseAdmin
+        .from('users')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'suspended');
+
+      // Tempo médio desde cadastro (em dias)
+      const { data: allUsers } = await supabaseAdmin
+        .from('users')
+        .select('created_at');
+
+      let avgDaysSinceRegistration = 0;
+      if (allUsers && allUsers.length > 0) {
+        const totalDays = allUsers.reduce((sum, user) => {
+          const createdAt = new Date(user.created_at);
+          const diffTime = now.getTime() - createdAt.getTime();
+          const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+          return sum + diffDays;
+        }, 0);
+        avgDaysSinceRegistration = Math.round(totalDays / allUsers.length);
+      }
+
+      // Taxa de retenção (usuários que ainda estão ativos após 30 dias)
+      const retentionRate = totalUsers && totalUsers > 0
+        ? ((totalUsers - (suspendedUsers || 0)) / totalUsers) * 100
+        : 100;
+
+      console.log('✅ [getAggregatedStats] Stats agregadas calculadas');
+
+      return {
+        totalUsers: totalUsers || 0,
+        activeUsers: (totalUsers || 0) - (suspendedUsers || 0),
+        suspendedUsers: suspendedUsers || 0,
+        newUsersLast30Days: activeUsersLast30 || 0,
+        growthRate: parseFloat(growthRate.toFixed(1)),
+        retentionRate: parseFloat(retentionRate.toFixed(1)),
+        avgDaysSinceRegistration,
+      };
+    } catch (error: any) {
+      console.error('❌ [getAggregatedStats] Erro:', error);
+      throw error;
+    }
+  }
+
+  async exportUsersData(): Promise<any[]> {
+    console.log('📥 [exportUsersData] Exportando dados de usuários');
+
+    try {
+      const { data, error } = await supabaseAdmin
+        .from('users')
+        .select('id, name, email, status, created_at')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      // Buscar contagem de contas para cada usuário
+      const usersWithCounts = await Promise.all(
+        (data || []).map(async (user: any) => {
+          const { count } = await supabaseAdmin
+            .from('bills')
+            .select('*', { count: 'exact', head: true })
+            .eq('user_id', user.id);
+
+          return {
+            id: user.id,
+            name: user.name || 'Não informado',
+            email: user.email,
+            status: user.status === 'suspended' ? 'Suspenso' : 'Ativo',
+            createdAt: user.created_at,
+            billCount: count || 0,
+          };
+        })
+      );
+
+      console.log('✅ [exportUsersData] Dados exportados:', usersWithCounts.length, 'usuários');
+      return usersWithCounts;
+    } catch (error: any) {
+      console.error('❌ [exportUsersData] Erro:', error);
+      throw error;
+    }
+  }
+```
+
+BENEFÍCIOS:
+- Estatísticas agregadas sem dados individuais
+- Taxa de crescimento e retenção
+- Exportação de dados para backup
+- Apenas informações gerenciais
