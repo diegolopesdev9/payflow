@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { requireUser } from "./supabaseAuth";
+import { requireAdmin } from "./adminAuth";
 import type { Context } from "hono";
 import { SupabaseStorage } from "./supabase";
 
@@ -308,6 +309,63 @@ app.delete("/api/bills/:id", requireUser, async (c: Context) => {
 // ============ REPORTS ============
 app.get("/api/reports/summary", requireUser, async (c: Context) => {
   return c.json({ message: "Relatórios em desenvolvimento" });
+});
+
+// ============ ADMIN ROUTES ============
+app.get("/api/admin/stats", requireAdmin, async (c: Context) => {
+  console.log('📊 GET /api/admin/stats');
+
+  try {
+    const stats = await storage.getAdminStats();
+    return c.json(stats);
+  } catch (error: any) {
+    console.error('❌ Erro ao buscar stats:', error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+app.get("/api/admin/users", requireAdmin, async (c: Context) => {
+  console.log('👥 GET /api/admin/users');
+
+  try {
+    const limit = parseInt(c.req.query('limit') || '100');
+    const offset = parseInt(c.req.query('offset') || '0');
+
+    const users = await storage.getAllUsers(limit, offset);
+    return c.json(users);
+  } catch (error: any) {
+    console.error('❌ Erro ao buscar usuários:', error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+app.get("/api/admin/users/:id", requireAdmin, async (c: Context) => {
+  const userId = c.req.param('id');
+  console.log('🔍 GET /api/admin/users/:id', userId);
+
+  try {
+    const userDetails = await storage.getUserDetails(userId);
+    return c.json(userDetails);
+  } catch (error: any) {
+    console.error('❌ Erro ao buscar detalhes:', error);
+    return c.json({ error: error.message }, 404);
+  }
+});
+
+app.delete("/api/admin/users/:id", requireAdmin, async (c: Context) => {
+  const userId = c.req.param('id');
+  console.log('🗑️ DELETE /api/admin/users/:id', userId);
+
+  try {
+    const deleted = await storage.deleteUserAdmin(userId);
+    if (!deleted) {
+      return c.json({ error: 'Usuário não encontrado' }, 404);
+    }
+    return c.json({ message: 'Usuário deletado com sucesso' });
+  } catch (error: any) {
+    console.error('❌ Erro ao deletar usuário:', error);
+    return c.json({ error: error.message }, 500);
+  }
 });
 
 export default app;
