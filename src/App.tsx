@@ -27,6 +27,7 @@ import AppSettings from "@/pages/AppSettings";
 import Help from "@/pages/Help";
 import DataManagement from "@/pages/DataManagement";
 import NotFound from "@/pages/NotFound";
+import AdminDashboard from "@/pages/admin/AdminDashboard";
 
 
 const App = () => (
@@ -41,6 +42,11 @@ const App = () => (
           <Route path="/register" component={Register} />
           <Route path="/forgot-password" component={ForgotPassword} />
           <Route path="/reset-password" component={ResetPassword} />
+          <Route path="/admin/dashboard">
+            <ProtectedRoute>
+              <AdminDashboard />
+            </ProtectedRoute>
+          </Route>
           <Route path="/dashboard">
             <ProtectedRoute>
               <Dashboard />
