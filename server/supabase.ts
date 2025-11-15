@@ -301,6 +301,195 @@ export class SupabaseStorage implements IStorage {
       return { success: false, message: "Erro ao excluir dados" };
     }
   }
+
+  // ========== ADMIN OPERATIONS ==========
+
+  async getAdminStats(): Promise<any> {
+    console.log('📊 [getAdminStats] Buscando estatísticas admin');
+
+    try {
+      // Total de usuários
+      const { count: totalUsers } = await supabaseAdmin
+        .from('users')
+        .select('*', { count: 'exact', head: true });
+
+      // Usuários ativos (últimos 30 dias)
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+      const { count: activeUsers } = await supabaseAdmin
+        .from('users')
+        .select('*', { count: 'exact', head: true })
+        .gte('created_at', thirtyDaysAgo.toISOString());
+
+      // Total de contas criadas por cada usuário
+      const { data: billCounts } = await supabaseAdmin
+        .from('bills')
+        .select('user_id');
+
+      // Calcular média de contas por usuário
+      const billsByUser: { [key: string]: number } = {};
+      billCounts?.forEach((bill: any) => {
+        billsByUser[bill.user_id] = (billsByUser[bill.user_id] || 0) + 1;
+      });
+
+      const avgBillsPerUser = totalUsers && totalUsers > 0
+        ? Object.keys(billsByUser).length > 0
+          ? Object.values(billsByUser).reduce((a, b) => a + b, 0) / Object.keys(billsByUser).length
+          : 0
+        : 0;
+
+      // Usuários cadastrados nos últimos 30 dias (por dia)
+      const { data: recentUsers } = await supabaseAdmin
+        .from('users')
+        .select('created_at')
+        .gte('created_at', thirtyDaysAgo.toISOString())
+        .order('created_at', { ascending: true });
+
+      // Agrupar por dia
+      const usersByDay: { [key: string]: number } = {};
+      recentUsers?.forEach((user: any) => {
+        const date = new Date(user.created_at).toISOString().split('T')[0];
+        usersByDay[date] = (usersByDay[date] || 0) + 1;
+      });
+
+      const growthData = Object.entries(usersByDay).map(([date, count]) => ({
+        date,
+        count
+      }));
+
+      console.log('✅ [getAdminStats] Stats:', {
+        totalUsers,
+        activeUsers,
+        avgBillsPerUser: avgBillsPerUser.toFixed(1)
+      });
+
+      return {
+        totalUsers: totalUsers || 0,
+        activeUsers: activeUsers || 0,
+        avgBillsPerUser: parseFloat(avgBillsPerUser.toFixed(1)),
+        growthData,
+      };
+    } catch (error: any) {
+      console.error('❌ [getAdminStats] Erro:', error);
+      throw error;
+    }
+  }
+
+  async getAllUsers(limit = 100, offset = 0): Promise<any[]> {
+    console.log('👥 [getAllUsers] Buscando usuários');
+
+    try {
+      const { data, error } = await supabaseAdmin
+        .from('users')
+        .select('id, email, name, created_at')
+        .order('created_at', { ascending: false })
+        .range(offset, offset + limit - 1);
+
+      if (error) throw error;
+
+      // Para cada usuário, buscar contagem de contas
+      const usersWithStats = await Promise.all(
+        (data || []).map(async (user: any) => {
+          const { count: billCount } = await supabaseAdmin
+            .from('bills')
+            .select('*', { count: 'exact', head: true })
+            .eq('user_id', user.id);
+
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name || 'Não informado',
+            createdAt: user.created_at,
+            billCount: billCount || 0,
+          };
+        })
+      );
+
+      console.log('✅ [getAllUsers] Retornando', usersWithStats.length, 'usuários');
+      return usersWithStats;
+    } catch (error: any) {
+      console.error('❌ [getAllUsers] Erro:', error);
+      throw error;
+    }
+  }
+
+  async getUserDetails(userId: string): Promise<any> {
+    console.log('🔍 [getUserDetails] Buscando detalhes do usuário:', userId);
+
+    try {
+      // Dados do usuário
+      const { data: user, error: userError } = await supabaseAdmin
+        .from('users')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (userError || !user) throw new Error('Usuário não encontrado');
+
+      // Contar contas
+      const { count: billCount } = await supabaseAdmin
+        .from('bills')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', userId);
+
+      // Contar categorias
+      const { count: categoryCount } = await supabaseAdmin
+        .from('categories')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', userId);
+
+      console.log('✅ [getUserDetails] Detalhes:', {
+        email: user.email,
+        billCount,
+        categoryCount
+      });
+
+      return {
+        id: user.id,
+        email: user.email,
+        name: user.name || 'Não informado',
+        createdAt: user.created_at,
+        billCount: billCount || 0,
+        categoryCount: categoryCount || 0,
+      };
+    } catch (error: any) {
+      console.error('❌ [getUserDetails] Erro:', error);
+      throw error;
+    }
+  }
+
+  async deleteUserAdmin(userId: string): Promise<boolean> {
+    console.log('🗑️ [deleteUserAdmin] Deletando usuário:', userId);
+
+    try {
+      // Deletar contas do usuário
+      await supabaseAdmin
+        .from('bills')
+        .delete()
+        .eq('user_id', userId);
+
+      // Deletar categorias do usuário
+      await supabaseAdmin
+        .from('categories')
+        .delete()
+        .eq('user_id', userId);
+
+      // Deletar usuário da tabela users
+      const { error } = await supabaseAdmin
+        .from('users')
+        .delete()
+        .eq('id', userId);
+
+      if (error) throw error;
+
+      console.log('✅ [deleteUserAdmin] Usuário deletado com sucesso');
+      return true;
+    } catch (error: any) {
+      console.error('❌ [deleteUserAdmin] Erro:', error);
+      throw error;
+    }
+  }
 }
 
 export const supabaseStorage = new SupabaseStorage();
