@@ -35,8 +35,6 @@ const AdminDashboard = () => {
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [userToDelete, setUserToDelete] = useState<any>(null);
-  const [userActivity, setUserActivity] = useState<any>(null);
-  const [loadingActivity, setLoadingActivity] = useState(false);
 
   // Redirect se não for admin
   useEffect(() => {
@@ -119,9 +117,12 @@ const AdminDashboard = () => {
         title: variables.status === 'suspended' ? "Usuário suspenso" : "Usuário reativado",
         description: `O status foi alterado com sucesso.`,
       });
-      // Atualizar dados locais
+      // Atualizar status local
       if (selectedUser) {
-        fetchUserDetails(selectedUser.id);
+        setSelectedUser({
+          ...selectedUser,
+          status: variables.status
+        });
       }
     },
     onError: (error: any) => {
@@ -160,28 +161,16 @@ const AdminDashboard = () => {
   // Fetch user details
   const fetchUserDetails = async (userId: string) => {
     try {
-      setLoadingActivity(true);
-      
-      // Buscar detalhes básicos
-      const detailsResponse = await fetchWithAuth(`/api/admin/users/${userId}`);
-      if (!detailsResponse.ok) throw new Error('Failed to fetch user details');
-      const details = await detailsResponse.json();
-      setSelectedUser(details);
-      
-      // Buscar atividades
-      const activityResponse = await fetchWithAuth(`/api/admin/users/${userId}/activity`);
-      if (!activityResponse.ok) throw new Error('Failed to fetch activity');
-      const activity = await activityResponse.json();
-      setUserActivity(activity);
-      
+      const response = await fetchWithAuth(`/api/admin/users/${userId}`);
+      if (!response.ok) throw new Error('Failed to fetch user details');
+      const data = await response.json();
+      setSelectedUser(data);
     } catch (error: any) {
       toast({
         title: "Erro",
         description: "Não foi possível carregar os detalhes do usuário.",
         variant: "destructive",
       });
-    } finally {
-      setLoadingActivity(false);
     }
   };
 
@@ -416,83 +405,38 @@ const AdminDashboard = () => {
       </div>
 
       {/* User Details Dialog */}
-      <Dialog open={!!selectedUser} onOpenChange={() => {
-        setSelectedUser(null);
-        setUserActivity(null);
-      }}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+      <Dialog open={!!selectedUser} onOpenChange={() => setSelectedUser(null)}>
+        <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              Detalhes do Usuário
-              {userActivity && (
+              Gerenciar Usuário
+              {selectedUser && (
                 <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                  userActivity.accountStatus === 'suspended' 
+                  selectedUser.status === 'suspended' 
                     ? 'bg-red-100 text-red-700' 
                     : 'bg-green-100 text-green-700'
                 }`}>
-                  {userActivity.accountStatus === 'suspended' ? '🔴 Suspenso' : '🟢 Ativo'}
+                  {selectedUser.status === 'suspended' ? '🔴 Suspenso' : '🟢 Ativo'}
                 </span>
               )}
             </DialogTitle>
           </DialogHeader>
           
-          {loadingActivity ? (
-            <div className="py-8 text-center text-gray-500">
-              Carregando detalhes...
-            </div>
-          ) : selectedUser && userActivity ? (
+          {selectedUser ? (
             <div className="space-y-6">
               {/* Informações Básicas */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-3">
                 <div>
                   <p className="text-sm text-gray-500">Nome</p>
-                  <p className="font-medium">{selectedUser.name}</p>
+                  <p className="font-medium text-gray-900">{selectedUser.name}</p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Email</p>
-                  <p className="font-medium">{selectedUser.email}</p>
+                  <p className="font-medium text-gray-900">{selectedUser.email}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500">Membro desde</p>
-                  <p className="font-medium">{formatDate(userActivity.memberSince)}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Última atividade</p>
-                  <p className="font-medium">{formatDate(userActivity.lastActivity)}</p>
-                </div>
-              </div>
-
-              <Separator />
-
-              {/* Estatísticas de Uso */}
-              <div>
-                <h3 className="font-semibold mb-3 text-gray-900">Estatísticas de Uso</h3>
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="bg-blue-50 p-3 rounded-lg">
-                    <p className="text-sm text-gray-600">Total de Contas</p>
-                    <p className="text-2xl font-bold text-blue-600">{userActivity.totalBills}</p>
-                  </div>
-                  <div className="bg-green-50 p-3 rounded-lg">
-                    <p className="text-sm text-gray-600">Pagas</p>
-                    <p className="text-2xl font-bold text-green-600">{userActivity.paidBills}</p>
-                  </div>
-                  <div className="bg-red-50 p-3 rounded-lg">
-                    <p className="text-sm text-gray-600">Pendentes</p>
-                    <p className="text-2xl font-bold text-red-600">{userActivity.unpaidBills}</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-purple-50 p-3 rounded-lg">
-                  <p className="text-sm text-gray-600">Categorias Criadas</p>
-                  <p className="text-2xl font-bold text-purple-600">{userActivity.categoryCount}</p>
-                </div>
-                <div className="bg-orange-50 p-3 rounded-lg">
-                  <p className="text-sm text-gray-600">Valor Total</p>
-                  <p className="text-2xl font-bold text-orange-600">
-                    R$ {userActivity.totalAmount.toFixed(2)}
-                  </p>
+                  <p className="text-sm text-gray-500">Data de Cadastro</p>
+                  <p className="font-medium text-gray-900">{formatDate(selectedUser.createdAt)}</p>
                 </div>
               </div>
 
@@ -501,27 +445,27 @@ const AdminDashboard = () => {
               {/* Ações Admin */}
               <div>
                 <h3 className="font-semibold mb-3 text-gray-900">Ações Administrativas</h3>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
                   <Button
                     variant="outline"
                     onClick={() => toggleStatusMutation.mutate({
                       userId: selectedUser.id,
-                      status: userActivity.accountStatus === 'suspended' ? 'active' : 'suspended'
+                      status: selectedUser.status === 'suspended' ? 'active' : 'suspended'
                     })}
                     disabled={toggleStatusMutation.isPending}
-                    className={userActivity.accountStatus === 'suspended' 
+                    className={`w-full ${selectedUser.status === 'suspended' 
                       ? 'border-green-500 text-green-600 hover:bg-green-50'
-                      : 'border-red-500 text-red-600 hover:bg-red-50'
-                    }
+                      : 'border-orange-500 text-orange-600 hover:bg-orange-50'
+                    }`}
                   >
-                    {userActivity.accountStatus === 'suspended' ? '✓ Reativar Conta' : '⊗ Suspender Conta'}
+                    {selectedUser.status === 'suspended' ? '✓ Reativar Conta' : '⊗ Suspender Conta'}
                   </Button>
 
                   <Button
                     variant="outline"
                     onClick={() => resetPasswordMutation.mutate(selectedUser.id)}
                     disabled={resetPasswordMutation.isPending}
-                    className="border-blue-500 text-blue-600 hover:bg-blue-50"
+                    className="w-full border-blue-500 text-blue-600 hover:bg-blue-50"
                   >
                     🔑 Resetar Senha
                   </Button>
@@ -530,11 +474,10 @@ const AdminDashboard = () => {
                     variant="outline"
                     onClick={() => {
                       setSelectedUser(null);
-                      setUserActivity(null);
                       setUserToDelete(selectedUser);
                       setShowDeleteDialog(true);
                     }}
-                    className="border-red-500 text-red-600 hover:bg-red-50 col-span-2"
+                    className="w-full border-red-500 text-red-600 hover:bg-red-50"
                   >
                     🗑️ Deletar Usuário
                   </Button>
@@ -546,10 +489,7 @@ const AdminDashboard = () => {
           <DialogFooter>
             <Button
               variant="outline"
-              onClick={() => {
-                setSelectedUser(null);
-                setUserActivity(null);
-              }}
+              onClick={() => setSelectedUser(null)}
             >
               Fechar
             </Button>
