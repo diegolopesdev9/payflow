@@ -28,8 +28,15 @@ import { useAuth } from "@/lib/auth";
 
 const Settings = () => {
   const [location, setLocation] = useLocation();
-  const { isAdmin } = useAuth();
+  const { user, isAdmin } = useAuth();
   const [darkMode, setDarkMode] = useState(false);
+
+  // DEBUG - Remover depois
+  console.log('🔍 DEBUG Settings:');
+  console.log('User:', user);
+  console.log('User email:', user?.email);
+  console.log('isAdmin:', isAdmin);
+
   const [notifications, setNotifications] = useState(true);
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [pushNotifications, setPushNotifications] = useState(false);
