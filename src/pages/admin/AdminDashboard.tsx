@@ -61,6 +61,17 @@ const AdminDashboard = () => {
     enabled: authenticated === true && isAdmin,
   });
 
+  // Fetch aggregated stats
+  const { data: aggregatedStats, isLoading: aggregatedLoading } = useQuery({
+    queryKey: ['/api/admin/stats/aggregated'],
+    queryFn: async () => {
+      const response = await fetchWithAuth('/api/admin/stats/aggregated');
+      if (!response.ok) throw new Error('Failed to fetch aggregated stats');
+      return response.json();
+    },
+    enabled: authenticated === true && isAdmin,
+  });
+
   // Fetch all users
   const { data: users = [], isLoading: usersLoading } = useQuery({
     queryKey: ['/api/admin/users'],
@@ -231,7 +242,7 @@ const AdminDashboard = () => {
 
       <div className="container mx-auto px-4 py-6 space-y-6">
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
           <Card className="bg-white/95 backdrop-blur shadow-xl">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
@@ -243,7 +254,7 @@ const AdminDashboard = () => {
               <p className="text-3xl font-bold text-blue-600">
                 {stats?.totalUsers || 0}
               </p>
-              <p className="text-sm text-gray-500 mt-1">Cadastrados no sistema</p>
+              <p className="text-sm text-gray-500 mt-1">Cadastrados</p>
             </CardContent>
           </Card>
 
@@ -256,7 +267,22 @@ const AdminDashboard = () => {
             </CardHeader>
             <CardContent>
               <p className="text-3xl font-bold text-green-600">
-                {stats?.activeUsers || 0}
+                {aggregatedStats?.activeUsers || 0}
+              </p>
+              <p className="text-sm text-gray-500 mt-1">Contas ativas</p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white/95 backdrop-blur shadow-xl">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
+                <TrendingUp className="w-4 h-4 text-orange-600" />
+                Novos (30d)
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-3xl font-bold text-orange-600">
+                {aggregatedStats?.newUsersLast30Days || 0}
               </p>
               <p className="text-sm text-gray-500 mt-1">Últimos 30 dias</p>
             </CardContent>
@@ -266,14 +292,46 @@ const AdminDashboard = () => {
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
                 <TrendingUp className="w-4 h-4 text-purple-600" />
-                Média de Contas
+                Crescimento
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-bold text-purple-600">
-                {stats?.avgBillsPerUser || 0}
+              <p className={`text-3xl font-bold ${
+                (aggregatedStats?.growthRate || 0) >= 0 ? 'text-green-600' : 'text-red-600'
+              }`}>
+                {aggregatedStats?.growthRate >= 0 ? '+' : ''}{aggregatedStats?.growthRate || 0}%
               </p>
-              <p className="text-sm text-gray-500 mt-1">Por usuário</p>
+              <p className="text-sm text-gray-500 mt-1">vs período anterior</p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white/95 backdrop-blur shadow-xl">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
+                <Shield className="w-4 h-4 text-yellow-600" />
+                Taxa de Retenção
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-3xl font-bold text-yellow-600">
+                {aggregatedStats?.retentionRate || 0}%
+              </p>
+              <p className="text-sm text-gray-500 mt-1">Usuários ativos</p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white/95 backdrop-blur shadow-xl">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
+                <Activity className="w-4 h-4 text-red-600" />
+                Suspensos
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-3xl font-bold text-red-600">
+                {aggregatedStats?.suspendedUsers || 0}
+              </p>
+              <p className="text-sm text-gray-500 mt-1">Contas suspensas</p>
             </CardContent>
           </Card>
         </div>
