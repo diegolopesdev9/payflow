@@ -1,0 +1,108 @@
+TAREFA: Adicionar seção administrativa no Settings.tsx que só aparece para o usuário admin.
+
+INSTRUÇÕES CRÍTICAS:
+- MODIFIQUE APENAS o arquivo src/pages/Settings.tsx
+- ADICIONE Card "Área Administrativa" no final
+- Card só aparece se isAdmin = true
+- Mostre o diff antes de aplicar
+
+ARQUIVO A MODIFICAR: src/pages/Settings.tsx
+
+ALTERAÇÃO 1 - IMPORTS:
+
+ENCONTRE (linha 8):
+```typescript
+import { 
+  ArrowLeft,
+  Bell,
+  Moon,
+  Sun,
+  Shield,
+  Database,
+  Download,
+  Trash2,
+  LogOut,
+  Home,
+  CreditCard,
+  TrendingUp,
+  User
+} from "lucide-react";
+```
+
+ADICIONE Settings no import (se não existir):
+```typescript
+import { 
+  ArrowLeft,
+  Bell,
+  Moon,
+  Sun,
+  Shield,
+  Database,
+  Download,
+  Trash2,
+  LogOut,
+  Home,
+  CreditCard,
+  TrendingUp,
+  User,
+  Settings as SettingsIcon
+} from "lucide-react";
+```
+
+ALTERAÇÃO 2 - ADICIONAR useAuth:
+
+NO TOPO DO COMPONENTE (linha 17), APÓS const [location, setLocation] = useLocation();
+
+ADICIONE:
+```typescript
+const { isAdmin } = useAuth();
+```
+
+CERTIFIQUE-SE de que useAuth está importado. ENCONTRE:
+```typescript
+import { useLocation } from "wouter";
+```
+
+E ADICIONE LOGO ABAIXO:
+```typescript
+import { useAuth } from "@/lib/auth";
+```
+
+ALTERAÇÃO 3 - ADICIONAR CARD ADMIN:
+
+ENCONTRE o último Card "Account Actions" (antes do Bottom Navigation).
+
+ADICIONE ESTE NOVO CARD LOGO ANTES do Card "Account Actions":
+```typescript
+        {/* Admin Area - Só aparece para admin */}
+        {isAdmin && (
+          <Card className="fin-card border-2 border-yellow-500/50 bg-yellow-50/50">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-yellow-900">
+                <Shield className="w-5 h-5 text-yellow-600" />
+                Área Administrativa
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <p className="text-sm text-yellow-800 mb-4">
+                Acesso exclusivo ao painel de gerenciamento do sistema
+              </p>
+              <Button 
+                variant="outline" 
+                className="w-full justify-start bg-yellow-600 text-white hover:bg-yellow-700 border-yellow-600"
+                onClick={() => setLocation("/admin/dashboard")}
+              >
+                <Shield className="w-4 h-4 mr-2" />
+                Acessar Painel Admin
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+```
+
+BENEFÍCIOS:
+- Só aparece quando diegolopes.dev9@gmail.com está logado
+- Card destacado com borda amarela/dourada
+- Totalmente invisível para outros usuários
+- Integrado naturalmente no Settings
+- Mais seguro que no Login
