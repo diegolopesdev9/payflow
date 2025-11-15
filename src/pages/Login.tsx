@@ -8,6 +8,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
 import { AlertCircle } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth"; // Import useAuth
+import { Shield } from "lucide-react"; // Import Shield for the icon
 
 
 const Login = () => {
@@ -15,8 +17,10 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const [, setLocation] = useLocation(); // Keep setLocation for navigation
-  const [error, setError] = useState(""); // State to hold error messages
+  const [, setLocation] = useLocation();
+  const [error, setError] = useState("");
+  const { isAdmin } = useAuth(); // Get isAdmin from useAuth
+
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,7 +68,22 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary via-primary/95 to-secondary flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-primary via-primary/95 to-secondary flex items-center justify-center p-4 relative"> {/* Added relative for absolute positioning */}
+      {/* Admin Button - Conditionally rendered */}
+      {isAdmin && (
+        <div className="absolute top-4 right-4">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => setLocation("/admin")}
+            className="border-red-500 text-red-500 hover:bg-red-500 hover:text-white"
+            title="Painel do Admin"
+          >
+            <Shield className="h-5 w-5" />
+          </Button>
+        </div>
+      )}
+
       <div className="w-full max-w-md animate-fade-in">
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-primary-foreground mb-2">
