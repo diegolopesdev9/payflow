@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -237,7 +236,7 @@ const AdminDashboard = () => {
                       <div className="w-full flex items-end justify-center relative" style={{ height: '128px' }}>
                         <div
                           className="w-full bg-blue-600 rounded-t transition-all hover:bg-blue-700 cursor-pointer"
-                          style={{ 
+                          style={{
                             height: `${Math.max(heightPercent, 5)}%`,
                             minHeight: '8px'
                           }}
@@ -278,6 +277,7 @@ const AdminDashboard = () => {
                   <tr className="border-b">
                     <th className="text-left p-3 text-sm font-medium text-gray-600">Nome</th>
                     <th className="text-left p-3 text-sm font-medium text-gray-600">Email</th>
+                    <th className="text-left p-3 text-sm font-medium text-gray-600">Status</th>
                     <th className="text-left p-3 text-sm font-medium text-gray-600">Cadastro</th>
                     <th className="text-left p-3 text-sm font-medium text-gray-600">Contas</th>
                     <th className="text-right p-3 text-sm font-medium text-gray-600">Ações</th>
@@ -286,7 +286,7 @@ const AdminDashboard = () => {
                 <tbody>
                   {filteredUsers.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="text-center p-8 text-gray-500">
+                      <td colSpan={6} className="text-center p-8 text-gray-500">
                         Nenhum usuário encontrado
                       </td>
                     </tr>
@@ -297,6 +297,15 @@ const AdminDashboard = () => {
                           <span className="font-medium text-gray-900">{u.name}</span>
                         </td>
                         <td className="p-3 text-gray-600">{u.email}</td>
+                        <td className="p-3">
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            u.status === 'suspended'
+                              ? 'bg-red-100 text-red-700'
+                              : 'bg-green-100 text-green-700'
+                          }`}>
+                            {u.status === 'suspended' ? '🔴 Suspenso' : '🟢 Ativo'}
+                          </span>
+                        </td>
                         <td className="p-3 text-gray-600">{formatDate(u.createdAt)}</td>
                         <td className="p-3">
                           <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
