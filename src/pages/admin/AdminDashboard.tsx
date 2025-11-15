@@ -16,6 +16,7 @@ import {
   Trash2,
   Eye,
   Shield,
+  Download,
 } from "lucide-react";
 import {
   Dialog,
@@ -191,6 +192,57 @@ const AdminDashboard = () => {
       month: '2-digit',
       year: 'numeric',
     });
+  };
+
+  const exportToCSV = async () => {
+    try {
+      toast({
+        title: "Exportando dados...",
+        description: "Preparando arquivo CSV.",
+      });
+
+      const response = await fetchWithAuth('/api/admin/export/users');
+      if (!response.ok) throw new Error('Failed to export');
+      const result = await response.json();
+
+      // Converter para CSV
+      const headers = ['ID', 'Nome', 'Email', 'Status', 'Data Cadastro', 'Número de Contas'];
+      const rows = result.data.map((user: any) => [
+        user.id,
+        user.name,
+        user.email,
+        user.status,
+        new Date(user.createdAt).toLocaleDateString('pt-BR'),
+        user.billCount,
+      ]);
+
+      const csvContent = [
+        headers.join(','),
+        ...rows.map((row: any[]) => row.map(cell => `"${cell}"`).join(','))
+      ].join('\n');
+
+      // Download
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `usuarios_${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      toast({
+        title: "Exportação concluída!",
+        description: `${result.totalRecords} usuários exportados com sucesso.`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Erro ao exportar",
+        description: error.message || "Não foi possível exportar os dados.",
+        variant: "destructive",
+      });
+    }
   };
 
   // Filter users by search
@@ -374,16 +426,27 @@ const AdminDashboard = () => {
         {/* Users Table */}
         <Card className="bg-white/95 backdrop-blur shadow-xl">
           <CardHeader>
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-4">
               <CardTitle className="text-gray-900">Usuários Cadastrados</CardTitle>
-              <div className="relative w-64">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <Input
-                  placeholder="Buscar por nome ou email..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={exportToCSV}
+                  className="border-green-500 text-green-600 hover:bg-green-50"
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Exportar CSV
+                </Button>
+                <div className="relative w-64">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <Input
+                    placeholder="Buscar por nome ou email..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
               </div>
             </div>
           </CardHeader>
